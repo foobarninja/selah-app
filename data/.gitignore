@@ -1,0 +1,7 @@
+# Downloaded source data (too large for git)
+sources/bible.eng.db
+sources/strongs/
+sources/*.json
+
+# Keep the directory structure
+!sources/.gitkeep

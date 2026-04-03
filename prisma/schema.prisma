@@ -1,0 +1,685 @@
+// Selah — Prisma Schema
+// Translated from bible-app-schema.sql
+
+generator client {
+  provider = "prisma-client"
+  output   = "../src/generated/prisma"
+}
+
+datasource db {
+  provider = "sqlite"
+}
+
+// ============================================================================
+// LAYER 1A: TRANSLATIONS & SCRIPTURE TEXT
+// ============================================================================
+
+model Translation {
+  id            String  @id
+  name          String
+  englishName   String  @map("english_name")
+  shortName     String  @map("short_name")
+  language      String  @default("eng")
+  textDirection String  @default("ltr") @map("text_direction")
+  website       String?
+  licenseUrl    String? @map("license_url")
+  licenseNotes  String? @map("license_notes")
+  numBooks      Int?    @map("num_books")
+  numChapters   Int?    @map("num_chapters")
+  numVerses     Int?    @map("num_verses")
+  hasStrongs    Boolean @default(false) @map("has_strongs")
+  isPrimary     Boolean @default(false) @map("is_primary")
+  description   String?
+  sortOrder     Int     @default(100) @map("sort_order")
+
+  verses    Verse[]
+  footnotes Footnote[]
+
+  @@map("translations")
+}
+
+model Book {
+  id          String  @id
+  name        String
+  testament   String
+  bookOrder   Int     @map("book_order")
+  numChapters Int     @map("num_chapters")
+  category    String?
+
+  verses               Verse[]
+  footnotes            Footnote[]
+  strongsVerseMaps     StrongsVerseMap[]
+  crossRefsAsSource    CrossReference[]     @relation("source")
+  crossRefsAsTarget    CrossReference[]     @relation("target")
+  commentaryEntries    CommentaryEntry[]
+  characterAppearances CharacterAppearance[]
+  passageThemes        PassageTheme[]
+  passageClimates      PassageClimate[]
+  narrativeUnits       NarrativeUnit[]
+  devotionals          Devotional[]
+  userNoteAnchors      UserNoteAnchor[]
+  userBookmarks        UserBookmark[]
+  readingHistory       ReadingHistory[]
+
+  @@map("books")
+}
+
+model Verse {
+  id            Int     @id @default(autoincrement())
+  translationId String  @map("translation_id")
+  bookId        String  @map("book_id")
+  chapter       Int
+  verse         Int
+  text          String
+  textFormatted String? @map("text_formatted")
+  wordsOfJesus  Boolean @default(false) @map("words_of_jesus")
+  heading       String?
+
+  translation Translation @relation(fields: [translationId], references: [id])
+  book        Book        @relation(fields: [bookId], references: [id])
+
+  @@unique([translationId, bookId, chapter, verse])
+  @@index([bookId, chapter, verse])
+  @@index([translationId])
+  @@map("verses")
+}
+
+model Footnote {
+  id            Int     @id @default(autoincrement())
+  translationId String  @map("translation_id")
+  bookId        String  @map("book_id")
+  chapter       Int
+  verse         Int
+  noteText      String  @map("note_text")
+  caller        String?
+
+  translation Translation @relation(fields: [translationId], references: [id])
+  book        Book        @relation(fields: [bookId], references: [id])
+
+  @@map("footnotes")
+}
+
+// ============================================================================
+// LAYER 1B: STRONG'S CONCORDANCE
+// ============================================================================
+
+model StrongsEntry {
+  number          String  @id
+  language        String
+  word            String
+  transliteration String?
+  pronunciation   String?
+  definition      String
+  shortDefinition String? @map("short_definition")
+  kjvUsage        String? @map("kjv_usage")
+  derivation      String?
+  relatedNumbers  String? @map("related_numbers")
+
+  verseMaps StrongsVerseMap[]
+
+  @@index([language])
+  @@map("strongs_entries")
+}
+
+model StrongsVerseMap {
+  id             Int     @id @default(autoincrement())
+  strongsNumber  String  @map("strongs_number")
+  bookId         String  @map("book_id")
+  chapter        Int
+  verse          Int
+  wordPosition   Int?    @map("word_position")
+  translatedWord String? @map("translated_word")
+
+  entry StrongsEntry @relation(fields: [strongsNumber], references: [number])
+  book  Book         @relation(fields: [bookId], references: [id])
+
+  @@index([bookId, chapter, verse])
+  @@index([strongsNumber])
+  @@map("strongs_verse_map")
+}
+
+// ============================================================================
+// LAYER 1C: CROSS-REFERENCES
+// ============================================================================
+
+model CrossReference {
+  id             Int     @id @default(autoincrement())
+  sourceBook     String  @map("source_book")
+  sourceChapter  Int     @map("source_chapter")
+  sourceVerse    Int     @map("source_verse")
+  targetBook     String  @map("target_book")
+  targetChapter  Int     @map("target_chapter")
+  targetVerse    Int     @map("target_verse")
+  targetEndVerse Int?    @map("target_end_verse")
+  score          Int?
+  refType        String  @default("cross") @map("ref_type")
+
+  sourceBookRef Book @relation("source", fields: [sourceBook], references: [id])
+  targetBookRef Book @relation("target", fields: [targetBook], references: [id])
+
+  @@index([sourceBook, sourceChapter, sourceVerse])
+  @@index([targetBook, targetChapter, targetVerse])
+  @@map("cross_references")
+}
+
+// ============================================================================
+// LAYER 1D: COMMENTARIES
+// ============================================================================
+
+model CommentarySource {
+  id           String  @id
+  name         String
+  englishName  String  @map("english_name")
+  website      String?
+  licenseUrl   String? @map("license_url")
+  licenseNotes String? @map("license_notes")
+  numBooks     Int?    @map("num_books")
+  numVerses    Int?    @map("num_verses")
+  era          String?
+  tradition    String?
+
+  entries CommentaryEntry[]
+
+  @@map("commentary_sources")
+}
+
+model CommentaryEntry {
+  id             Int     @id @default(autoincrement())
+  sourceId       String  @map("source_id")
+  bookId         String  @map("book_id")
+  chapter        Int
+  verse          Int?
+  text           String
+  isIntroduction Boolean @default(false) @map("is_introduction")
+
+  source CommentarySource @relation(fields: [sourceId], references: [id])
+  book   Book             @relation(fields: [bookId], references: [id])
+
+  @@index([bookId, chapter, verse])
+  @@index([sourceId])
+  @@map("commentary_entries")
+}
+
+// ============================================================================
+// LAYER 2A: CHARACTERS
+// ============================================================================
+
+model Character {
+  id               String  @id
+  name             String
+  aliases          String?
+  gender           String?
+  tribeClan        String? @map("tribe_clan")
+  occupation       String?
+  socialStatus     String? @map("social_status")
+  era              String?
+  approximateDates String? @map("approximate_dates")
+  bioBrief         String? @map("bio_brief")
+  bioFull          String? @map("bio_full")
+  modernParallel   String? @map("modern_parallel")
+  emotionalArc     String? @map("emotional_arc")
+  faithJourney     String? @map("faith_journey")
+  sourceTier       String  @default("scholarship") @map("source_tier")
+  sourceNotes      String? @map("source_notes")
+  tyndaleProfileId String? @map("tyndale_profile_id")
+  isNamed          Boolean @default(true) @map("is_named")
+  prominence       String  @default("secondary")
+
+  appearances    CharacterAppearance[]
+  relationshipsA CharacterRelationship[] @relation("charA")
+  relationshipsB CharacterRelationship[] @relation("charB")
+
+  @@index([era])
+  @@map("characters")
+}
+
+model CharacterRelationship {
+  id           Int     @id @default(autoincrement())
+  characterA   String  @map("character_a")
+  characterB   String  @map("character_b")
+  relationship String
+  description  String?
+  sourceTier   String  @default("canon") @map("source_tier")
+
+  charA Character @relation("charA", fields: [characterA], references: [id])
+  charB Character @relation("charB", fields: [characterB], references: [id])
+
+  @@index([characterA])
+  @@index([characterB])
+  @@map("character_relationships")
+}
+
+model CharacterAppearance {
+  id             Int     @id @default(autoincrement())
+  characterId    String  @map("character_id")
+  bookId         String  @map("book_id")
+  chapter        Int
+  verseStart     Int     @map("verse_start")
+  verseEnd       Int?    @map("verse_end")
+  role           String
+  emotionalState String? @map("emotional_state")
+  motivation     String?
+  stakes         String?
+  narrativeNote  String? @map("narrative_note")
+  modernParallel String? @map("modern_parallel")
+  sourceTier     String  @default("scholarship") @map("source_tier")
+
+  character Character @relation(fields: [characterId], references: [id])
+  book      Book      @relation(fields: [bookId], references: [id])
+
+  @@index([characterId])
+  @@index([bookId, chapter, verseStart])
+  @@map("character_appearances")
+}
+
+// ============================================================================
+// LAYER 2B: THEMES
+// ============================================================================
+
+model Theme {
+  id            String  @id
+  name          String
+  category      String?
+  parentThemeId String? @map("parent_theme_id")
+  definition    String?
+  modernFraming String? @map("modern_framing")
+  relatedThemes String? @map("related_themes")
+  sourceTier    String  @default("scholarship") @map("source_tier")
+
+  parent        Theme?         @relation("themeHierarchy", fields: [parentThemeId], references: [id])
+  children      Theme[]        @relation("themeHierarchy")
+  passageThemes PassageTheme[]
+
+  @@map("themes")
+}
+
+model PassageTheme {
+  id          Int     @id @default(autoincrement())
+  themeId     String  @map("theme_id")
+  bookId      String  @map("book_id")
+  chapter     Int
+  verseStart  Int     @map("verse_start")
+  verseEnd    Int?    @map("verse_end")
+  relevance   String  @default("primary")
+  contextNote String? @map("context_note")
+  sourceTier  String  @default("scholarship") @map("source_tier")
+
+  theme Theme @relation(fields: [themeId], references: [id])
+  book  Book  @relation(fields: [bookId], references: [id])
+
+  @@index([themeId])
+  @@index([bookId, chapter, verseStart])
+  @@map("passage_themes")
+}
+
+// ============================================================================
+// LAYER 2C: CLIMATE & LOCATIONS
+// ============================================================================
+
+model Location {
+  id           String  @id
+  name         String
+  modernName   String? @map("modern_name")
+  region       String?
+  latitude     Float?
+  longitude    Float?
+  description  String?
+  significance String?
+  sourceTier   String  @default("scholarship") @map("source_tier")
+
+  passageClimates PassageClimate[]
+
+  @@map("locations")
+}
+
+model ClimateContext {
+  id             String  @id
+  name           String
+  era            String
+  dateRange      String? @map("date_range")
+  political      String?
+  economic       String?
+  social         String?
+  religious      String?
+  geographic     String?
+  dailyLife      String? @map("daily_life")
+  modernParallel String? @map("modern_parallel")
+  sourceTier     String  @default("scholarship") @map("source_tier")
+  sourceNotes    String? @map("source_notes")
+
+  passageClimates PassageClimate[]
+
+  @@map("climate_contexts")
+}
+
+model PassageClimate {
+  id          Int     @id @default(autoincrement())
+  contextId   String  @map("context_id")
+  bookId      String  @map("book_id")
+  chapter     Int
+  verseStart  Int     @map("verse_start")
+  verseEnd    Int?    @map("verse_end")
+  locationId  String? @map("location_id")
+  contextNote String? @map("context_note")
+  sourceTier  String  @default("scholarship") @map("source_tier")
+
+  context  ClimateContext @relation(fields: [contextId], references: [id])
+  book     Book           @relation(fields: [bookId], references: [id])
+  location Location?      @relation(fields: [locationId], references: [id])
+
+  @@index([contextId])
+  @@index([bookId, chapter, verseStart])
+  @@map("passage_climate")
+}
+
+// ============================================================================
+// LAYER 2D: NARRATIVE UNITS
+// ============================================================================
+
+model NarrativeUnit {
+  id             String  @id
+  title          String
+  bookId         String  @map("book_id")
+  chapterStart   Int     @map("chapter_start")
+  verseStart     Int     @map("verse_start")
+  chapterEnd     Int?    @map("chapter_end")
+  verseEnd       Int?    @map("verse_end")
+  summary        String?
+  significance   String?
+  relationalNote String? @map("relational_note")
+  conceptualNote String? @map("conceptual_note")
+  climateNote    String? @map("climate_note")
+  modernParallel String? @map("modern_parallel")
+  keyQuestions   String? @map("key_questions")
+  preachingAngles String? @map("preaching_angles")
+  sourceTier     String  @default("scholarship") @map("source_tier")
+  sourceNotes    String? @map("source_notes")
+
+  book        Book         @relation(fields: [bookId], references: [id])
+  devotionals Devotional[]
+
+  @@index([bookId, chapterStart, verseStart])
+  @@map("narrative_units")
+}
+
+// ============================================================================
+// LAYER 2E: DAILY BREAD
+// ============================================================================
+
+model DevotionalTag {
+  id          String  @id
+  name        String
+  category    String
+  icon        String?
+  parentTagId String? @map("parent_tag_id")
+  description String?
+  sortOrder   Int     @default(100) @map("sort_order")
+
+  parent   DevotionalTag?     @relation("tagHierarchy", fields: [parentTagId], references: [id])
+  children DevotionalTag[]    @relation("tagHierarchy")
+  tagMaps  DevotionalTagMap[]
+
+  @@map("devotional_tags")
+}
+
+model Devotional {
+  id                   String  @id
+  title                String
+  bookId               String  @map("book_id")
+  chapter              Int
+  verseStart           Int     @map("verse_start")
+  verseEnd             Int     @map("verse_end")
+  contextBrief         String  @map("context_brief")
+  modernMoment         String  @map("modern_moment")
+  conversationStarters String  @map("conversation_starters")
+  goingDeeper          String? @map("going_deeper")
+  audience             String  @default("family")
+  estimatedMinutes     Int     @default(5) @map("estimated_minutes")
+  season               String?
+  dayOfYear            Int?    @map("day_of_year")
+  narrativeId          String? @map("narrative_id")
+  sourceTier           String  @default("ai_assisted") @map("source_tier")
+  sourceNotes          String? @map("source_notes")
+  createdAt            String  @default("") @map("created_at")
+
+  book          Book               @relation(fields: [bookId], references: [id])
+  narrativeUnit NarrativeUnit?     @relation(fields: [narrativeId], references: [id])
+  tagMaps       DevotionalTagMap[]
+  history       DevotionalHistory[]
+
+  @@index([bookId, chapter, verseStart])
+  @@index([season])
+  @@index([audience])
+  @@map("devotionals")
+}
+
+model DevotionalTagMap {
+  id           Int    @id @default(autoincrement())
+  devotionalId String @map("devotional_id")
+  tagId        String @map("tag_id")
+  relevance    String @default("primary")
+
+  devotional Devotional    @relation(fields: [devotionalId], references: [id])
+  tag        DevotionalTag @relation(fields: [tagId], references: [id])
+
+  @@unique([devotionalId, tagId])
+  @@map("devotional_tag_map")
+}
+
+model DevotionalHistory {
+  id           Int     @id @default(autoincrement())
+  devotionalId String  @map("devotional_id")
+  completedAt  String  @default("") @map("completed_at")
+  familyNotes  String? @map("family_notes")
+  rating       Int?
+
+  devotional Devotional @relation(fields: [devotionalId], references: [id])
+
+  @@index([devotionalId])
+  @@map("devotional_history")
+}
+
+// ============================================================================
+// LAYER 3: AI PROVIDERS
+// ============================================================================
+
+model AiProvider {
+  id               String  @id
+  name             String
+  apiBaseUrl       String  @map("api_base_url")
+  apiKeyHeader     String  @default("Authorization") @map("api_key_header")
+  apiKeyPrefix     String  @default("Bearer ") @map("api_key_prefix")
+  requestTemplate  String  @map("request_template")
+  responseTextPath String  @map("response_text_path")
+  isLocal          Boolean @default(false) @map("is_local")
+  notes            String?
+
+  models AiModel[]
+
+  @@map("ai_providers")
+}
+
+model AiModel {
+  id         Int     @id @default(autoincrement())
+  providerId String  @map("provider_id")
+  modelId    String  @map("model_id")
+  name       String
+  isDefault  Boolean @default(false) @map("is_default")
+  maxContext  Int?    @map("max_context")
+  notes      String?
+
+  provider AiProvider @relation(fields: [providerId], references: [id])
+
+  @@map("ai_models")
+}
+
+// ============================================================================
+// LAYER 4: USER STATE
+// ============================================================================
+
+model AppSetting {
+  key         String  @id
+  value       String
+  valueType   String  @default("string") @map("value_type")
+  category    String  @default("general")
+  description String?
+
+  @@map("app_settings")
+}
+
+model UserNote {
+  id               Int     @id @default(autoincrement())
+  title            String?
+  content          String
+  noteType         String  @default("annotation") @map("note_type")
+  highlightColor   String  @default("default") @map("highlight_color")
+  isPinned         Boolean @default(false) @map("is_pinned")
+  studyContext     String? @map("study_context")
+  aiConversationId Int?    @map("ai_conversation_id")
+  createdAt        String  @default("") @map("created_at")
+  updatedAt        String  @default("") @map("updated_at")
+
+  anchors    UserNoteAnchor[]
+  noteThemes UserNoteTheme[]
+  noteTags   UserNoteTag[]
+
+  @@map("user_notes")
+}
+
+model UserNoteAnchor {
+  id         Int     @id @default(autoincrement())
+  noteId     Int     @map("note_id")
+  anchorType String  @map("anchor_type")
+  bookId     String? @map("book_id")
+  chapter    Int?
+  verseStart Int?    @map("verse_start")
+  verseEnd   Int?    @map("verse_end")
+  refId      String? @map("ref_id")
+  isPrimary  Boolean @default(false) @map("is_primary")
+
+  note UserNote @relation(fields: [noteId], references: [id], onDelete: Cascade)
+  book Book?    @relation(fields: [bookId], references: [id])
+
+  @@unique([noteId, anchorType, bookId, chapter, verseStart, refId])
+  @@index([noteId])
+  @@index([bookId, chapter, verseStart])
+  @@map("user_note_anchors")
+}
+
+model UserNoteTheme {
+  id      Int    @id @default(autoincrement())
+  noteId  Int    @map("note_id")
+  themeId String @map("theme_id")
+
+  note UserNote @relation(fields: [noteId], references: [id], onDelete: Cascade)
+
+  @@unique([noteId, themeId])
+  @@index([noteId])
+  @@map("user_note_themes")
+}
+
+model UserTag {
+  id        String @id
+  name      String
+  color     String @default("default")
+  createdAt String @default("") @map("created_at")
+
+  noteTags UserNoteTag[]
+
+  @@map("user_tags")
+}
+
+model UserNoteTag {
+  id     Int    @id @default(autoincrement())
+  noteId Int    @map("note_id")
+  tagId  String @map("tag_id")
+
+  note UserNote @relation(fields: [noteId], references: [id], onDelete: Cascade)
+  tag  UserTag  @relation(fields: [tagId], references: [id])
+
+  @@unique([noteId, tagId])
+  @@index([noteId])
+  @@map("user_note_tags")
+}
+
+model UserBookmark {
+  id        Int     @id @default(autoincrement())
+  bookId    String  @map("book_id")
+  chapter   Int
+  verse     Int?
+  color     String  @default("default")
+  noteId    Int?    @map("note_id")
+  createdAt String  @default("") @map("created_at")
+
+  book Book @relation(fields: [bookId], references: [id])
+
+  @@index([bookId, chapter, verse])
+  @@map("user_bookmarks")
+}
+
+model UserCollection {
+  id             Int     @id @default(autoincrement())
+  title          String
+  description    String?
+  collectionType String  @default("study") @map("collection_type")
+  createdAt      String  @default("") @map("created_at")
+  updatedAt      String  @default("") @map("updated_at")
+
+  items UserCollectionItem[]
+
+  @@map("user_collections")
+}
+
+model UserCollectionItem {
+  id           Int     @id @default(autoincrement())
+  collectionId Int     @map("collection_id")
+  itemType     String  @map("item_type")
+  itemRef      String  @map("item_ref")
+  note         String?
+  sortOrder    Int     @default(0) @map("sort_order")
+  createdAt    String  @default("") @map("created_at")
+
+  collection UserCollection @relation(fields: [collectionId], references: [id], onDelete: Cascade)
+
+  @@index([collectionId, sortOrder])
+  @@map("user_collection_items")
+}
+
+model ReadingHistory {
+  id        Int    @id @default(autoincrement())
+  bookId    String @map("book_id")
+  chapter   Int
+  verse     Int?
+  visitedAt String @default("") @map("visited_at")
+
+  book Book @relation(fields: [bookId], references: [id])
+
+  @@map("reading_history")
+}
+
+model AiConversation {
+  id         Int     @id @default(autoincrement())
+  title      String?
+  contextRef String? @map("context_ref")
+  createdAt  String  @default("") @map("created_at")
+  updatedAt  String  @default("") @map("updated_at")
+
+  messages AiMessage[]
+
+  @@map("ai_conversations")
+}
+
+model AiMessage {
+  id             Int     @id @default(autoincrement())
+  conversationId Int     @map("conversation_id")
+  role           String
+  content        String
+  providerId     String? @map("provider_id")
+  modelId        String? @map("model_id")
+  createdAt      String  @default("") @map("created_at")
+
+  conversation AiConversation @relation(fields: [conversationId], references: [id], onDelete: Cascade)
+
+  @@index([conversationId, createdAt])
+  @@map("ai_messages")
+}

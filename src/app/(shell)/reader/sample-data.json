@@ -1,0 +1,338 @@
+{
+  "_meta": {
+    "models": {
+      "passage": "The currently displayed narrative unit — a scene or pericope grouping a range of verses with metadata.",
+      "verse": "A single verse of Scripture with text across translations, Strong's annotations, and words-of-Jesus flag.",
+      "footnote": "A translation-specific textual note associated with a verse, rendered as an expandable superscript marker.",
+      "characterAppearance": "A character's presence in this passage — role, emotional state, stakes, and modern parallel for the scene cast.",
+      "theme": "A conceptual thread surfacing in this passage with contextual annotation and source tier.",
+      "climateContext": "Historical, geographical, and cultural context for this passage — politics, geography, social norms.",
+      "crossReference": "A semantic link to another passage with a relevance score and snippet.",
+      "commentary": "A scholar commentary excerpt tied to a verse or range, with author and display tier.",
+      "journalEntry": "A resurfaced user journal entry matched to the current reading context.",
+      "translation": "A Bible translation/version available for reading."
+    },
+    "relationships": [
+      "Passage contains many Verses",
+      "Verse may have many Footnotes (translation-specific)",
+      "Passage has many CharacterAppearances (scene cast)",
+      "Passage has many Themes (conceptual lens)",
+      "Passage has many ClimateContexts (climate lens)",
+      "Passage has many CrossReferences to other passages",
+      "Passage has many Commentaries tied to its verses",
+      "JournalEntries are resurfaced based on five matching channels against the current passage"
+    ]
+  },
+  "passage": {
+    "id": "john-4-4-15",
+    "book": "John",
+    "chapter": 4,
+    "verseStart": 4,
+    "verseEnd": 15,
+    "title": "The woman at the well",
+    "narrativeUnitId": "nu-john-4-4-26"
+  },
+  "activeTranslation": "BSB",
+  "availableTranslations": [
+    { "id": "bsb", "name": "Berean Standard Bible", "abbreviation": "BSB" },
+    { "id": "esv", "name": "English Standard Version", "abbreviation": "ESV" },
+    { "id": "niv", "name": "New International Version", "abbreviation": "NIV" },
+    { "id": "kjv", "name": "King James Version", "abbreviation": "KJV" }
+  ],
+  "parallelTranslations": ["ESV"],
+  "verses": [
+    {
+      "number": 4,
+      "text": "Now He had to pass through Samaria.",
+      "wordsOfJesus": false,
+      "strongs": [
+        { "word": "Samaria", "code": "G4540", "transliteration": "Samareia", "brief": "a city and region of central Palestine" }
+      ],
+      "footnotes": [],
+      "parallelTexts": [
+        { "translation": "ESV", "text": "And he had to pass through Samaria." }
+      ]
+    },
+    {
+      "number": 5,
+      "text": "So He came to a town of Samaria called Sychar, near the plot of ground that Jacob had given to his son Joseph.",
+      "wordsOfJesus": false,
+      "strongs": [
+        { "word": "Sychar", "code": "G4965", "transliteration": "Sychar", "brief": "a place near Jacob's well" }
+      ],
+      "footnotes": [
+        { "id": "fn-john-4-5a", "marker": "a", "text": "Some manuscripts read \"Shechem.\" The identification with modern Askar near Nablus is widely accepted." }
+      ],
+      "parallelTexts": [
+        { "translation": "ESV", "text": "So he came to a town of Samaria called Sychar, near the field that Jacob had given to his son Joseph." }
+      ]
+    },
+    {
+      "number": 6,
+      "text": "Jacob's well was there, and Jesus, weary from His journey, sat down beside the well. It was about the sixth hour.",
+      "wordsOfJesus": false,
+      "strongs": [],
+      "footnotes": [
+        { "id": "fn-john-4-6a", "marker": "b", "text": "The sixth hour is noon by Jewish reckoning, or 6 PM by Roman reckoning. Most scholars favor noon, which explains the woman's solitary visit." }
+      ],
+      "parallelTexts": [
+        { "translation": "ESV", "text": "Jacob's well was there; so Jesus, wearied as he was from his journey, was sitting beside the well. It was about the sixth hour." }
+      ]
+    },
+    {
+      "number": 7,
+      "text": "A woman from Samaria came to draw water. Jesus said to her, \"Give Me a drink.\"",
+      "wordsOfJesus": true,
+      "wordsOfJesusRange": { "start": 43, "end": 63 },
+      "strongs": [
+        { "word": "water", "code": "G5204", "transliteration": "hydōr", "brief": "water, often used metaphorically for spiritual life" }
+      ],
+      "footnotes": [],
+      "parallelTexts": [
+        { "translation": "ESV", "text": "A woman from Samaria came to draw water. Jesus said to her, \"Give me a drink.\"" }
+      ]
+    },
+    {
+      "number": 8,
+      "text": "(His disciples had gone into the town to buy food.)",
+      "wordsOfJesus": false,
+      "strongs": [],
+      "footnotes": [],
+      "parallelTexts": [
+        { "translation": "ESV", "text": "(For his disciples had gone away into the city to buy food.)" }
+      ]
+    },
+    {
+      "number": 9,
+      "text": "The Samaritan woman said to Him, \"How can You, a Jew, ask for a drink from me, a Samaritan woman?\" (For Jews do not associate with Samaritans.)",
+      "wordsOfJesus": false,
+      "strongs": [],
+      "footnotes": [
+        { "id": "fn-john-4-9a", "marker": "c", "text": "Some manuscripts read \"For Jews do not use vessels in common with Samaritans.\"" }
+      ],
+      "parallelTexts": [
+        { "translation": "ESV", "text": "The Samaritan woman said to him, \"How is it that you, a Jew, ask for a drink from me, a woman of Samaria?\" (For Jews have no dealings with Samaritans.)" }
+      ]
+    },
+    {
+      "number": 10,
+      "text": "Jesus answered, \"If you knew the gift of God and who is asking you for a drink, you would have asked Him, and He would have given you living water.\"",
+      "wordsOfJesus": true,
+      "strongs": [
+        { "word": "living", "code": "G2198", "transliteration": "zaō", "brief": "to live; living water means flowing spring water, contrasted with still cistern water" }
+      ],
+      "footnotes": [],
+      "parallelTexts": [
+        { "translation": "ESV", "text": "Jesus answered her, \"If you knew the gift of God, and who it is that is saying to you, 'Give me a drink,' you would have asked him, and he would have given you living water.\"" }
+      ]
+    },
+    {
+      "number": 11,
+      "text": "\"Sir,\" the woman replied, \"You have nothing to draw with and the well is deep. Where then do You get this living water?\"",
+      "wordsOfJesus": false,
+      "strongs": [],
+      "footnotes": [],
+      "parallelTexts": [
+        { "translation": "ESV", "text": "The woman said to him, \"Sir, you have nothing to draw water with, and the well is deep. Where do you get that living water?\"" }
+      ]
+    },
+    {
+      "number": 12,
+      "text": "\"Are You greater than our father Jacob, who gave us this well and drank from it himself, as did his sons and his livestock?\"",
+      "wordsOfJesus": false,
+      "strongs": [],
+      "footnotes": [],
+      "parallelTexts": [
+        { "translation": "ESV", "text": "\"Are you greater than our father Jacob? He gave us the well and drank from it himself, as did his sons and his livestock.\"" }
+      ]
+    },
+    {
+      "number": 13,
+      "text": "Jesus answered, \"Everyone who drinks this water will be thirsty again.\"",
+      "wordsOfJesus": true,
+      "strongs": [],
+      "footnotes": [],
+      "parallelTexts": [
+        { "translation": "ESV", "text": "Jesus said to her, \"Everyone who drinks of this water will be thirsty again.\"" }
+      ]
+    },
+    {
+      "number": 14,
+      "text": "\"But whoever drinks the water I give him will never thirst. Indeed, the water I give him will become in him a fount of water springing up to eternal life.\"",
+      "wordsOfJesus": true,
+      "strongs": [],
+      "footnotes": [],
+      "parallelTexts": [
+        { "translation": "ESV", "text": "\"but whoever drinks of the water that I will give him will never be thirsty again. The water that I will give him will become in him a spring of water welling up to eternal life.\"" }
+      ]
+    },
+    {
+      "number": 15,
+      "text": "\"Sir, give me this water,\" the woman said, \"so that I will not get thirsty and have to keep coming here to draw water.\"",
+      "wordsOfJesus": false,
+      "strongs": [],
+      "footnotes": [],
+      "parallelTexts": [
+        { "translation": "ESV", "text": "The woman said to him, \"Sir, give me this water, so that I will not be thirsty or have to come here to draw water.\"" }
+      ]
+    }
+  ],
+  "sceneCast": [
+    {
+      "characterId": "jesus",
+      "name": "Jesus",
+      "role": "protagonist",
+      "emotion": "Deliberate, unhurried — He chose this route",
+      "motivation": "To cross a boundary no one expected Him to cross",
+      "stakes": "An entire people group excluded from the covenant",
+      "modernParallel": "Starting a conversation with the person everyone else avoids at the office",
+      "sourceTier": 2
+    },
+    {
+      "characterId": "samaritan-woman",
+      "name": "Samaritan woman",
+      "role": "deuteragonist",
+      "emotion": "Guarded, defensive — she came at noon to avoid people",
+      "motivation": "Survival through invisibility",
+      "stakes": "Her entire social identity is being rewritten in this conversation",
+      "modernParallel": "Going to the grocery store at 2 AM because you don't want to face your neighbors",
+      "sourceTier": 2
+    },
+    {
+      "characterId": "disciples",
+      "name": "Disciples",
+      "role": "bystander",
+      "emotion": "Unaware — they're buying food",
+      "motivation": "Practical needs",
+      "stakes": "They'll return to find their teacher breaking every social rule they know",
+      "modernParallel": "Coming back from a coffee run to find your boss in a meeting that changes everything",
+      "sourceTier": 2
+    },
+    {
+      "characterId": "jacob",
+      "name": "Jacob",
+      "role": "referenced figure",
+      "emotion": "Not present — invoked as ancestral authority",
+      "motivation": "N/A (historical reference)",
+      "stakes": "His legacy is being used to measure the person standing in front of her",
+      "modernParallel": "Quoting your grandfather to win an argument with a stranger",
+      "sourceTier": 3
+    }
+  ],
+  "themes": [
+    {
+      "themeId": "social-boundaries",
+      "name": "Social boundaries",
+      "annotation": "Jews and Samaritans don't share vessels. Jesus asks anyway. The boundary isn't acknowledged — it's simply stepped over.",
+      "sourceTier": 2
+    },
+    {
+      "themeId": "living-water",
+      "name": "Living water",
+      "annotation": "The Greek hydōr zōn literally means \"water that is alive\" — flowing spring water vs. cistern water. She hears plumbing. He means something else entirely.",
+      "sourceTier": 4
+    },
+    {
+      "themeId": "grace",
+      "name": "Grace",
+      "annotation": "She didn't seek Him out. She came for water. Grace met her at her daily errand — the most ordinary moment of her day became the most extraordinary.",
+      "sourceTier": 4
+    }
+  ],
+  "climateContexts": [
+    {
+      "id": "climate-roman-samaria",
+      "title": "Roman Samaria, ~AD 27",
+      "content": "Samaria sits between Judea and Galilee. Most Jewish travelers detour around it — adding days to avoid contact. The well is a public space but the sixth hour (noon) is the emptiest time. No one draws water in the heat unless they're avoiding the morning crowd.",
+      "sourceTier": 3
+    },
+    {
+      "id": "climate-jacobs-well",
+      "title": "Jacob's well — a contested inheritance",
+      "content": "The well is not just infrastructure — it's a claim to ancestral legitimacy. Both Jews and Samaritans trace lineage to Jacob. Sitting at this well, Jesus places himself at the intersection of a centuries-old dispute about who belongs.",
+      "sourceTier": 3
+    }
+  ],
+  "crossReferences": [
+    {
+      "id": "xref-isa-55-1",
+      "targetPassage": "Isaiah 55:1",
+      "snippet": "Come, all you who are thirsty, come to the waters...",
+      "relevanceScore": 92,
+      "sourceTier": 2
+    },
+    {
+      "id": "xref-jer-2-13",
+      "targetPassage": "Jeremiah 2:13",
+      "snippet": "They have forsaken me, the spring of living water...",
+      "relevanceScore": 87,
+      "sourceTier": 2
+    },
+    {
+      "id": "xref-rev-7-17",
+      "targetPassage": "Revelation 7:17",
+      "snippet": "He will lead them to springs of living water...",
+      "relevanceScore": 71,
+      "sourceTier": 2
+    },
+    {
+      "id": "xref-gen-29-1-10",
+      "targetPassage": "Genesis 29:1-10",
+      "snippet": "Jacob came to the well where Rachel was watering sheep...",
+      "relevanceScore": 65,
+      "sourceTier": 2
+    }
+  ],
+  "commentaries": [
+    {
+      "id": "comm-carson-1",
+      "author": "D.A. Carson",
+      "excerpt": "The woman's surprise is not merely ethnic but gendered — a Jewish rabbi initiating conversation with an unaccompanied Samaritan woman violated multiple social boundaries simultaneously.",
+      "verseRange": "4:7-9",
+      "displayTier": "curated",
+      "sourceTier": 2
+    },
+    {
+      "id": "comm-henry-1",
+      "author": "Matthew Henry",
+      "excerpt": "Christ was weary, but not weary of doing good. He sat on the well, not seeking rest from service but occasion for service.",
+      "verseRange": "4:6-7",
+      "displayTier": "curated",
+      "sourceTier": 2
+    },
+    {
+      "id": "comm-gill-1",
+      "author": "John Gill",
+      "excerpt": "By 'living water' is meant the grace of God, the gift of the Holy Spirit. It is called 'living' because it quickens dead sinners, revives drooping saints, and issues in eternal life.",
+      "verseRange": "4:10",
+      "displayTier": "extended",
+      "sourceTier": 2
+    }
+  ],
+  "resurfacedEntries": [
+    {
+      "id": "journal-abc123",
+      "noteType": "reflection",
+      "content": "She came at noon because she didn't want to be seen. I've done that — chosen the wrong time just to avoid people.",
+      "anchors": [
+        { "type": "verse", "ref": "John 4:7" },
+        { "type": "character", "ref": "Samaritan woman" }
+      ],
+      "tags": ["revisit this"],
+      "createdAt": "2026-01-05T20:30:00Z",
+      "matchChannel": "direct-anchor",
+      "matchScore": 0.95
+    }
+  ],
+  "lensTags": [
+    { "label": "Jesus", "lens": "relational", "entityId": "jesus" },
+    { "label": "Samaritan woman", "lens": "relational", "entityId": "samaritan-woman" },
+    { "label": "Disciples", "lens": "relational", "entityId": "disciples" },
+    { "label": "Social boundaries", "lens": "conceptual", "entityId": "social-boundaries" },
+    { "label": "Living water", "lens": "conceptual", "entityId": "living-water" },
+    { "label": "Grace", "lens": "conceptual", "entityId": "grace" },
+    { "label": "Roman Samaria", "lens": "climate", "entityId": "climate-roman-samaria" },
+    { "label": "Noon heat", "lens": "climate", "entityId": "climate-jacobs-well" }
+  ],
+  "activeVerseNumber": 7
+}

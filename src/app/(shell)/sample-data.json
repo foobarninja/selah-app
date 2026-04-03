@@ -1,0 +1,104 @@
+{
+  "_meta": {
+    "models": {
+      "searchResult": "A result from the universal search, grouped by type (passage, character, theme, strongs).",
+      "dailyBread": "Today's Daily Bread devotional state — preview for uncompleted, acknowledgment for completed.",
+      "historyItem": "A recent study session entry — passage, character, theme, or sermon project the user visited.",
+      "recentNote": "A recent journal entry shown on the Home screen for continuity of reflection.",
+      "welcomeMessage": "The first-launch greeting shown when there's no history."
+    },
+    "relationships": [
+      "SearchResults are grouped by type and link to Reader, Characters, Themes, or Word Study",
+      "DailyBread links to the Daily Bread section",
+      "HistoryItems link back to the entity they reference (Reader, Character profile, Theme profile, Study Builder)",
+      "RecentNotes link to the Journal section"
+    ]
+  },
+  "searchResults": {
+    "passages": [
+      { "id": "sr-john-4", "ref": "John 4:4-26", "title": "The woman at the well", "preview": "A Samaritan woman came to draw water..." },
+      { "id": "sr-john-3", "ref": "John 3:1-21", "title": "Nicodemus visits Jesus", "preview": "Now there was a Pharisee named Nicodemus..." }
+    ],
+    "characters": [
+      { "id": "sr-samaritan-woman", "name": "Samaritan woman", "bioBrief": "Unnamed woman at Jacob's well whose midday errand became the most important conversation of her life" }
+    ],
+    "themes": [
+      { "id": "sr-living-water", "name": "Living water", "modernFraming": "She hears plumbing. He means something else entirely." }
+    ],
+    "strongs": [
+      { "id": "sr-g5204", "code": "G5204", "transliteration": "hydōr", "brief": "Water, often used metaphorically for spiritual life" }
+    ]
+  },
+  "dailyBread": {
+    "status": "available",
+    "title": "When someone else gets what you wanted",
+    "audienceLevel": "adults",
+    "estimatedMinutes": 8,
+    "seasonalSet": "ordinary",
+    "passageRef": "Genesis 27:30-40",
+    "completedMessage": null
+  },
+  "dailyBreadCompleted": {
+    "status": "completed",
+    "title": "When someone else gets what you wanted",
+    "audienceLevel": "adults",
+    "estimatedMinutes": 8,
+    "seasonalSet": "ordinary",
+    "passageRef": "Genesis 27:30-40",
+    "completedMessage": "Today's bread was broken. Esau's grief is real — and so is the grace that follows it."
+  },
+  "history": [
+    {
+      "id": "hist-1",
+      "type": "passage",
+      "title": "John 4:4-26",
+      "context": "The woman at the well",
+      "timeAgo": "2 hours ago"
+    },
+    {
+      "id": "hist-2",
+      "type": "character",
+      "title": "Samaritan woman",
+      "context": "Life of Christ · Outcast",
+      "timeAgo": "2 hours ago"
+    },
+    {
+      "id": "hist-3",
+      "type": "theme",
+      "title": "Exile",
+      "context": "Condition · 7 passages",
+      "timeAgo": "Yesterday"
+    },
+    {
+      "id": "hist-4",
+      "type": "sermon",
+      "title": "Living water series — week 2",
+      "context": "Study Builder · 12 items assembled",
+      "timeAgo": "3 days ago"
+    }
+  ],
+  "recentNotes": [
+    {
+      "id": "note-1",
+      "noteType": "question",
+      "snippet": "Why does the text say Jesus 'had to' pass through Samaria? Was it geographical necessity or theological intention?",
+      "anchors": [
+        { "type": "verse", "label": "John 4:4" }
+      ],
+      "timeAgo": "2 hours ago"
+    },
+    {
+      "id": "note-2",
+      "noteType": "reflection",
+      "snippet": "She came at noon because she didn't want to be seen. I've done that — chosen the wrong time just to avoid people.",
+      "anchors": [
+        { "type": "verse", "label": "John 4:7" },
+        { "type": "character", "label": "Samaritan woman" }
+      ],
+      "timeAgo": "Yesterday"
+    }
+  ],
+  "welcomeMessage": "Welcome to Selah. Start anywhere — search for a passage, explore a character, or begin with today's reading below. There's no right way to use this. Follow what catches your attention. The text has been waiting for you.",
+  "isFirstLaunch": false,
+  "searchQuery": ""
+}

@@ -1,0 +1,133 @@
+{
+  "_meta": {
+    "models": {
+      "strongsEntry": "An original-language word with dictionary entry, morphology, semantic range, and concordance.",
+      "translationCluster": "A group of English translations that render the word the same way.",
+      "concordanceEntry": "A verse where this word appears, with text, highlighted word, rendering, and optional curated note.",
+      "relatedWord": "A word sharing a derivation root with the current entry.",
+      "narrativeConnection": "A narrative unit where this word appears with three-lens annotation.",
+      "frequencySegment": "One of 66 book segments showing occurrence count for the frequency bar."
+    },
+    "relationships": [
+      "StrongsEntry has many TranslationClusters",
+      "StrongsEntry has many ConcordanceEntries (curated + full)",
+      "StrongsEntry has many RelatedWords via derivation chain",
+      "StrongsEntry has many NarrativeConnections",
+      "StrongsEntry has 66 FrequencySegments"
+    ]
+  },
+  "arrivedFrom": {
+    "passageRef": "John 4:7",
+    "passageTitle": "The woman at the well"
+  },
+  "entry": {
+    "strongsNumber": "G5204",
+    "language": "greek",
+    "originalScript": "ὕδωρ",
+    "transliteration": "hydōr",
+    "pronunciation": "hoo'-dore",
+    "shortGloss": "water",
+    "fullDefinition": "Water — both literal (rivers, wells, rain, the sea) and metaphorical (spiritual life, cleansing, chaos, judgment). In the Old Testament, water is simultaneously life-giving and dangerous: the same element that sustains Israel in the desert drowns Pharaoh's army. In the New Testament, Jesus transforms the metaphor — \"living water\" (hydōr zōn) in John 4 means flowing spring water as opposed to still cistern water, but the conversation makes it clear he means something the well can't provide. The semantic range stretches from the most basic physical necessity to the most profound spiritual promise.",
+    "morphology": "Noun, neuter, nominative/accusative singular",
+    "totalOccurrences": 76
+  },
+  "translationClusters": [
+    {
+      "rendering": "water",
+      "count": 12,
+      "translations": ["ESV", "NIV", "KJV", "NASB", "BSB", "CSB", "NLT", "NKJV", "RSV", "ASV", "YLT", "WEB"]
+    },
+    {
+      "rendering": "waters",
+      "count": 3,
+      "translations": ["KJV", "NKJV", "YLT"],
+      "note": "Used in plural contexts (Genesis 1:2, Revelation 17:1)"
+    }
+  ],
+  "curatedOccurrences": [
+    {
+      "id": "co-gen-1-2",
+      "verseRef": "Genesis 1:2",
+      "verseText": "Now the earth was formless and void, and darkness was over the surface of the deep. And the Spirit of God was hovering over the **waters**.",
+      "rendering": "waters",
+      "curatedNote": "The first appearance — water as primordial chaos, the raw material before creation. God's spirit moves over it, not through it.",
+      "sourceTier": 2
+    },
+    {
+      "id": "co-exod-17-6",
+      "verseRef": "Exodus 17:6",
+      "verseText": "I will stand there before you by the rock at Horeb. Strike the rock, and **water** will come out of it for the people to drink.",
+      "rendering": "water",
+      "curatedNote": "Water from stone in the desert — the impossible provision. Paul later reads Christ into this rock (1 Cor 10:4).",
+      "sourceTier": 2
+    },
+    {
+      "id": "co-john-4-10",
+      "verseRef": "John 4:10",
+      "verseText": "Jesus answered, \"If you knew the gift of God and who is asking you for a drink, you would have asked Him, and He would have given you living **water**.\"",
+      "rendering": "water",
+      "curatedNote": "The metaphorical pivot. She hears plumbing — flowing spring water vs. cistern water. He means something the well can't provide. The word hasn't changed; the meaning has expanded beyond its container.",
+      "sourceTier": 4
+    },
+    {
+      "id": "co-john-4-14",
+      "verseRef": "John 4:14",
+      "verseText": "But whoever drinks the **water** I give him will never thirst. Indeed, the **water** I give him will become in him a fount of **water** springing up to eternal life.",
+      "rendering": "water",
+      "curatedNote": "Three uses in one verse — the word cascades. External provision becomes internal spring becomes eternal source. The semantic range plays out in a single sentence.",
+      "sourceTier": 4
+    },
+    {
+      "id": "co-john-7-38",
+      "verseRef": "John 7:38",
+      "verseText": "Whoever believes in Me, as the Scripture has said, 'Out of his heart will flow rivers of living **water**.'",
+      "rendering": "water",
+      "curatedNote": "John's second living water moment. The source has moved — it's no longer a well Jesus offers, it's something that flows out of the believer. The metaphor has fully internalized.",
+      "sourceTier": 2
+    },
+    {
+      "id": "co-rev-22-1",
+      "verseRef": "Revelation 22:1",
+      "verseText": "Then the angel showed me a river of the **water** of life, clear as crystal, flowing from the throne of God and of the Lamb.",
+      "rendering": "water",
+      "curatedNote": "The final appearance — water of life flowing from the throne. The arc is complete: from chaos (Genesis 1) to clarity (Revelation 22). The word's journey mirrors the biblical narrative.",
+      "sourceTier": 2
+    }
+  ],
+  "frequencySegments": [
+    { "book": "Genesis", "count": 8 }, { "book": "Exodus", "count": 6 }, { "book": "Leviticus", "count": 3 },
+    { "book": "Numbers", "count": 4 }, { "book": "Deuteronomy", "count": 3 }, { "book": "Joshua", "count": 2 },
+    { "book": "Judges", "count": 1 }, { "book": "Ruth", "count": 0 }, { "book": "1 Samuel", "count": 1 },
+    { "book": "2 Samuel", "count": 2 }, { "book": "1 Kings", "count": 3 }, { "book": "2 Kings", "count": 2 },
+    { "book": "1 Chronicles", "count": 0 }, { "book": "2 Chronicles", "count": 1 }, { "book": "Ezra", "count": 1 },
+    { "book": "Nehemiah", "count": 1 }, { "book": "Esther", "count": 0 }, { "book": "Job", "count": 3 },
+    { "book": "Psalms", "count": 5 }, { "book": "Proverbs", "count": 2 }, { "book": "Ecclesiastes", "count": 0 },
+    { "book": "Song of Solomon", "count": 1 }, { "book": "Isaiah", "count": 4 }, { "book": "Jeremiah", "count": 3 },
+    { "book": "Lamentations", "count": 1 }, { "book": "Ezekiel", "count": 4 }, { "book": "Daniel", "count": 0 },
+    { "book": "Hosea", "count": 0 }, { "book": "Joel", "count": 0 }, { "book": "Amos", "count": 1 },
+    { "book": "Obadiah", "count": 0 }, { "book": "Jonah", "count": 1 }, { "book": "Micah", "count": 0 },
+    { "book": "Nahum", "count": 0 }, { "book": "Habakkuk", "count": 0 }, { "book": "Zephaniah", "count": 0 },
+    { "book": "Haggai", "count": 0 }, { "book": "Zechariah", "count": 1 }, { "book": "Malachi", "count": 0 },
+    { "book": "Matthew", "count": 2 }, { "book": "Mark", "count": 1 }, { "book": "Luke", "count": 1 },
+    { "book": "John", "count": 7 }, { "book": "Acts", "count": 1 }, { "book": "Romans", "count": 0 },
+    { "book": "1 Corinthians", "count": 0 }, { "book": "2 Corinthians", "count": 0 }, { "book": "Galatians", "count": 0 },
+    { "book": "Ephesians", "count": 1 }, { "book": "Philippians", "count": 0 }, { "book": "Colossians", "count": 0 },
+    { "book": "1 Thessalonians", "count": 0 }, { "book": "2 Thessalonians", "count": 0 },
+    { "book": "1 Timothy", "count": 0 }, { "book": "2 Timothy", "count": 0 }, { "book": "Titus", "count": 0 },
+    { "book": "Philemon", "count": 0 }, { "book": "Hebrews", "count": 1 }, { "book": "James", "count": 1 },
+    { "book": "1 Peter", "count": 1 }, { "book": "2 Peter", "count": 1 }, { "book": "1 John", "count": 1 },
+    { "book": "2 John", "count": 0 }, { "book": "3 John", "count": 0 }, { "book": "Jude", "count": 0 },
+    { "book": "Revelation", "count": 4 }
+  ],
+  "relatedWords": [
+    { "strongsNumber": "G504", "originalScript": "ἄνυδρος", "transliteration": "anhydros", "shortGloss": "waterless, dry" },
+    { "strongsNumber": "G5205", "originalScript": "ὑετός", "transliteration": "huetos", "shortGloss": "rain" },
+    { "strongsNumber": "G4222", "originalScript": "ποτίζω", "transliteration": "potizō", "shortGloss": "to give drink, to water" }
+  ],
+  "narrativeConnections": [
+    { "narrativeUnitRef": "John 4:4-26", "title": "The woman at the well", "themes": ["Social boundaries", "Grace"] },
+    { "narrativeUnitRef": "Exodus 17:1-7", "title": "Water from the rock", "themes": ["Provision", "Faith"] },
+    { "narrativeUnitRef": "Revelation 22:1-5", "title": "The river of life", "themes": ["Restoration", "Covenant"] }
+  ],
+  "searchQuery": ""
+}

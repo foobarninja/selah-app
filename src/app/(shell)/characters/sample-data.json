@@ -1,0 +1,195 @@
+{
+  "_meta": {
+    "models": {
+      "character": "A biblical person with profile, emotional arc, and modern-bridge framing. No prominence ranking.",
+      "characterAppearance": "A character's presence in a specific narrative unit — role, emotional state, stakes, modern parallel.",
+      "relationship": "A typed connection between two characters (parent, child, spouse, sibling, teacher, disciple, adversary, etc.).",
+      "connectedTheme": "A theme this character embodies, with a brief annotation of how it manifests through them.",
+      "discoverCard": "The rotating prompt that surfaces an overlooked character the user hasn't explored.",
+      "filterOption": "A filter chip category and its available values."
+    },
+    "relationships": [
+      "Character has many CharacterAppearances across NarrativeUnits",
+      "Character has many Relationships to other Characters (typed connections)",
+      "Character embodies many ConnectedThemes",
+      "CharacterAppearance links to a passage in the Reader",
+      "DiscoverCard references a Character"
+    ]
+  },
+  "discoverCard": {
+    "characterId": "rizpah",
+    "name": "Rizpah",
+    "hook": "Have you met Rizpah? She guarded her sons' bodies on an exposed rock for months — through rain and sun — until the king finally noticed.",
+    "era": "monarchy",
+    "bioBrief": "Concubine of Saul who staged a silent, relentless protest"
+  },
+  "filters": {
+    "era": [
+      { "value": "patriarchal", "label": "Patriarchal" },
+      { "value": "exodus", "label": "Exodus" },
+      { "value": "judges", "label": "Judges" },
+      { "value": "monarchy", "label": "Monarchy" },
+      { "value": "exile", "label": "Exile" },
+      { "value": "life-of-christ", "label": "Life of Christ" },
+      { "value": "early-church", "label": "Early church" }
+    ],
+    "testament": [
+      { "value": "ot", "label": "OT" },
+      { "value": "nt", "label": "NT" }
+    ],
+    "roleType": [
+      { "value": "named", "label": "Named" },
+      { "value": "unnamed-notable", "label": "Unnamed notable" }
+    ],
+    "socialStatus": [
+      { "value": "royalty", "label": "Royalty" },
+      { "value": "priest", "label": "Priest" },
+      { "value": "outcast", "label": "Outcast" },
+      { "value": "common", "label": "Common" },
+      { "value": "military", "label": "Military" }
+    ]
+  },
+  "characters": [
+    {
+      "id": "samaritan-woman",
+      "name": "Samaritan woman",
+      "bioBrief": "Unnamed woman at Jacob's well whose midday errand became the most important conversation of her life",
+      "era": "life-of-christ",
+      "testament": "nt",
+      "roleType": "unnamed-notable",
+      "socialStatus": "outcast"
+    },
+    {
+      "id": "rizpah",
+      "name": "Rizpah",
+      "bioBrief": "Concubine of Saul who staged a silent, relentless protest by guarding her sons' bodies for months",
+      "era": "monarchy",
+      "testament": "ot",
+      "roleType": "named",
+      "socialStatus": "common"
+    },
+    {
+      "id": "david",
+      "name": "David",
+      "bioBrief": "Shepherd, musician, king, and ancestor of Christ — a life of extremes between devotion and failure",
+      "era": "monarchy",
+      "testament": "ot",
+      "roleType": "named",
+      "socialStatus": "royalty"
+    },
+    {
+      "id": "hagar",
+      "name": "Hagar",
+      "bioBrief": "Egyptian servant caught between two people's promises, twice abandoned in the desert, twice seen by God",
+      "era": "patriarchal",
+      "testament": "ot",
+      "roleType": "named",
+      "socialStatus": "outcast"
+    },
+    {
+      "id": "peter",
+      "name": "Peter",
+      "bioBrief": "Fisherman who spoke first and thought second — a life defined by bold mistakes and bolder recoveries",
+      "era": "life-of-christ",
+      "testament": "nt",
+      "roleType": "named",
+      "socialStatus": "common"
+    },
+    {
+      "id": "bartimaeus",
+      "name": "Bartimaeus",
+      "bioBrief": "Blind beggar on the Jericho road who refused to be quiet when everyone told him to",
+      "era": "life-of-christ",
+      "testament": "nt",
+      "roleType": "named",
+      "socialStatus": "outcast"
+    },
+    {
+      "id": "deborah",
+      "name": "Deborah",
+      "bioBrief": "Judge, prophet, and military strategist who led Israel when no one else would step forward",
+      "era": "judges",
+      "testament": "ot",
+      "roleType": "named",
+      "socialStatus": "priest"
+    },
+    {
+      "id": "onesimus",
+      "name": "Onesimus",
+      "bioBrief": "Runaway slave who found Paul in prison and returned carrying a letter that reframed everything",
+      "era": "early-church",
+      "testament": "nt",
+      "roleType": "named",
+      "socialStatus": "outcast"
+    }
+  ],
+  "selectedProfile": {
+    "id": "samaritan-woman",
+    "name": "Samaritan woman",
+    "bio": "She has no name in the text — only a location and an ethnicity. Yet she receives one of the longest personal conversations Jesus has with anyone in the Gospels. She came to the well at noon to avoid people. She left and brought the whole town back.",
+    "modernBridge": "She's the person who goes to the grocery store at 2 AM because she doesn't want to run into anyone she knows. The one who's been through enough relationships that people have stopped asking. And the one who, when she finally meets someone who sees her completely, becomes the most effective evangelist in the entire Gospel of John.",
+    "era": "life-of-christ",
+    "testament": "nt",
+    "roleType": "unnamed-notable",
+    "socialStatus": "outcast",
+    "faithJourney": {
+      "text": "She starts at the well as someone avoiding God's people — drawing water at noon to dodge the community that has rejected her. When Jesus reveals that he knows her history, she deflects with a theological debate about worship locations. But he doesn't let her stay in the abstract. By the end of the conversation she's asking genuine questions, and when she returns to town she's not preaching theology — she's telling people to come meet someone who told her everything she ever did. Her faith journey is a single conversation: from avoidance to deflection to curiosity to testimony. She never becomes a disciple in the formal sense. She becomes something more immediate — the first evangelist to the Samaritans.",
+      "sourceTier": 4
+    },
+    "appearances": [
+      {
+        "id": "app-john-4-4-26",
+        "passageRef": "John 4:4-26",
+        "passageTitle": "The woman at the well",
+        "role": "deuteragonist",
+        "emotionalState": "Guarded, then curious, then exposed, then transformed",
+        "stakes": "Her entire social identity is being rewritten in this conversation",
+        "modernParallel": "Going to the grocery store at 2 AM because you don't want to face your neighbors — and someone sees you anyway, and it changes everything",
+        "sourceTier": 2
+      },
+      {
+        "id": "app-john-4-27-30",
+        "passageRef": "John 4:27-30",
+        "passageTitle": "The woman tells the town",
+        "role": "protagonist",
+        "emotionalState": "Urgently convinced — she left her water jar behind",
+        "stakes": "She's returning to the very people she's been avoiding",
+        "modernParallel": "Posting something deeply personal on social media for the first time because you can't keep it to yourself",
+        "sourceTier": 2
+      },
+      {
+        "id": "app-john-4-39-42",
+        "passageRef": "John 4:39-42",
+        "passageTitle": "Many Samaritans believe",
+        "role": "catalyst",
+        "emotionalState": "Vindicated — the town believed because of her testimony first",
+        "stakes": "The outcast became the bridge between Jesus and an entire community",
+        "modernParallel": "The person nobody listened to turning out to be the one who introduced everyone to something that mattered",
+        "sourceTier": 2
+      }
+    ],
+    "relationships": [
+      { "characterId": "jesus", "characterName": "Jesus", "type": "teacher", "group": "allies" },
+      { "characterId": "disciples", "characterName": "Disciples", "type": "witness", "group": "other" }
+    ],
+    "connectedThemes": [
+      {
+        "themeId": "social-boundaries",
+        "name": "Social boundaries",
+        "annotation": "She embodies the cost of being on the wrong side of a social line — and the moment when someone steps over it"
+      },
+      {
+        "themeId": "living-water",
+        "name": "Living water",
+        "annotation": "She came for well water and received the metaphor that defines the entire Gospel of John"
+      },
+      {
+        "themeId": "identity",
+        "name": "Identity",
+        "annotation": "Her identity shifts from 'Samaritan woman' to 'the one who told us' — the town's name for her after she returns"
+      }
+    ]
+  },
+  "activeFilters": [],
+  "searchQuery": ""
+}

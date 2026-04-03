@@ -1,26 +1,90 @@
 @import "tailwindcss";
+@import "./styles/tokens.css";
 
-:root {
-  --background: #ffffff;
-  --foreground: #171717;
-}
-
+/* ── Tailwind v4 Theme Extension ── */
 @theme inline {
-  --color-background: var(--background);
-  --color-foreground: var(--foreground);
-  --font-sans: var(--font-geist-sans);
-  --font-mono: var(--font-geist-mono);
+  /* Primary — Aged Gold */
+  --color-selah-gold-50: var(--selah-gold-50);
+  --color-selah-gold-100: var(--selah-gold-100);
+  --color-selah-gold-300: var(--selah-gold-300);
+  --color-selah-gold-500: var(--selah-gold-500);
+  --color-selah-gold-700: var(--selah-gold-700);
+  --color-selah-gold-900: var(--selah-gold-900);
+
+  /* Relational Lens — Terracotta */
+  --color-selah-terra-50: var(--selah-terra-50);
+  --color-selah-terra-200: var(--selah-terra-200);
+  --color-selah-terra-400: var(--selah-terra-400);
+  --color-selah-terra-600: var(--selah-terra-600);
+  --color-selah-terra-800: var(--selah-terra-800);
+
+  /* Conceptual Lens — Deep Teal */
+  --color-selah-teal-50: var(--selah-teal-50);
+  --color-selah-teal-200: var(--selah-teal-200);
+  --color-selah-teal-400: var(--selah-teal-400);
+  --color-selah-teal-600: var(--selah-teal-600);
+  --color-selah-teal-800: var(--selah-teal-800);
+
+  /* Climate Lens — Sage */
+  --color-selah-sage-50: var(--selah-sage-50);
+  --color-selah-sage-200: var(--selah-sage-200);
+  --color-selah-sage-400: var(--selah-sage-400);
+  --color-selah-sage-600: var(--selah-sage-600);
+  --color-selah-sage-800: var(--selah-sage-800);
+
+  /* Functional — Sky (AI) */
+  --color-selah-sky-50: var(--selah-sky-50);
+  --color-selah-sky-400: var(--selah-sky-400);
+  --color-selah-sky-700: var(--selah-sky-700);
+
+  /* Functional — Warmth (Conjecture) */
+  --color-selah-warmth-50: var(--selah-warmth-50);
+  --color-selah-warmth-400: var(--selah-warmth-400);
+  --color-selah-warmth-700: var(--selah-warmth-700);
+
+  /* Font families */
+  --font-display: 'Cormorant Garamond', Georgia, 'Times New Roman', serif;
+  --font-body: 'Source Sans 3', 'Segoe UI', -apple-system, sans-serif;
+  --font-mono: 'JetBrains Mono', 'Fira Code', Consolas, monospace;
+
+  /* Transition durations */
+  --transition-duration-250: 250ms;
 }
 
-@media (prefers-color-scheme: dark) {
-  :root {
-    --background: #0a0a0a;
-    --foreground: #ededed;
-  }
+/* ── Semantic aliases used by shell components ── */
+:root {
+  --selah-gold-active-bg: var(--selah-gold-900);
+  --selah-gold-active-text: var(--selah-gold-300);
+}
+
+/* ── Default to dark mode ── */
+:root {
+  --selah-bg-page: var(--selah-midnight);
+  --selah-bg-surface: var(--selah-charcoal);
+  --selah-bg-elevated: var(--selah-leather);
+  --selah-border-color: var(--selah-stone);
+  --selah-text-1: var(--selah-text-dark-1);
+  --selah-text-2: var(--selah-text-dark-2);
+  --selah-text-3: var(--selah-text-dark-3);
+  --selah-jesus-words: var(--selah-jesus-dark);
+}
+
+/* ── Light mode overrides ── */
+[data-theme="light"] {
+  --selah-bg-page: var(--selah-parchment);
+  --selah-bg-surface: var(--selah-aged-paper);
+  --selah-bg-elevated: var(--selah-linen);
+  --selah-border-color: var(--selah-sand);
+  --selah-text-1: var(--selah-text-light-1);
+  --selah-text-2: var(--selah-text-light-2);
+  --selah-text-3: var(--selah-text-light-3);
+  --selah-jesus-words: var(--selah-jesus-light);
+  --selah-gold-active-bg: var(--selah-gold-50);
+  --selah-gold-active-text: var(--selah-gold-700);
 }
 
 body {
-  background: var(--background);
-  color: var(--foreground);
-  font-family: Arial, Helvetica, sans-serif;
+  background: var(--selah-bg-page);
+  color: var(--selah-text-1);
+  font-family: var(--selah-font-body);
 }

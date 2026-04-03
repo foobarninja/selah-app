@@ -1,0 +1,1 @@
+export { WordStudyProfile } from './WordStudyProfile'

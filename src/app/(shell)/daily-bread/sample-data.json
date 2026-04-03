@@ -1,0 +1,98 @@
+{
+  "_meta": {
+    "models": {
+      "moodTile": "A tappable life-situation tile in the mood picker grid.",
+      "seasonalCard": "The seasonal devotional prompt shown during Advent, Lent, Easter.",
+      "devotional": "A Daily Bread entry with passage, context, modern moment, conversation starters, and going deeper link.",
+      "devotionalHistory": "A completed devotional with family notes and rating.",
+      "audienceLevel": "One of four audience levels for devotional content."
+    },
+    "relationships": [
+      "MoodTile maps to one or more Devotionals",
+      "Devotional belongs to an AudienceLevel and optionally a seasonal set",
+      "DevotionalHistory records completion of a Devotional with notes and rating"
+    ]
+  },
+  "moodTiles": [
+    { "id": "stressed", "label": "Stressed", "category": "weight" },
+    { "id": "grateful", "label": "Grateful", "category": "warmth" },
+    { "id": "worried", "label": "Worried about someone", "category": "weight" },
+    { "id": "celebrating", "label": "Celebrating", "category": "warmth" },
+    { "id": "quiet", "label": "Just need something quiet", "category": "stillness" },
+    { "id": "grieving", "label": "Grieving", "category": "weight" },
+    { "id": "anxious", "label": "Anxious", "category": "weight" },
+    { "id": "hopeful", "label": "Hopeful", "category": "warmth" },
+    { "id": "lonely", "label": "Lonely", "category": "stillness" },
+    { "id": "thankful", "label": "Thankful", "category": "warmth" },
+    { "id": "confused", "label": "Confused about something", "category": "stillness" },
+    { "id": "angry", "label": "Angry", "category": "weight" }
+  ],
+  "seasonalCard": {
+    "isActive": true,
+    "season": "Advent",
+    "week": 2,
+    "message": "It's the second week of Advent. Tonight's reading is about waiting — and what happens in the space between the promise and the arrival.",
+    "devotionalId": "advent-week-2-waiting"
+  },
+  "currentAudienceLevel": "family",
+  "selectedDevotional": {
+    "id": "dev-gen-27-esau",
+    "title": "When someone else gets what you wanted",
+    "passageRef": "Genesis 27:30-40",
+    "audienceLevel": "family",
+    "estimatedMinutes": 5,
+    "seasonalSet": "ordinary",
+    "moodMatch": "grieving",
+    "passage": "When Esau heard his father's words, he burst out with a loud and bitter cry and said to his father, \"Bless me — me too, my father!\" But Isaac said, \"Your brother came deceitfully and took your blessing.\" Esau said, \"Isn't he rightly named Jacob? This is the second time he has taken advantage of me: He took my birthright, and now he's taken my blessing!\" Then he asked, \"Haven't you reserved any blessing for me?\"",
+    "contextBrief": "Esau walks in from hunting, ready for the moment his father promised him — the firstborn's blessing. But it's already gone. His brother Jacob, wearing goatskin on his arms to feel like Esau, stole it while Esau was out doing exactly what his father asked. Esau didn't lose the blessing because he was unworthy. He lost it because someone else got there first.",
+    "modernMoment": "You know that feeling when you find out the promotion went to someone else — and they didn't even want it as much as you did? Or when your sibling got the thing you'd been quietly hoping for, and nobody noticed you were hoping? Esau's cry isn't ancient. It's the sound of someone who did everything right and still got passed over. It's the sound of every kid who says \"that's not fair\" and is absolutely correct.",
+    "conversationStarters": [
+      "Has anyone ever gotten something you really wanted? How did that feel?",
+      "Do you think Jacob felt good about what he did, or do you think it cost him something too?",
+      "When something feels unfair, what helps you move through it instead of getting stuck?",
+      "Esau cried out loud. Is it okay to be that upset, or should he have handled it differently?"
+    ],
+    "goingDeeper": {
+      "narrativeUnitRef": "Genesis 27:1-40",
+      "prompt": "The full story of the stolen blessing — including what Isaac knew and what Rebekah planned."
+    }
+  },
+  "history": [
+    {
+      "id": "hist-1",
+      "date": "2026-04-02",
+      "devotionalId": "dev-ps-23-shepherd",
+      "title": "When you don't know what's next",
+      "rating": 4,
+      "familyNotes": "The kids asked why sheep need a shepherd. Led to a really good conversation about who we trust when we're lost.",
+      "audienceLevel": "family"
+    },
+    {
+      "id": "hist-2",
+      "date": "2026-04-01",
+      "devotionalId": "dev-ruth-1-loyalty",
+      "title": "Choosing someone else's hard road",
+      "rating": 5,
+      "familyNotes": "",
+      "audienceLevel": "family"
+    },
+    {
+      "id": "hist-3",
+      "date": "2026-03-30",
+      "devotionalId": "dev-jonah-flee",
+      "title": "When you run from the thing you're supposed to do",
+      "rating": 3,
+      "familyNotes": "Kids thought Jonah was funny. Might revisit this one with the adult version when they're older.",
+      "audienceLevel": "family"
+    }
+  ],
+  "browseDevotionals": [
+    { "id": "dev-gen-27-esau", "title": "When someone else gets what you wanted", "passageRef": "Genesis 27:30-40", "audienceLevel": "family", "estimatedMinutes": 5, "seasonalSet": "ordinary", "situation": "grieving" },
+    { "id": "dev-ps-23-shepherd", "title": "When you don't know what's next", "passageRef": "Psalm 23", "audienceLevel": "family", "estimatedMinutes": 5, "seasonalSet": "ordinary", "situation": "anxious" },
+    { "id": "dev-ruth-1-loyalty", "title": "Choosing someone else's hard road", "passageRef": "Ruth 1:16-17", "audienceLevel": "family", "estimatedMinutes": 5, "seasonalSet": "ordinary", "situation": "grateful" },
+    { "id": "advent-week-2-waiting", "title": "What happens while you wait", "passageRef": "Isaiah 40:28-31", "audienceLevel": "family", "estimatedMinutes": 6, "seasonalSet": "advent", "situation": "hopeful" },
+    { "id": "dev-jonah-flee", "title": "When you run from the thing you're supposed to do", "passageRef": "Jonah 1:1-17", "audienceLevel": "family", "estimatedMinutes": 7, "seasonalSet": "ordinary", "situation": "anxious" }
+  ],
+  "activeTab": "tonight",
+  "completionState": null
+}

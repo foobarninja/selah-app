@@ -1,0 +1,137 @@
+{
+  "_meta": {
+    "models": {
+      "journalEntry": "A personal study note with content, type classification, multi-anchors, system theme tags, user tags, and study context.",
+      "anchor": "A link from a journal entry to a passage, character, theme, or narrative unit.",
+      "userTag": "A personal taxonomy label created by the user.",
+      "collection": "A curated group of passages, characters, themes, and notes assembled for a purpose.",
+      "collectionItem": "An item within a collection with position and annotation.",
+      "bookmark": "A lightweight verse marker for quick retrieval."
+    },
+    "relationships": [
+      "JournalEntry has many Anchors (polymorphic multi-anchor)",
+      "JournalEntry has many UserTags",
+      "JournalEntry may have related entries via shared anchors/themes/tags",
+      "Collection has many CollectionItems in user-defined order",
+      "Bookmark marks a single verse"
+    ]
+  },
+  "entries": [
+    {
+      "id": "je-1",
+      "noteType": "question",
+      "content": "Why does the text say Jesus 'had to' pass through Samaria? Was it geographical necessity or theological intention? Most Jews took the longer route around Samaria. The 'had to' feels deliberate — like the narrative is telling us this meeting wasn't accidental.",
+      "anchors": [
+        { "type": "verse", "label": "John 4:4", "entityId": "john-4-4" },
+        { "type": "character", "label": "Jesus", "entityId": "jesus" }
+      ],
+      "themeTags": ["Social boundaries"],
+      "userTags": ["ask pastor about", "sermon series potential"],
+      "studyContext": "reading",
+      "createdAt": "2026-04-03T14:30:00Z",
+      "timeAgo": "2 hours ago"
+    },
+    {
+      "id": "je-2",
+      "noteType": "reflection",
+      "content": "She came at noon because she didn't want to be seen. I've done that — chosen the wrong time just to avoid people. There's something about invisibility that feels like protection until someone sees you and it turns out that's what you needed.",
+      "anchors": [
+        { "type": "verse", "label": "John 4:7", "entityId": "john-4-7" },
+        { "type": "character", "label": "Samaritan woman", "entityId": "samaritan-woman" }
+      ],
+      "themeTags": ["Identity", "Grace"],
+      "userTags": ["revisit this"],
+      "studyContext": "reading",
+      "createdAt": "2026-04-02T20:15:00Z",
+      "timeAgo": "Yesterday"
+    },
+    {
+      "id": "je-3",
+      "noteType": "sermon_idea",
+      "content": "Forgiveness isn't a feeling. It's a decision you make before the feeling catches up. Joseph had years between the pit and the palace, and the forgiveness happened somewhere in those years — not at the dramatic moment of revelation in Genesis 45, but in the quiet accumulation of choices not to become bitter.",
+      "anchors": [
+        { "type": "verse", "label": "Genesis 50:20", "entityId": "gen-50-20" },
+        { "type": "character", "label": "Joseph", "entityId": "joseph" },
+        { "type": "theme", "label": "Forgiveness", "entityId": "forgiveness" }
+      ],
+      "themeTags": ["Forgiveness", "Suffering"],
+      "userTags": ["forgiveness series", "use in week 3"],
+      "studyContext": "sermon-prep",
+      "createdAt": "2026-03-28T09:00:00Z",
+      "timeAgo": "6 days ago"
+    },
+    {
+      "id": "je-4",
+      "noteType": "insight",
+      "content": "The Greek word for 'living' in 'living water' (zaō) literally means flowing as opposed to still. She heard plumbing. He meant eternity. The entire conversation is two people using the same words to mean completely different things — and the breakthrough happens when she stops hearing literally.",
+      "anchors": [
+        { "type": "verse", "label": "John 4:10", "entityId": "john-4-10" },
+        { "type": "theme", "label": "Living water", "entityId": "living-water" }
+      ],
+      "themeTags": ["Living water"],
+      "userTags": [],
+      "studyContext": "word-study",
+      "createdAt": "2026-03-25T16:45:00Z",
+      "timeAgo": "9 days ago"
+    },
+    {
+      "id": "je-5",
+      "noteType": "prayer",
+      "content": "Help me see the people I've been walking past. The ones who come at noon because they don't want to be seen. The ones whose names nobody remembers.",
+      "anchors": [],
+      "themeTags": [],
+      "userTags": [],
+      "studyContext": "devotional",
+      "createdAt": "2026-03-20T21:00:00Z",
+      "timeAgo": "2 weeks ago"
+    },
+    {
+      "id": "je-6",
+      "noteType": "annotation",
+      "content": "Esau's cry in v.34 — 'Bless me — me too, my father!' — is the rawest moment in Genesis. He's not angry yet. He's just heartbroken.",
+      "anchors": [
+        { "type": "verse", "label": "Genesis 27:34", "entityId": "gen-27-34" },
+        { "type": "character", "label": "Esau", "entityId": "esau" }
+      ],
+      "themeTags": ["Grief"],
+      "userTags": ["daily bread connection"],
+      "studyContext": "reading",
+      "createdAt": "2026-03-18T19:30:00Z",
+      "timeAgo": "2 weeks ago"
+    }
+  ],
+  "collections": [
+    {
+      "id": "col-1",
+      "title": "Comfort passages for hospital visits",
+      "description": "Verses and reflections I reach for when visiting someone in the hospital. Not platitudes — real comfort.",
+      "itemCount": 7,
+      "lastEdited": "1 week ago"
+    },
+    {
+      "id": "col-2",
+      "title": "Verses my daughter asked about",
+      "description": "Questions she's brought to the dinner table, with the passages and my notes on how we talked through them.",
+      "itemCount": 4,
+      "lastEdited": "3 days ago"
+    },
+    {
+      "id": "col-3",
+      "title": "Forgiveness series — source material",
+      "description": "Everything I've collected for the sermon series. Overlaps with the Study Builder project but includes personal reflections too.",
+      "itemCount": 15,
+      "lastEdited": "6 days ago"
+    }
+  ],
+  "bookmarks": [
+    { "id": "bk-1", "verseRef": "Psalm 23:1", "createdAt": "2026-04-01", "timeAgo": "2 days ago" },
+    { "id": "bk-2", "verseRef": "John 4:14", "createdAt": "2026-03-30", "timeAgo": "4 days ago" },
+    { "id": "bk-3", "verseRef": "Romans 8:28", "createdAt": "2026-03-25", "timeAgo": "9 days ago" },
+    { "id": "bk-4", "verseRef": "Isaiah 40:31", "createdAt": "2026-03-20", "timeAgo": "2 weeks ago" },
+    { "id": "bk-5", "verseRef": "Micah 6:8", "createdAt": "2026-03-15", "timeAgo": "3 weeks ago" }
+  ],
+  "availableUserTags": ["ask pastor about", "sermon series potential", "revisit this", "forgiveness series", "use in week 3", "daily bread connection", "share with small group"],
+  "activeTab": "notes",
+  "activeFilters": [],
+  "searchQuery": ""
+}

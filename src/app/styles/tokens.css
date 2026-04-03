@@ -1,0 +1,134 @@
+/* Design Tokens for Selah */
+
+:root {
+  /* ── Surfaces (Dark) ── */
+  --selah-midnight: #0F0D0B;
+  --selah-charcoal: #1C1917;
+  --selah-leather: #292524;
+  --selah-stone: #3D3835;
+
+  /* ── Surfaces (Light) ── */
+  --selah-parchment: #FAF8F5;
+  --selah-aged-paper: #F5F0EB;
+  --selah-linen: #EDEAE4;
+  --selah-sand: #D6D0C4;
+
+  /* ── Text (Dark) ── */
+  --selah-text-dark-1: #E8E2D9;
+  --selah-text-dark-2: #A39E93;
+  --selah-text-dark-3: #6E695F;
+
+  /* ── Text (Light) ── */
+  --selah-text-light-1: #1C1917;
+  --selah-text-light-2: #57534E;
+  --selah-text-light-3: #78716C;
+
+  /* ── Primary Accent — Aged Gold ── */
+  --selah-gold-50: #FBF3E0;
+  --selah-gold-100: #F5E4B8;
+  --selah-gold-300: #E8C767;
+  --selah-gold-500: #C6A23C;
+  --selah-gold-700: #7A5C1F;
+  --selah-gold-900: #4A3711;
+
+  /* ── Relational Lens — Terracotta ── */
+  --selah-terra-50: #FDF5F3;
+  --selah-terra-200: #E2BBB0;
+  --selah-terra-400: #C47A63;
+  --selah-terra-600: #8B4533;
+  --selah-terra-800: #5C2D21;
+
+  /* ── Conceptual Lens — Deep Teal ── */
+  --selah-teal-50: #EFF8F6;
+  --selah-teal-200: #93CBBD;
+  --selah-teal-400: #4A9E88;
+  --selah-teal-600: #2B6B5A;
+  --selah-teal-800: #1A4539;
+
+  /* ── Climate Lens — Sage ── */
+  --selah-sage-50: #F5F5ED;
+  --selah-sage-200: #B5B89A;
+  --selah-sage-400: #8A8E64;
+  --selah-sage-600: #5A5D3C;
+  --selah-sage-800: #393B26;
+
+  /* ── Functional ── */
+  --selah-sky-50: #EEF2F7;
+  --selah-sky-400: #6B91B5;
+  --selah-sky-700: #4A6380;
+  --selah-warmth-50: #FAF0E6;
+  --selah-warmth-400: #C9A96E;
+  --selah-warmth-700: #8B6B3E;
+
+  /* ── Words of Jesus ── */
+  --selah-jesus-dark: #D4836B;
+  --selah-jesus-light: #A0523A;
+
+  /* ── Typography ── */
+  --selah-font-display: 'Cormorant Garamond', Georgia, 'Times New Roman', serif;
+  --selah-font-body: 'Source Sans 3', 'Segoe UI', -apple-system, sans-serif;
+  --selah-font-mono: 'JetBrains Mono', 'Fira Code', 'Consolas', monospace;
+
+  /* ── Motion ── */
+  --selah-transition-page: 300ms ease-out;
+  --selah-transition-panel: 250ms ease-out;
+  --selah-transition-hover: 150ms ease;
+  --selah-transition-surface: 400ms ease-out;
+  --selah-transition-verse: 200ms ease;
+
+  /* ── Spacing ── */
+  --selah-radius-sm: 6px;
+  --selah-radius-md: 10px;
+  --selah-radius-lg: 12px;
+}
+
+/* Dark mode aliases */
+[data-theme="dark"], .dark {
+  --selah-bg-page: var(--selah-midnight);
+  --selah-bg-surface: var(--selah-charcoal);
+  --selah-bg-elevated: var(--selah-leather);
+  --selah-border-color: var(--selah-stone);
+  --selah-text-1: var(--selah-text-dark-1);
+  --selah-text-2: var(--selah-text-dark-2);
+  --selah-text-3: var(--selah-text-dark-3);
+  --selah-jesus-words: var(--selah-jesus-dark);
+}
+
+/* Light mode aliases */
+[data-theme="light"], .light {
+  --selah-bg-page: var(--selah-parchment);
+  --selah-bg-surface: var(--selah-aged-paper);
+  --selah-bg-elevated: var(--selah-linen);
+  --selah-border-color: var(--selah-sand);
+  --selah-text-1: var(--selah-text-light-1);
+  --selah-text-2: var(--selah-text-light-2);
+  --selah-text-3: var(--selah-text-light-3);
+  --selah-jesus-words: var(--selah-jesus-light);
+}
+
+/* System preference */
+@media (prefers-color-scheme: dark) {
+  [data-theme="system"] {
+    --selah-bg-page: var(--selah-midnight);
+    --selah-bg-surface: var(--selah-charcoal);
+    --selah-bg-elevated: var(--selah-leather);
+    --selah-border-color: var(--selah-stone);
+    --selah-text-1: var(--selah-text-dark-1);
+    --selah-text-2: var(--selah-text-dark-2);
+    --selah-text-3: var(--selah-text-dark-3);
+    --selah-jesus-words: var(--selah-jesus-dark);
+  }
+}
+
+@media (prefers-color-scheme: light) {
+  [data-theme="system"] {
+    --selah-bg-page: var(--selah-parchment);
+    --selah-bg-surface: var(--selah-aged-paper);
+    --selah-bg-elevated: var(--selah-linen);
+    --selah-border-color: var(--selah-sand);
+    --selah-text-1: var(--selah-text-light-1);
+    --selah-text-2: var(--selah-text-light-2);
+    --selah-text-3: var(--selah-text-light-3);
+    --selah-jesus-words: var(--selah-jesus-light);
+  }
+}

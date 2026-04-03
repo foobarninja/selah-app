@@ -1,0 +1,372 @@
+{
+  "_meta": {
+    "models": {
+      "themeCategory": "A top-level grouping for themes: virtue, emotion, doctrine, relationship, condition, action, attribute of God.",
+      "theme": "A conceptual thread that traces across the canon with modern framing, scholarly definition, and hierarchical children.",
+      "themePassage": "A passage where a theme surfaces, with contextual annotation and source tier.",
+      "connectedCharacter": "A character who embodies this theme, with a brief annotation.",
+      "traceSegment": "One of 66 book segments in the density trace bar, with an occurrence count.",
+      "threadPrompt": "The rotating discover-equivalent that traces a theme across the canon in bridge voice."
+    },
+    "relationships": [
+      "ThemeCategory contains many top-level Themes",
+      "Theme may have child Themes (parent_theme_id hierarchy)",
+      "Theme has many ThemePassages grouped by era",
+      "Theme has many ConnectedCharacters",
+      "Theme has many related Themes (horizontal connections)",
+      "Theme has 66 TraceSegments (one per book)",
+      "ThreadPrompt references a Theme"
+    ]
+  },
+  "threadPrompt": {
+    "themeId": "exile",
+    "name": "Exile",
+    "hook": "Trace the thread of exile — it starts with Adam leaving the garden, runs through Hagar in the desert, peaks in Babylon, and echoes in every person who's ever felt displaced from home.",
+    "category": "condition"
+  },
+  "categories": [
+    {
+      "id": "virtue",
+      "label": "Virtue",
+      "themes": [
+        {
+          "id": "forgiveness",
+          "name": "Forgiveness",
+          "modernFraming": "The decision to stop charging rent for the space someone occupies in your head",
+          "children": [
+            { "id": "reconciliation", "name": "Reconciliation" },
+            { "id": "pardon", "name": "Pardon" }
+          ]
+        },
+        {
+          "id": "faith",
+          "name": "Faith",
+          "modernFraming": "Trusting the rope before you can see what it's attached to",
+          "children": [
+            { "id": "trust", "name": "Trust" },
+            { "id": "doubt", "name": "Doubt" }
+          ]
+        },
+        {
+          "id": "love",
+          "name": "Love",
+          "modernFraming": "Choosing someone's good when it costs you something",
+          "children": [
+            { "id": "agape", "name": "Agape" },
+            { "id": "phileo", "name": "Phileo" },
+            { "id": "storge", "name": "Storge" }
+          ]
+        }
+      ]
+    },
+    {
+      "id": "emotion",
+      "label": "Emotion",
+      "themes": [
+        {
+          "id": "grief",
+          "name": "Grief",
+          "modernFraming": "The weight you carry when the world subtracts someone from it",
+          "children": [
+            { "id": "lament", "name": "Lament" },
+            { "id": "mourning", "name": "Mourning" }
+          ]
+        },
+        {
+          "id": "joy",
+          "name": "Joy",
+          "modernFraming": "Not happiness — the quieter thing underneath it that stays when circumstances don't",
+          "children": []
+        },
+        {
+          "id": "fear",
+          "name": "Fear",
+          "modernFraming": "The alarm system that sometimes fires when there's a fire and sometimes when there's toast",
+          "children": [
+            { "id": "anxiety", "name": "Anxiety" },
+            { "id": "reverence", "name": "Reverence" }
+          ]
+        }
+      ]
+    },
+    {
+      "id": "doctrine",
+      "label": "Doctrine",
+      "themes": [
+        {
+          "id": "covenant",
+          "name": "Covenant",
+          "modernFraming": "A promise so binding it reshapes both parties — not a contract you can exit, but an identity you enter",
+          "children": [
+            { "id": "abrahamic-covenant", "name": "Abrahamic covenant" },
+            { "id": "new-covenant", "name": "New covenant" }
+          ]
+        },
+        {
+          "id": "redemption",
+          "name": "Redemption",
+          "modernFraming": "Buying something back that was always yours — the receipt just got lost",
+          "children": []
+        }
+      ]
+    },
+    {
+      "id": "condition",
+      "label": "Condition",
+      "themes": [
+        {
+          "id": "exile",
+          "name": "Exile",
+          "modernFraming": "The ache of being somewhere that isn't home and not being sure home still exists",
+          "children": [
+            { "id": "displacement", "name": "Displacement" },
+            { "id": "return", "name": "Return" }
+          ]
+        },
+        {
+          "id": "suffering",
+          "name": "Suffering",
+          "modernFraming": "The question that has no answer and the silence that follows it",
+          "children": [
+            { "id": "persecution", "name": "Persecution" },
+            { "id": "affliction", "name": "Affliction" }
+          ]
+        }
+      ]
+    },
+    {
+      "id": "relationship",
+      "label": "Relationship",
+      "themes": [
+        {
+          "id": "identity",
+          "name": "Identity",
+          "modernFraming": "The answer to 'who are you?' when no one is watching",
+          "children": [
+            { "id": "belonging", "name": "Belonging" },
+            { "id": "calling", "name": "Calling" }
+          ]
+        }
+      ]
+    },
+    {
+      "id": "action",
+      "label": "Action",
+      "themes": [
+        {
+          "id": "obedience",
+          "name": "Obedience",
+          "modernFraming": "Doing the thing before understanding why — and finding the understanding comes after",
+          "children": []
+        }
+      ]
+    },
+    {
+      "id": "attribute-of-god",
+      "label": "Attribute of God",
+      "themes": [
+        {
+          "id": "grace",
+          "name": "Grace",
+          "modernFraming": "Getting what you didn't earn and not getting what you did — at the same time",
+          "children": [
+            { "id": "mercy", "name": "Mercy" },
+            { "id": "favor", "name": "Favor" }
+          ]
+        },
+        {
+          "id": "justice",
+          "name": "Justice",
+          "modernFraming": "The universe insisting that things be made right, even when 'right' is expensive",
+          "children": [
+            { "id": "judgment", "name": "Judgment" },
+            { "id": "righteousness", "name": "Righteousness" }
+          ]
+        }
+      ]
+    }
+  ],
+  "selectedProfile": {
+    "id": "exile",
+    "name": "Exile",
+    "modernFraming": "The ache of being somewhere that isn't home and not being sure home still exists. Exile isn't just a historical event — it's a recurring human condition. Every person who's moved to a city where they know no one, every immigrant who dreams in one language and lives in another, every kid sitting alone at lunch for the third week in a row. The Bible returns to this theme because it knows displacement is universal.",
+    "scholarlyDefinition": "The forced removal of a people from their homeland, particularly the Babylonian exile of 586 BCE and the earlier Assyrian deportation of the northern kingdom in 722 BCE. Theologically, exile represents the consequences of covenant unfaithfulness and the tension between God's judgment and God's promise of restoration.",
+    "category": "condition",
+    "parentThemeId": null,
+    "childThemes": [
+      { "id": "displacement", "name": "Displacement" },
+      { "id": "return", "name": "Return" }
+    ],
+    "relatedThemes": [
+      { "id": "identity", "name": "Identity" },
+      { "id": "belonging", "name": "Belonging" },
+      { "id": "suffering", "name": "Suffering" },
+      { "id": "covenant", "name": "Covenant" },
+      { "id": "redemption", "name": "Redemption" }
+    ],
+    "traceSegments": [
+      { "book": "Genesis", "count": 3 },
+      { "book": "Exodus", "count": 5 },
+      { "book": "Leviticus", "count": 0 },
+      { "book": "Numbers", "count": 1 },
+      { "book": "Deuteronomy", "count": 2 },
+      { "book": "Joshua", "count": 1 },
+      { "book": "Judges", "count": 0 },
+      { "book": "Ruth", "count": 2 },
+      { "book": "1 Samuel", "count": 1 },
+      { "book": "2 Samuel", "count": 0 },
+      { "book": "1 Kings", "count": 2 },
+      { "book": "2 Kings", "count": 6 },
+      { "book": "1 Chronicles", "count": 1 },
+      { "book": "2 Chronicles", "count": 4 },
+      { "book": "Ezra", "count": 5 },
+      { "book": "Nehemiah", "count": 4 },
+      { "book": "Esther", "count": 3 },
+      { "book": "Job", "count": 0 },
+      { "book": "Psalms", "count": 4 },
+      { "book": "Proverbs", "count": 0 },
+      { "book": "Ecclesiastes", "count": 0 },
+      { "book": "Song of Solomon", "count": 0 },
+      { "book": "Isaiah", "count": 8 },
+      { "book": "Jeremiah", "count": 9 },
+      { "book": "Lamentations", "count": 5 },
+      { "book": "Ezekiel", "count": 7 },
+      { "book": "Daniel", "count": 6 },
+      { "book": "Hosea", "count": 2 },
+      { "book": "Joel", "count": 1 },
+      { "book": "Amos", "count": 2 },
+      { "book": "Obadiah", "count": 1 },
+      { "book": "Jonah", "count": 0 },
+      { "book": "Micah", "count": 1 },
+      { "book": "Nahum", "count": 0 },
+      { "book": "Habakkuk", "count": 1 },
+      { "book": "Zephaniah", "count": 1 },
+      { "book": "Haggai", "count": 2 },
+      { "book": "Zechariah", "count": 2 },
+      { "book": "Malachi", "count": 0 },
+      { "book": "Matthew", "count": 2 },
+      { "book": "Mark", "count": 0 },
+      { "book": "Luke", "count": 2 },
+      { "book": "John", "count": 1 },
+      { "book": "Acts", "count": 1 },
+      { "book": "Romans", "count": 1 },
+      { "book": "1 Corinthians", "count": 0 },
+      { "book": "2 Corinthians", "count": 1 },
+      { "book": "Galatians", "count": 0 },
+      { "book": "Ephesians", "count": 1 },
+      { "book": "Philippians", "count": 1 },
+      { "book": "Colossians", "count": 0 },
+      { "book": "1 Thessalonians", "count": 0 },
+      { "book": "2 Thessalonians", "count": 0 },
+      { "book": "1 Timothy", "count": 0 },
+      { "book": "2 Timothy", "count": 0 },
+      { "book": "Titus", "count": 0 },
+      { "book": "Philemon", "count": 0 },
+      { "book": "Hebrews", "count": 3 },
+      { "book": "James", "count": 1 },
+      { "book": "1 Peter", "count": 2 },
+      { "book": "2 Peter", "count": 0 },
+      { "book": "1 John", "count": 0 },
+      { "book": "2 John", "count": 0 },
+      { "book": "3 John", "count": 0 },
+      { "book": "Jude", "count": 0 },
+      { "book": "Revelation", "count": 3 }
+    ],
+    "passages": {
+      "patriarchal": [
+        {
+          "id": "tp-gen-3-23-24",
+          "passageRef": "Genesis 3:23-24",
+          "passageTitle": "Expelled from Eden",
+          "annotation": "The first exile. Not a geographic relocation but an existential one — humanity losing access to the presence of God. Every exile after this is an echo.",
+          "sourceTier": 2
+        },
+        {
+          "id": "tp-gen-21-14-21",
+          "passageRef": "Genesis 21:14-21",
+          "passageTitle": "Hagar in the desert",
+          "annotation": "Sent away with a child and a water skin. Exile imposed by someone else's promise — she didn't break a covenant, she was collateral damage in one.",
+          "sourceTier": 2
+        }
+      ],
+      "monarchy": [
+        {
+          "id": "tp-2kings-25-1-12",
+          "passageRef": "2 Kings 25:1-12",
+          "passageTitle": "The fall of Jerusalem",
+          "annotation": "The exile that defined a people. Not just displacement — the destruction of the temple, the seat of God's presence. When home and God and identity are all in the same place and all three are taken at once.",
+          "sourceTier": 2
+        }
+      ],
+      "exile": [
+        {
+          "id": "tp-dan-1-1-8",
+          "passageRef": "Daniel 1:1-8",
+          "passageTitle": "Daniel in Babylon",
+          "annotation": "Exile as assimilation pressure. New name, new diet, new language — but Daniel draws a line. The question isn't 'where are you?' but 'who are you when everything familiar has been replaced?'",
+          "sourceTier": 4
+        },
+        {
+          "id": "tp-ps-137-1-6",
+          "passageRef": "Psalm 137:1-6",
+          "passageTitle": "By the rivers of Babylon",
+          "annotation": "The exile's anthem. 'How can we sing the Lord's song in a foreign land?' The raw grief of displacement turned into poetry — which is itself an act of resistance against forgetting.",
+          "sourceTier": 2
+        },
+        {
+          "id": "tp-jer-29-4-7",
+          "passageRef": "Jeremiah 29:4-7",
+          "passageTitle": "Seek the welfare of the city",
+          "annotation": "The most counterintuitive instruction in Scripture. Bloom where you're displaced. Build houses in enemy territory. Pray for the city that conquered you. Exile as mission field.",
+          "sourceTier": 2
+        }
+      ],
+      "life-of-christ": [
+        {
+          "id": "tp-luke-15-11-24",
+          "passageRef": "Luke 15:11-24",
+          "passageTitle": "The prodigal son",
+          "annotation": "Self-imposed exile. He didn't lose his home — he left it. The far country isn't a place, it's a decision. And the return is possible because the father never moved.",
+          "sourceTier": 4
+        }
+      ],
+      "early-church": [
+        {
+          "id": "tp-1pet-2-11",
+          "passageRef": "1 Peter 2:11",
+          "passageTitle": "Strangers and exiles",
+          "annotation": "Exile reframed as identity. Not a punishment but a calling — to live as resident aliens whose citizenship is elsewhere. The early church turned displacement into a theological position.",
+          "sourceTier": 2
+        }
+      ]
+    },
+    "connectedCharacters": [
+      {
+        "characterId": "hagar",
+        "name": "Hagar",
+        "annotation": "Twice exiled — first from Egypt to Canaan as a servant, then from Abraham's household into the desert. Seen by God both times.",
+        "era": "patriarchal"
+      },
+      {
+        "characterId": "daniel",
+        "name": "Daniel",
+        "annotation": "Taken to Babylon as a teenager, given a new name, pressured to assimilate. Drew boundaries that defined his identity in exile for decades.",
+        "era": "exile"
+      },
+      {
+        "characterId": "ruth",
+        "name": "Ruth",
+        "annotation": "Chose exile voluntarily — left Moab for a foreign land because loyalty mattered more than belonging.",
+        "era": "monarchy"
+      },
+      {
+        "characterId": "samaritan-woman",
+        "name": "Samaritan woman",
+        "annotation": "Social exile within her own community. She didn't leave home — home left her. The well at noon is exile measured in hours, not miles.",
+        "era": "life-of-christ"
+      }
+    ]
+  },
+  "activeFilters": [],
+  "searchQuery": ""
+}

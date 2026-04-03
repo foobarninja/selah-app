@@ -1,0 +1,190 @@
+'use client'
+
+import { useState } from 'react'
+import { Eye, EyeOff, Check, X, Download, Upload, Minus, Plus, Sun, Moon, Monitor } from 'lucide-react'
+import type { SettingsProps, AIProvider, ThemeMode, AudienceLevel, RetentionDays } from './types'
+
+const font = {
+  display: "var(--selah-font-display, 'Cormorant Garamond', serif)",
+  body: "var(--selah-font-body, 'Source Sans 3', sans-serif)",
+  mono: "var(--selah-font-mono, 'JetBrains Mono', monospace)",
+}
+
+function SettingsSection({ title, description, children }: { title: string; description: string; children: React.ReactNode }) {
+  return (
+    <section className="mb-12">
+      <h2 style={{ fontFamily: font.display, fontSize: '24px', fontWeight: 400, color: 'var(--selah-text-1, #E8E2D9)', marginBottom: '4px' }}>{title}</h2>
+      <p style={{ fontFamily: font.body, fontSize: '13px', color: 'var(--selah-text-3, #6E695F)', marginBottom: '20px' }}>{description}</p>
+      <div className="space-y-4">{children}</div>
+    </section>
+  )
+}
+
+function Toggle({ label, checked, onChange }: { label: string; checked: boolean; onChange: (value: boolean) => void }) {
+  return (
+    <div className="flex items-center justify-between py-1">
+      <span style={{ fontFamily: font.body, fontSize: '14px', color: 'var(--selah-text-1, #E8E2D9)' }}>{label}</span>
+      <button onClick={() => onChange(!checked)} className="relative rounded-full transition-colors duration-200" style={{ width: '40px', height: '22px', backgroundColor: checked ? 'var(--selah-gold-500, #C6A23C)' : 'var(--selah-border-color, #3D3835)', border: 'none', cursor: 'pointer' }}>
+        <span className="absolute top-1 rounded-full transition-all duration-200" style={{ width: '14px', height: '14px', backgroundColor: '#fff', left: checked ? '22px' : '4px' }} />
+      </button>
+    </div>
+  )
+}
+
+function LabelRow({ label, children }: { label: string; children: React.ReactNode }) {
+  return (<div className="flex items-center justify-between py-1"><span style={{ fontFamily: font.body, fontSize: '14px', color: 'var(--selah-text-1, #E8E2D9)' }}>{label}</span>{children}</div>)
+}
+
+export function SettingsView({ translations, aiConfig, aiProviders, studyPreferences, backupInfo, onChangePrimary, onToggleParallel, onToggleDisplay, onSelectProvider, onSaveAIConfig, onTestConnection, onChangeCommentary, onToggleSourceTier, onChangeDailyBreadAudience, onChangeFontSize, onChangeTheme, onDownloadBackup, onToggleAutoBackup, onChangeRetention, onRestoreBackup, onExportJournal, onExportCollections, onExportConversations }: SettingsProps) {
+  const [showApiKey, setShowApiKey] = useState(false)
+  const [apiKey, setApiKey] = useState('')
+  const [selectedProvider, setSelectedProvider] = useState<AIProvider | null>(aiConfig.provider)
+  const [showAIConfig, setShowAIConfig] = useState(!aiConfig.isConfigured)
+
+  return (
+    <div className="h-full overflow-y-auto" style={{ padding: '40px 32px' }}>
+      <div style={{ maxWidth: '640px', margin: '0 auto' }}>
+        <h1 style={{ fontFamily: font.display, fontWeight: 300, fontSize: '36px', letterSpacing: '0.5px', color: 'var(--selah-text-1, #E8E2D9)', marginBottom: '36px' }}>Settings</h1>
+
+        {/* 1. TRANSLATIONS */}
+        <SettingsSection title="Translations" description="Choose your reading translations and display preferences.">
+          <LabelRow label="Primary translation">
+            <select value={translations.primaryId} onChange={(e) => onChangePrimary?.(e.target.value)} className="rounded-lg outline-none" style={{ fontFamily: font.body, fontSize: '13px', padding: '6px 12px', backgroundColor: 'var(--selah-bg-surface, #1C1917)', color: 'var(--selah-text-1, #E8E2D9)', border: '1px solid var(--selah-border-color, #3D3835)' }}>
+              {translations.available.map((t) => (<option key={t.id} value={t.id}>{t.abbreviation} &mdash; {t.name}</option>))}
+            </select>
+          </LabelRow>
+          <div>
+            <p style={{ fontFamily: font.body, fontSize: '14px', color: 'var(--selah-text-1, #E8E2D9)', marginBottom: '8px' }}>Parallel translations <span style={{ color: 'var(--selah-text-3)', fontSize: '12px' }}>(up to 3)</span></p>
+            <div className="flex flex-wrap gap-2">
+              {translations.available.filter((t) => t.id !== translations.primaryId).map((t) => {
+                const isActive = translations.parallelIds.includes(t.id)
+                const atMax = translations.parallelIds.length >= 3 && !isActive
+                return (<button key={t.id} onClick={() => !atMax && onToggleParallel?.(t.id)} className="transition-all duration-150" style={{ padding: '4px 12px', borderRadius: '8px', fontFamily: font.body, fontSize: '12px', fontWeight: 500, cursor: atMax ? 'default' : 'pointer', opacity: atMax ? 0.4 : 1, backgroundColor: isActive ? 'var(--selah-gold-900, #4A3711)' : 'transparent', color: isActive ? 'var(--selah-gold-300, #E8C767)' : 'var(--selah-text-2, #A39E93)', border: isActive ? '1px solid var(--selah-gold-500)' : '1px solid var(--selah-border-color, #3D3835)' }}>{t.abbreviation}</button>)
+              })}
+            </div>
+          </div>
+          <Toggle label="Show Strong's numbers" checked={translations.showStrongs} onChange={(v) => onToggleDisplay?.('showStrongs', v)} />
+          <Toggle label="Show cross-references" checked={translations.showCrossReferences} onChange={(v) => onToggleDisplay?.('showCrossReferences', v)} />
+          <Toggle label="Show footnotes" checked={translations.showFootnotes} onChange={(v) => onToggleDisplay?.('showFootnotes', v)} />
+        </SettingsSection>
+
+        {/* 2. AI ASSISTANT */}
+        <SettingsSection title="AI assistant" description="Optional — connect an AI provider for freeform theological exploration. Selah works fully without this.">
+          {aiConfig.isConfigured && !showAIConfig ? (
+            <div className="flex items-center justify-between rounded-lg" style={{ padding: '14px 18px', backgroundColor: 'var(--selah-bg-surface, #1C1917)', border: '1px solid var(--selah-border-color, #3D3835)' }}>
+              <div>
+                <p style={{ fontFamily: font.body, fontSize: '14px', fontWeight: 500, color: 'var(--selah-text-1, #E8E2D9)' }}>{aiProviders.find((p) => p.id === aiConfig.provider)?.name || aiConfig.provider}</p>
+                <p style={{ fontFamily: font.mono, fontSize: '12px', color: 'var(--selah-text-3, #6E695F)' }}>{aiConfig.model}</p>
+              </div>
+              <div className="flex items-center gap-3">
+                <span className="flex items-center gap-1" style={{ fontFamily: font.body, fontSize: '11px', color: 'var(--selah-teal-400, #4A9E88)' }}><Check size={12} strokeWidth={2} /> Connected</span>
+                <button onClick={() => setShowAIConfig(true)} style={{ fontFamily: font.body, fontSize: '13px', fontWeight: 500, color: 'var(--selah-gold-500, #C6A23C)', background: 'none', border: 'none', cursor: 'pointer' }}>Configure</button>
+              </div>
+            </div>
+          ) : (
+            <>
+              <p style={{ fontFamily: font.body, fontSize: '13px', color: 'var(--selah-text-2, #A39E93)', marginBottom: '8px' }}>Provider</p>
+              <div className="grid grid-cols-2 sm:grid-cols-3 gap-2 mb-5">
+                {aiProviders.map((p) => (
+                  <button key={p.id} onClick={() => { setSelectedProvider(p.id); onSelectProvider?.(p.id) }} className="text-left rounded-lg transition-all duration-150" style={{ padding: '12px 14px', backgroundColor: 'var(--selah-bg-surface, #1C1917)', border: selectedProvider === p.id ? '2px solid var(--selah-gold-500, #C6A23C)' : '1px solid var(--selah-border-color, #3D3835)', cursor: 'pointer' }}>
+                    <p style={{ fontFamily: font.body, fontSize: '14px', fontWeight: 600, color: 'var(--selah-text-1, #E8E2D9)', marginBottom: '2px' }}>{p.name}</p>
+                    <p style={{ fontFamily: font.body, fontSize: '11px', color: 'var(--selah-text-3, #6E695F)', lineHeight: 1.4 }}>{p.note}</p>
+                  </button>
+                ))}
+              </div>
+              {selectedProvider && (
+                <>
+                  <p style={{ fontFamily: font.body, fontSize: '13px', color: 'var(--selah-text-2)', marginBottom: '6px' }}>API key</p>
+                  <div className="flex items-center gap-2 mb-4">
+                    <div className="flex-1 flex items-center rounded-lg" style={{ backgroundColor: 'var(--selah-bg-surface, #1C1917)', border: '1px solid var(--selah-border-color, #3D3835)', padding: '8px 12px' }}>
+                      <input type={showApiKey ? 'text' : 'password'} value={apiKey} onChange={(e) => setApiKey(e.target.value)} placeholder="sk-..." className="flex-1 outline-none" style={{ fontFamily: font.mono, fontSize: '13px', color: 'var(--selah-text-1)', backgroundColor: 'transparent', border: 'none' }} />
+                      <button onClick={() => setShowApiKey(!showApiKey)} style={{ color: 'var(--selah-text-3)', background: 'none', border: 'none', cursor: 'pointer' }}>{showApiKey ? <EyeOff size={14} strokeWidth={1.5} /> : <Eye size={14} strokeWidth={1.5} />}</button>
+                    </div>
+                  </div>
+                  <p style={{ fontFamily: font.body, fontSize: '13px', color: 'var(--selah-text-2)', marginBottom: '6px' }}>Model</p>
+                  <select className="w-full rounded-lg outline-none mb-4" style={{ fontFamily: font.body, fontSize: '13px', padding: '8px 12px', backgroundColor: 'var(--selah-bg-surface, #1C1917)', color: 'var(--selah-text-1)', border: '1px solid var(--selah-border-color, #3D3835)' }}>
+                    <option>Select a model...</option>
+                    <option>gpt-4o</option>
+                    <option>gpt-4o-mini</option>
+                    <option>claude-sonnet-4-20250514</option>
+                  </select>
+                  <div className="flex items-center gap-3">
+                    <button onClick={onTestConnection} className="transition-colors duration-150" style={{ fontFamily: font.body, fontSize: '13px', fontWeight: 500, padding: '8px 16px', borderRadius: '8px', backgroundColor: 'var(--selah-bg-surface, #1C1917)', color: 'var(--selah-text-1)', border: '1px solid var(--selah-border-color, #3D3835)', cursor: 'pointer' }}>Test connection</button>
+                    <button onClick={() => selectedProvider && onSaveAIConfig?.(selectedProvider, apiKey, 'gpt-4o')} className="transition-colors duration-150" style={{ fontFamily: font.body, fontSize: '13px', fontWeight: 600, padding: '8px 16px', borderRadius: '8px', backgroundColor: 'var(--selah-gold-500, #C6A23C)', color: '#fff', border: 'none', cursor: 'pointer' }}>Save</button>
+                    {aiConfig.isConfigured && (<button onClick={() => setShowAIConfig(false)} style={{ fontFamily: font.body, fontSize: '13px', color: 'var(--selah-text-3)', background: 'none', border: 'none', cursor: 'pointer' }}>Cancel</button>)}
+                  </div>
+                </>
+              )}
+            </>
+          )}
+        </SettingsSection>
+
+        {/* 3. STUDY PREFERENCES */}
+        <SettingsSection title="Study preferences" description="Customize your reading and study experience.">
+          <LabelRow label="Commentary display">
+            <div className="flex gap-1 rounded-lg" style={{ padding: '2px', backgroundColor: 'var(--selah-bg-surface, #1C1917)' }}>
+              {(['curated', 'curated-extended'] as const).map((mode) => (<button key={mode} onClick={() => onChangeCommentary?.(mode)} className="transition-all duration-150" style={{ padding: '4px 12px', borderRadius: '6px', fontFamily: font.body, fontSize: '12px', fontWeight: 500, border: 'none', cursor: 'pointer', backgroundColor: studyPreferences.commentaryDisplay === mode ? 'var(--selah-bg-elevated, #292524)' : 'transparent', color: studyPreferences.commentaryDisplay === mode ? 'var(--selah-text-1)' : 'var(--selah-text-3)' }}>{mode === 'curated' ? 'Curated' : 'All'}</button>))}
+            </div>
+          </LabelRow>
+          <div>
+            <p style={{ fontFamily: font.body, fontSize: '14px', color: 'var(--selah-text-1)', marginBottom: '8px' }}>Source tier visibility</p>
+            {Object.entries(studyPreferences.sourceTierVisibility).map(([tier, visible]) => {
+              const labels: Record<string, string> = { canon: 'Canon', scholarship: 'Scholarship', historical: 'Historical', aiAssisted: 'AI-assisted', conjecture: 'Conjecture' }
+              return (<label key={tier} className="flex items-center gap-3 py-1 cursor-pointer"><input type="checkbox" checked={visible} onChange={() => onToggleSourceTier?.(tier, !visible)} className="rounded" style={{ accentColor: 'var(--selah-gold-500, #C6A23C)' }} /><span style={{ fontFamily: font.body, fontSize: '13px', color: 'var(--selah-text-1)' }}>{labels[tier] || tier}</span></label>)
+            })}
+          </div>
+          <LabelRow label="Daily Bread audience">
+            <select value={studyPreferences.dailyBreadAudience} onChange={(e) => onChangeDailyBreadAudience?.(e.target.value as AudienceLevel)} className="rounded-lg outline-none" style={{ fontFamily: font.body, fontSize: '13px', padding: '6px 12px', backgroundColor: 'var(--selah-bg-surface)', color: 'var(--selah-text-1)', border: '1px solid var(--selah-border-color)' }}>
+              <option value="young-children">Young children</option><option value="family">Family</option><option value="teens">Teens</option><option value="adults">Adults</option>
+            </select>
+          </LabelRow>
+          <LabelRow label="Reading font size">
+            <div className="flex items-center gap-3">
+              <button onClick={() => onChangeFontSize?.(Math.max(12, studyPreferences.readingFontSize - 1))} className="rounded-md transition-colors duration-150" style={{ padding: '4px 8px', backgroundColor: 'var(--selah-bg-surface)', color: 'var(--selah-text-2)', border: '1px solid var(--selah-border-color)', cursor: 'pointer' }}><Minus size={14} strokeWidth={1.5} /></button>
+              <span style={{ fontFamily: font.mono, fontSize: '13px', color: 'var(--selah-text-1)', width: '32px', textAlign: 'center' }}>{studyPreferences.readingFontSize}</span>
+              <button onClick={() => onChangeFontSize?.(Math.min(24, studyPreferences.readingFontSize + 1))} className="rounded-md transition-colors duration-150" style={{ padding: '4px 8px', backgroundColor: 'var(--selah-bg-surface)', color: 'var(--selah-text-2)', border: '1px solid var(--selah-border-color)', cursor: 'pointer' }}><Plus size={14} strokeWidth={1.5} /></button>
+            </div>
+          </LabelRow>
+          <LabelRow label="Theme">
+            <div className="flex gap-1 rounded-lg" style={{ padding: '2px', backgroundColor: 'var(--selah-bg-surface)' }}>
+              {([{ mode: 'light' as ThemeMode, icon: Sun }, { mode: 'dark' as ThemeMode, icon: Moon }, { mode: 'system' as ThemeMode, icon: Monitor }]).map(({ mode, icon: Icon }) => (
+                <button key={mode} onClick={() => onChangeTheme?.(mode)} className="flex items-center gap-1.5 transition-all duration-150" style={{ padding: '4px 12px', borderRadius: '6px', fontFamily: font.body, fontSize: '12px', fontWeight: 500, border: 'none', cursor: 'pointer', backgroundColor: studyPreferences.theme === mode ? 'var(--selah-bg-elevated)' : 'transparent', color: studyPreferences.theme === mode ? 'var(--selah-text-1)' : 'var(--selah-text-3)' }}><Icon size={13} strokeWidth={1.5} />{mode.charAt(0).toUpperCase() + mode.slice(1)}</button>
+              ))}
+            </div>
+          </LabelRow>
+        </SettingsSection>
+
+        {/* 4. BACKUP & DATA */}
+        <SettingsSection title="Backup & data" description="Your notes, bookmarks, collections, reading history, and preferences.">
+          <div className="flex items-center justify-between">
+            <div>
+              <p style={{ fontFamily: font.body, fontSize: '14px', color: 'var(--selah-text-1)' }}>Manual backup</p>
+              <p style={{ fontFamily: font.body, fontSize: '12px', color: 'var(--selah-text-3)' }}>Last backup: {backupInfo.lastBackupAgo} &middot; {backupInfo.estimatedSize}</p>
+            </div>
+            <button onClick={onDownloadBackup} className="flex items-center gap-2 transition-colors duration-150" style={{ fontFamily: font.body, fontSize: '13px', fontWeight: 500, padding: '8px 16px', borderRadius: '8px', backgroundColor: 'var(--selah-bg-surface)', color: 'var(--selah-text-1)', border: '1px solid var(--selah-border-color)', cursor: 'pointer' }}><Download size={14} strokeWidth={1.5} />Download</button>
+          </div>
+          <Toggle label="Auto-backup" checked={backupInfo.autoBackupEnabled} onChange={(v) => onToggleAutoBackup?.(v)} />
+          {backupInfo.autoBackupEnabled && (
+            <LabelRow label="Keep backups for">
+              <div className="flex gap-1 rounded-lg" style={{ padding: '2px', backgroundColor: 'var(--selah-bg-surface)' }}>
+                {([7, 14, 30] as RetentionDays[]).map((days) => (<button key={days} onClick={() => onChangeRetention?.(days)} className="transition-all duration-150" style={{ padding: '4px 12px', borderRadius: '6px', fontFamily: font.body, fontSize: '12px', fontWeight: 500, border: 'none', cursor: 'pointer', backgroundColor: backupInfo.autoBackupRetentionDays === days ? 'var(--selah-bg-elevated)' : 'transparent', color: backupInfo.autoBackupRetentionDays === days ? 'var(--selah-text-1)' : 'var(--selah-text-3)' }}>{days} days</button>))}
+              </div>
+            </LabelRow>
+          )}
+          <div className="flex items-center justify-between">
+            <p style={{ fontFamily: font.body, fontSize: '14px', color: 'var(--selah-text-1)' }}>Restore from backup</p>
+            <button className="flex items-center gap-2 transition-colors duration-150" style={{ fontFamily: font.body, fontSize: '13px', fontWeight: 500, padding: '8px 16px', borderRadius: '8px', backgroundColor: 'var(--selah-bg-surface)', color: 'var(--selah-text-1)', border: '1px solid var(--selah-border-color)', cursor: 'pointer' }}><Upload size={14} strokeWidth={1.5} />Choose file</button>
+          </div>
+          <div style={{ borderTop: '1px solid var(--selah-border-color, #3D3835)', paddingTop: '16px', marginTop: '8px' }}>
+            <p style={{ fontFamily: font.body, fontSize: '10px', fontWeight: 500, textTransform: 'uppercase', letterSpacing: '1.5px', color: 'var(--selah-text-3)', marginBottom: '10px' }}>Export</p>
+            <div className="space-y-2">
+              {[{ label: 'Journal entries', action: onExportJournal }, { label: 'Collections', action: onExportCollections }, { label: 'AI conversations', action: onExportConversations }].map(({ label, action }) => (
+                <button key={label} onClick={action} className="block transition-colors duration-150" style={{ fontFamily: font.body, fontSize: '13px', fontWeight: 500, color: 'var(--selah-gold-500, #C6A23C)', background: 'none', border: 'none', cursor: 'pointer', padding: 0, textDecoration: 'underline', textUnderlineOffset: '2px' }}>{label}</button>
+              ))}
+            </div>
+          </div>
+        </SettingsSection>
+      </div>
+    </div>
+  )
+}

@@ -1,0 +1,80 @@
+{
+  "_meta": {
+    "models": {
+      "conversation": "A chat thread with the AI assistant, grounded in a specific passage, character, or theme context.",
+      "message": "A single message in a conversation — either from the user or the AI, with source tier for AI messages.",
+      "groundingContext": "The context injected into the AI system prompt — passage, characters, themes currently being viewed.",
+      "conversationThread": "A summary of a past conversation for the history list.",
+      "saveToJournalDraft": "The pre-populated data for saving an AI message to the journal."
+    },
+    "relationships": [
+      "Conversation has many Messages",
+      "Conversation has one GroundingContext",
+      "Message may be saved to Journal via SaveToJournalDraft",
+      "ConversationThread summarizes a past Conversation"
+    ]
+  },
+  "groundingContext": {
+    "type": "passage",
+    "passageRef": "John 4:4-15",
+    "passageTitle": "The woman at the well",
+    "characters": ["Jesus", "Samaritan woman"],
+    "themes": ["Social boundaries", "Living water", "Grace"]
+  },
+  "messages": [
+    {
+      "id": "msg-1",
+      "role": "user",
+      "content": "Why does Jesus ask her for water when he's about to offer her 'living water'? It seems contradictory — he needs something from her and then offers something infinite.",
+      "timestamp": "2:14 PM"
+    },
+    {
+      "id": "msg-2",
+      "role": "assistant",
+      "content": "That's one of the most interesting tensions in the passage. Jesus opens with a request — \"Give me a drink\" — which immediately breaks two social boundaries (a Jewish man speaking to a Samaritan woman, and a rabbi asking for something from someone considered unclean). But the request serves a purpose: it puts him in the position of needing her. He doesn't start with authority. He starts with vulnerability.\n\nThe shift from \"give me water\" to \"I'll give you living water\" reverses the dynamic — but only after he's established that the relationship goes both ways. Scholars disagree on whether this was a deliberate rhetorical strategy or simply a human moment (he was genuinely thirsty from the journey), but either reading leads to the same insight: the offer of grace begins with the willingness to receive.",
+      "sourceTier": 4,
+      "timestamp": "2:14 PM"
+    },
+    {
+      "id": "msg-3",
+      "role": "user",
+      "content": "That's interesting — the vulnerability as entry point. Does that pattern show up elsewhere in the Gospels?",
+      "timestamp": "2:15 PM"
+    },
+    {
+      "id": "msg-4",
+      "role": "assistant",
+      "content": "Several times, and it's worth noticing because it contradicts the expectation of divine authority. Jesus asks questions he presumably knows the answers to (\"Who do people say I am?\"), eats meals at homes of people the religious establishment avoids (Zacchaeus, Matthew), and here at the well, asks for water.\n\nThe pattern is consistent: Jesus enters through need rather than pronouncement. At Lazarus' tomb, he weeps before he commands. At the Last Supper, he washes feet before he teaches. The vulnerability isn't weakness — it's the teaching method. He demonstrates what grace looks like before he names it.\n\nThis is one interpretation, though. Other scholars read these moments as simply narrative — the human Jesus experienced real thirst, real grief, real weariness. The text supports both readings, which is part of what makes it rich.",
+      "sourceTier": 4,
+      "timestamp": "2:16 PM"
+    }
+  ],
+  "conversationHistory": [
+    {
+      "id": "thread-1",
+      "groundingLabel": "John 4:4-15 · The woman at the well",
+      "messageCount": 4,
+      "date": "Today, 2:14 PM"
+    },
+    {
+      "id": "thread-2",
+      "groundingLabel": "Exile theme · Jeremiah 29",
+      "messageCount": 6,
+      "date": "Yesterday"
+    },
+    {
+      "id": "thread-3",
+      "groundingLabel": "Peter · Character profile",
+      "messageCount": 3,
+      "date": "3 days ago"
+    },
+    {
+      "id": "thread-4",
+      "groundingLabel": "General conversation",
+      "messageCount": 8,
+      "date": "1 week ago"
+    }
+  ],
+  "isConfigured": true,
+  "isPanelOpen": true
+}

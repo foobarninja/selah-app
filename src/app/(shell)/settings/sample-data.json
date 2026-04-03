@@ -1,0 +1,73 @@
+{
+  "_meta": {
+    "models": {
+      "translationConfig": "The user's translation preferences — primary, parallels, and display toggles.",
+      "aiConfig": "AI provider configuration — provider, API key, model, connection status.",
+      "aiProvider": "An available AI provider with name and requirements.",
+      "studyPreferences": "Commentary, source tier, Daily Bread, font size, and theme preferences.",
+      "backupInfo": "Current backup status, file size, auto-backup settings."
+    },
+    "relationships": [
+      "TranslationConfig references available Translations",
+      "AIConfig references a selected AIProvider",
+      "StudyPreferences controls display across Reader, Commentary, and Daily Bread"
+    ]
+  },
+  "translations": {
+    "available": [
+      { "id": "bsb", "name": "Berean Standard Bible", "abbreviation": "BSB" },
+      { "id": "esv", "name": "English Standard Version", "abbreviation": "ESV" },
+      { "id": "niv", "name": "New International Version", "abbreviation": "NIV" },
+      { "id": "kjv", "name": "King James Version", "abbreviation": "KJV" },
+      { "id": "nasb", "name": "New American Standard Bible", "abbreviation": "NASB" },
+      { "id": "nlt", "name": "New Living Translation", "abbreviation": "NLT" },
+      { "id": "csb", "name": "Christian Standard Bible", "abbreviation": "CSB" },
+      { "id": "nkjv", "name": "New King James Version", "abbreviation": "NKJV" }
+    ],
+    "primaryId": "bsb",
+    "parallelIds": ["esv"],
+    "showStrongs": true,
+    "showCrossReferences": true,
+    "showFootnotes": true
+  },
+  "aiConfig": {
+    "isConfigured": false,
+    "provider": null,
+    "model": null,
+    "connectionStatus": null
+  },
+  "aiConfigured": {
+    "isConfigured": true,
+    "provider": "openai",
+    "model": "gpt-4o",
+    "connectionStatus": "connected"
+  },
+  "aiProviders": [
+    { "id": "anthropic", "name": "Anthropic", "note": "Claude models. Requires API key from console.anthropic.com" },
+    { "id": "google", "name": "Google", "note": "Gemini models. Requires API key from aistudio.google.com" },
+    { "id": "openai", "name": "OpenAI", "note": "GPT models. Requires API key from platform.openai.com" },
+    { "id": "ollama", "name": "Ollama", "note": "Local models. Requires Ollama running on your network" },
+    { "id": "custom", "name": "Custom", "note": "Any OpenAI-compatible endpoint. Requires URL and API key" }
+  ],
+  "studyPreferences": {
+    "commentaryDisplay": "curated",
+    "sourceTierVisibility": {
+      "canon": true,
+      "scholarship": true,
+      "historical": true,
+      "aiAssisted": true,
+      "conjecture": false
+    },
+    "dailyBreadAudience": "family",
+    "dailyBreadSeason": "auto",
+    "readingFontSize": 16,
+    "theme": "dark"
+  },
+  "backupInfo": {
+    "lastBackup": "2026-04-01T08:00:00Z",
+    "lastBackupAgo": "2 days ago",
+    "estimatedSize": "12.4 MB",
+    "autoBackupEnabled": true,
+    "autoBackupRetentionDays": 14
+  }
+}

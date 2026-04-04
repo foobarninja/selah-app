@@ -1,0 +1,884 @@
+[
+  {
+    "id": "adam",
+    "name": "Adam",
+    "era": "patriarchal",
+    "prominence": "major",
+    "mentions": -1
+  },
+  {
+    "id": "eve",
+    "name": "Eve",
+    "era": "patriarchal",
+    "prominence": "major",
+    "mentions": -1
+  },
+  {
+    "id": "noah",
+    "name": "Noah",
+    "era": "patriarchal",
+    "prominence": "major",
+    "mentions": -1
+  },
+  {
+    "id": "abraham",
+    "name": "Abraham",
+    "era": "patriarchal",
+    "prominence": "major",
+    "mentions": -1
+  },
+  {
+    "id": "sarah",
+    "name": "Sarah",
+    "era": "patriarchal",
+    "prominence": "major",
+    "mentions": -1
+  },
+  {
+    "id": "jacob",
+    "name": "Jacob",
+    "era": "patriarchal",
+    "prominence": "major",
+    "mentions": -1
+  },
+  {
+    "id": "joseph-son-of-jacob",
+    "name": "Joseph",
+    "era": "patriarchal",
+    "prominence": "major",
+    "mentions": -1
+  },
+  {
+    "id": "job",
+    "name": "Job",
+    "era": "patriarchal",
+    "prominence": "major",
+    "mentions": -1
+  },
+  {
+    "id": "moses",
+    "name": "Moses",
+    "era": "exodus",
+    "prominence": "major",
+    "mentions": -1
+  },
+  {
+    "id": "joshua",
+    "name": "Joshua",
+    "era": "exodus",
+    "prominence": "major",
+    "mentions": -1
+  },
+  {
+    "id": "samson",
+    "name": "Samson",
+    "era": "judges",
+    "prominence": "major",
+    "mentions": -1
+  },
+  {
+    "id": "ruth",
+    "name": "Ruth",
+    "era": "judges",
+    "prominence": "major",
+    "mentions": -1
+  },
+  {
+    "id": "hannah",
+    "name": "Hannah",
+    "era": "judges",
+    "prominence": "major",
+    "mentions": -1
+  },
+  {
+    "id": "samuel",
+    "name": "Samuel",
+    "era": "judges",
+    "prominence": "major",
+    "mentions": -1
+  },
+  {
+    "id": "david",
+    "name": "David",
+    "era": "united-monarchy",
+    "prominence": "major",
+    "mentions": -1
+  },
+  {
+    "id": "solomon",
+    "name": "Solomon",
+    "era": "united-monarchy",
+    "prominence": "major",
+    "mentions": -1
+  },
+  {
+    "id": "elijah",
+    "name": "Elijah",
+    "era": "divided-monarchy",
+    "prominence": "major",
+    "mentions": -1
+  },
+  {
+    "id": "isaiah",
+    "name": "Isaiah",
+    "era": "divided-monarchy",
+    "prominence": "major",
+    "mentions": -1
+  },
+  {
+    "id": "jeremiah",
+    "name": "Jeremiah",
+    "era": "divided-monarchy",
+    "prominence": "major",
+    "mentions": -1
+  },
+  {
+    "id": "daniel",
+    "name": "Daniel",
+    "era": "exile",
+    "prominence": "major",
+    "mentions": -1
+  },
+  {
+    "id": "esther",
+    "name": "Esther",
+    "era": "post-exile",
+    "prominence": "major",
+    "mentions": -1
+  },
+  {
+    "id": "jesus",
+    "name": "Jesus",
+    "era": "life-of-christ",
+    "prominence": "major",
+    "mentions": -1
+  },
+  {
+    "id": "mary-mother-of-jesus",
+    "name": "Mary, Mother of Jesus",
+    "era": "life-of-christ",
+    "prominence": "major",
+    "mentions": -1
+  },
+  {
+    "id": "john-the-baptist",
+    "name": "John the Baptist",
+    "era": "life-of-christ",
+    "prominence": "major",
+    "mentions": -1
+  },
+  {
+    "id": "simon-peter",
+    "name": "Simon Peter",
+    "era": "life-of-christ",
+    "prominence": "major",
+    "mentions": -1
+  },
+  {
+    "id": "judas-iscariot",
+    "name": "Judas Iscariot",
+    "era": "life-of-christ",
+    "prominence": "major",
+    "mentions": -1
+  },
+  {
+    "id": "paul",
+    "name": "Paul",
+    "era": "early-church",
+    "prominence": "major",
+    "mentions": -1
+  },
+  {
+    "id": "hagar",
+    "name": "Hagar",
+    "era": "patriarchal",
+    "prominence": "significant",
+    "mentions": -1
+  },
+  {
+    "id": "isaac",
+    "name": "Isaac",
+    "era": "patriarchal",
+    "prominence": "significant",
+    "mentions": -1
+  },
+  {
+    "id": "rebekah",
+    "name": "Rebekah",
+    "era": "patriarchal",
+    "prominence": "significant",
+    "mentions": -1
+  },
+  {
+    "id": "esau",
+    "name": "Esau",
+    "era": "patriarchal",
+    "prominence": "significant",
+    "mentions": -1
+  },
+  {
+    "id": "rachel",
+    "name": "Rachel",
+    "era": "patriarchal",
+    "prominence": "significant",
+    "mentions": -1
+  },
+  {
+    "id": "leah",
+    "name": "Leah",
+    "era": "patriarchal",
+    "prominence": "significant",
+    "mentions": -1
+  },
+  {
+    "id": "judah-son-of-jacob",
+    "name": "Judah",
+    "era": "patriarchal",
+    "prominence": "significant",
+    "mentions": -1
+  },
+  {
+    "id": "lot",
+    "name": "Lot",
+    "era": "patriarchal",
+    "prominence": "significant",
+    "mentions": -1
+  },
+  {
+    "id": "aaron",
+    "name": "Aaron",
+    "era": "exodus",
+    "prominence": "significant",
+    "mentions": -1
+  },
+  {
+    "id": "miriam",
+    "name": "Miriam",
+    "era": "exodus",
+    "prominence": "significant",
+    "mentions": -1
+  },
+  {
+    "id": "caleb",
+    "name": "Caleb",
+    "era": "exodus",
+    "prominence": "significant",
+    "mentions": -1
+  },
+  {
+    "id": "rahab",
+    "name": "Rahab",
+    "era": "exodus",
+    "prominence": "significant",
+    "mentions": -1
+  },
+  {
+    "id": "deborah",
+    "name": "Deborah",
+    "era": "judges",
+    "prominence": "significant",
+    "mentions": -1
+  },
+  {
+    "id": "gideon",
+    "name": "Gideon",
+    "era": "judges",
+    "prominence": "significant",
+    "mentions": -1
+  },
+  {
+    "id": "naomi",
+    "name": "Naomi",
+    "era": "judges",
+    "prominence": "significant",
+    "mentions": -1
+  },
+  {
+    "id": "boaz",
+    "name": "Boaz",
+    "era": "judges",
+    "prominence": "significant",
+    "mentions": -1
+  },
+  {
+    "id": "eli",
+    "name": "Eli",
+    "era": "judges",
+    "prominence": "significant",
+    "mentions": -1
+  },
+  {
+    "id": "saul",
+    "name": "Saul",
+    "era": "united-monarchy",
+    "prominence": "significant",
+    "mentions": -1
+  },
+  {
+    "id": "jonathan",
+    "name": "Jonathan",
+    "era": "united-monarchy",
+    "prominence": "significant",
+    "mentions": -1
+  },
+  {
+    "id": "bathsheba",
+    "name": "Bathsheba",
+    "era": "united-monarchy",
+    "prominence": "significant",
+    "mentions": -1
+  },
+  {
+    "id": "nathan-prophet",
+    "name": "Nathan",
+    "era": "united-monarchy",
+    "prominence": "significant",
+    "mentions": -1
+  },
+  {
+    "id": "absalom",
+    "name": "Absalom",
+    "era": "united-monarchy",
+    "prominence": "significant",
+    "mentions": -1
+  },
+  {
+    "id": "elisha",
+    "name": "Elisha",
+    "era": "divided-monarchy",
+    "prominence": "significant",
+    "mentions": -1
+  },
+  {
+    "id": "jezebel",
+    "name": "Jezebel",
+    "era": "divided-monarchy",
+    "prominence": "significant",
+    "mentions": -1
+  },
+  {
+    "id": "hezekiah",
+    "name": "Hezekiah",
+    "era": "divided-monarchy",
+    "prominence": "significant",
+    "mentions": -1
+  },
+  {
+    "id": "josiah",
+    "name": "Josiah",
+    "era": "divided-monarchy",
+    "prominence": "significant",
+    "mentions": -1
+  },
+  {
+    "id": "jonah",
+    "name": "Jonah",
+    "era": "divided-monarchy",
+    "prominence": "significant",
+    "mentions": -1
+  },
+  {
+    "id": "nebuchadnezzar",
+    "name": "Nebuchadnezzar",
+    "era": "exile",
+    "prominence": "significant",
+    "mentions": -1
+  },
+  {
+    "id": "ezekiel",
+    "name": "Ezekiel",
+    "era": "exile",
+    "prominence": "significant",
+    "mentions": -1
+  },
+  {
+    "id": "ezra",
+    "name": "Ezra",
+    "era": "post-exile",
+    "prominence": "significant",
+    "mentions": -1
+  },
+  {
+    "id": "nehemiah",
+    "name": "Nehemiah",
+    "era": "post-exile",
+    "prominence": "significant",
+    "mentions": -1
+  },
+  {
+    "id": "mordecai",
+    "name": "Mordecai",
+    "era": "post-exile",
+    "prominence": "significant",
+    "mentions": -1
+  },
+  {
+    "id": "andrew",
+    "name": "Andrew",
+    "era": "life-of-christ",
+    "prominence": "significant",
+    "mentions": -1
+  },
+  {
+    "id": "james-son-of-zebedee",
+    "name": "James, Son of Zebedee",
+    "era": "life-of-christ",
+    "prominence": "significant",
+    "mentions": -1
+  },
+  {
+    "id": "john-son-of-zebedee",
+    "name": "John, Son of Zebedee",
+    "era": "life-of-christ",
+    "prominence": "significant",
+    "mentions": -1
+  },
+  {
+    "id": "matthew-levi",
+    "name": "Matthew",
+    "era": "life-of-christ",
+    "prominence": "significant",
+    "mentions": -1
+  },
+  {
+    "id": "thomas",
+    "name": "Thomas",
+    "era": "life-of-christ",
+    "prominence": "significant",
+    "mentions": -1
+  },
+  {
+    "id": "mary-magdalene",
+    "name": "Mary Magdalene",
+    "era": "life-of-christ",
+    "prominence": "significant",
+    "mentions": -1
+  },
+  {
+    "id": "martha-of-bethany",
+    "name": "Martha of Bethany",
+    "era": "life-of-christ",
+    "prominence": "significant",
+    "mentions": -1
+  },
+  {
+    "id": "lazarus",
+    "name": "Lazarus",
+    "era": "life-of-christ",
+    "prominence": "significant",
+    "mentions": -1
+  },
+  {
+    "id": "nicodemus",
+    "name": "Nicodemus",
+    "era": "life-of-christ",
+    "prominence": "significant",
+    "mentions": -1
+  },
+  {
+    "id": "pontius-pilate",
+    "name": "Pontius Pilate",
+    "era": "life-of-christ",
+    "prominence": "significant",
+    "mentions": -1
+  },
+  {
+    "id": "woman-at-the-well",
+    "name": "Woman at the Well",
+    "era": "life-of-christ",
+    "prominence": "significant",
+    "mentions": -1
+  },
+  {
+    "id": "zacchaeus",
+    "name": "Zacchaeus",
+    "era": "life-of-christ",
+    "prominence": "significant",
+    "mentions": -1
+  },
+  {
+    "id": "barnabas",
+    "name": "Barnabas",
+    "era": "early-church",
+    "prominence": "significant",
+    "mentions": -1
+  },
+  {
+    "id": "stephen",
+    "name": "Stephen",
+    "era": "early-church",
+    "prominence": "significant",
+    "mentions": -1
+  },
+  {
+    "id": "timothy",
+    "name": "Timothy",
+    "era": "early-church",
+    "prominence": "significant",
+    "mentions": -1
+  },
+  {
+    "id": "luke",
+    "name": "Luke",
+    "era": "early-church",
+    "prominence": "significant",
+    "mentions": -1
+  },
+  {
+    "id": "priscilla",
+    "name": "Priscilla",
+    "era": "early-church",
+    "prominence": "significant",
+    "mentions": -1
+  },
+  {
+    "id": "james-brother-of-jesus",
+    "name": "James, brother of Jesus",
+    "era": "early-church",
+    "prominence": "significant",
+    "mentions": -1
+  },
+  {
+    "id": "lydia",
+    "name": "Lydia",
+    "era": "early-church",
+    "prominence": "significant",
+    "mentions": -1
+  },
+  {
+    "id": "cornelius",
+    "name": "Cornelius",
+    "era": "early-church",
+    "prominence": "significant",
+    "mentions": -1
+  },
+  {
+    "id": "enoch",
+    "name": "Enoch",
+    "era": "patriarchal",
+    "prominence": "significant",
+    "mentions": -1
+  },
+  {
+    "id": "laban",
+    "name": "Laban",
+    "era": "patriarchal",
+    "prominence": "significant",
+    "mentions": -1
+  },
+  {
+    "id": "dinah",
+    "name": "Dinah",
+    "era": "patriarchal",
+    "prominence": "significant",
+    "mentions": -1
+  },
+  {
+    "id": "reuben",
+    "name": "Reuben",
+    "era": "patriarchal",
+    "prominence": "significant",
+    "mentions": -1
+  },
+  {
+    "id": "shiphrah",
+    "name": "Shiphrah",
+    "era": "exodus",
+    "prominence": "significant",
+    "mentions": -1
+  },
+  {
+    "id": "puah",
+    "name": "Puah",
+    "era": "exodus",
+    "prominence": "significant",
+    "mentions": -1
+  },
+  {
+    "id": "pharaohs-daughter",
+    "name": "Pharaoh's Daughter",
+    "era": "exodus",
+    "prominence": "significant",
+    "mentions": -1
+  },
+  {
+    "id": "jael",
+    "name": "Jael",
+    "era": "judges",
+    "prominence": "significant",
+    "mentions": -1
+  },
+  {
+    "id": "jephthahs-daughter",
+    "name": "Jephthah's Daughter",
+    "era": "judges",
+    "prominence": "significant",
+    "mentions": -1
+  },
+  {
+    "id": "goliath",
+    "name": "Goliath",
+    "era": "united-monarchy",
+    "prominence": "significant",
+    "mentions": -1
+  },
+  {
+    "id": "mephibosheth",
+    "name": "Mephibosheth",
+    "era": "united-monarchy",
+    "prominence": "significant",
+    "mentions": -1
+  },
+  {
+    "id": "rizpah",
+    "name": "Rizpah",
+    "era": "united-monarchy",
+    "prominence": "significant",
+    "mentions": -1
+  },
+  {
+    "id": "tamar-daughter-of-david",
+    "name": "Tamar",
+    "era": "united-monarchy",
+    "prominence": "significant",
+    "mentions": -1
+  },
+  {
+    "id": "jeroboam",
+    "name": "Jeroboam",
+    "era": "divided-monarchy",
+    "prominence": "significant",
+    "mentions": -1
+  },
+  {
+    "id": "rehoboam",
+    "name": "Rehoboam",
+    "era": "divided-monarchy",
+    "prominence": "significant",
+    "mentions": -1
+  },
+  {
+    "id": "widow-of-zarephath",
+    "name": "Widow of Zarephath",
+    "era": "divided-monarchy",
+    "prominence": "significant",
+    "mentions": -1
+  },
+  {
+    "id": "huldah",
+    "name": "Huldah",
+    "era": "divided-monarchy",
+    "prominence": "significant",
+    "mentions": -1
+  },
+  {
+    "id": "naboth",
+    "name": "Naboth",
+    "era": "divided-monarchy",
+    "prominence": "significant",
+    "mentions": -1
+  },
+  {
+    "id": "gomer",
+    "name": "Gomer",
+    "era": "divided-monarchy",
+    "prominence": "significant",
+    "mentions": -1
+  },
+  {
+    "id": "belshazzar",
+    "name": "Belshazzar",
+    "era": "exile",
+    "prominence": "significant",
+    "mentions": -1
+  },
+  {
+    "id": "cyrus",
+    "name": "Cyrus",
+    "era": "exile",
+    "prominence": "significant",
+    "mentions": -1
+  },
+  {
+    "id": "vashti",
+    "name": "Vashti",
+    "era": "post-exile",
+    "prominence": "significant",
+    "mentions": -1
+  },
+  {
+    "id": "zerubbabel",
+    "name": "Zerubbabel",
+    "era": "post-exile",
+    "prominence": "significant",
+    "mentions": -1
+  },
+  {
+    "id": "elizabeth",
+    "name": "Elizabeth",
+    "era": "life-of-christ",
+    "prominence": "significant",
+    "mentions": -1
+  },
+  {
+    "id": "zechariah-father-of-john",
+    "name": "Zechariah",
+    "era": "life-of-christ",
+    "prominence": "significant",
+    "mentions": -1
+  },
+  {
+    "id": "hemorrhaging-woman",
+    "name": "The Hemorrhaging Woman",
+    "era": "life-of-christ",
+    "prominence": "significant",
+    "mentions": -1
+  },
+  {
+    "id": "centurion-with-servant",
+    "name": "The Centurion with the Sick Servant",
+    "era": "life-of-christ",
+    "prominence": "significant",
+    "mentions": -1
+  },
+  {
+    "id": "man-born-blind",
+    "name": "The Man Born Blind",
+    "era": "life-of-christ",
+    "prominence": "significant",
+    "mentions": -1
+  },
+  {
+    "id": "syrophoenician-woman",
+    "name": "The Syrophoenician Woman",
+    "era": "life-of-christ",
+    "prominence": "significant",
+    "mentions": -1
+  },
+  {
+    "id": "woman-caught-in-adultery",
+    "name": "The Woman Caught in Adultery",
+    "era": "life-of-christ",
+    "prominence": "significant",
+    "mentions": -1
+  },
+  {
+    "id": "repentant-thief",
+    "name": "The Repentant Thief",
+    "era": "life-of-christ",
+    "prominence": "significant",
+    "mentions": -1
+  },
+  {
+    "id": "ananias-husband-of-sapphira",
+    "name": "Ananias (husband of Sapphira)",
+    "era": "early-church",
+    "prominence": "significant",
+    "mentions": -1
+  },
+  {
+    "id": "sapphira",
+    "name": "Sapphira",
+    "era": "early-church",
+    "prominence": "significant",
+    "mentions": -1
+  },
+  {
+    "id": "gamaliel",
+    "name": "Gamaliel",
+    "era": "early-church",
+    "prominence": "significant",
+    "mentions": -1
+  },
+  {
+    "id": "ethiopian-eunuch",
+    "name": "Ethiopian Eunuch",
+    "era": "early-church",
+    "prominence": "significant",
+    "mentions": -1
+  },
+  {
+    "id": "herod-agrippa-i",
+    "name": "Herod Agrippa I",
+    "era": "early-church",
+    "prominence": "significant",
+    "mentions": -1
+  },
+  {
+    "id": "phoebe",
+    "name": "Phoebe",
+    "era": "early-church",
+    "prominence": "significant",
+    "mentions": -1
+  },
+  {
+    "id": "benjamin",
+    "name": "Benjamin",
+    "era": "patriarchal",
+    "prominence": "secondary",
+    "mentions": 7
+  },
+  {
+    "id": "simeon-son-of-jacob",
+    "name": "Simeon",
+    "era": "patriarchal",
+    "prominence": "secondary",
+    "mentions": 7
+  },
+  {
+    "id": "simeon-in-temple",
+    "name": "Simeon",
+    "era": "life-of-christ",
+    "prominence": "secondary",
+    "mentions": 7
+  },
+  {
+    "id": "ahab",
+    "name": "Ahab",
+    "era": "divided-monarchy",
+    "prominence": "secondary",
+    "mentions": 6
+  },
+  {
+    "id": "hosea",
+    "name": "Hosea",
+    "era": "divided-monarchy",
+    "prominence": "secondary",
+    "mentions": 6
+  },
+  {
+    "id": "amos",
+    "name": "Amos",
+    "era": "divided-monarchy",
+    "prominence": "secondary",
+    "mentions": 6
+  },
+  {
+    "id": "zechariah-prophet",
+    "name": "Zechariah",
+    "era": "post-exile",
+    "prominence": "secondary",
+    "mentions": 5
+  },
+  {
+    "id": "joab",
+    "name": "Joab",
+    "era": "united-monarchy",
+    "prominence": "secondary",
+    "mentions": 4
+  },
+  {
+    "id": "levi-son-of-jacob",
+    "name": "Levi",
+    "era": "patriarchal",
+    "prominence": "secondary",
+    "mentions": 4
+  },
+  {
+    "id": "ishmael",
+    "name": "Ishmael",
+    "era": "patriarchal",
+    "prominence": "secondary",
+    "mentions": 3
+  }
+]

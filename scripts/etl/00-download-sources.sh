@@ -24,24 +24,24 @@ echo "Target directory: $DATA_DIR"
 echo ""
 
 # ── 1. HelloAO English SQLite (~1.5GB) ──
-if [ -f "bible.eng.db" ]; then
-    echo "✓ bible.eng.db already exists ($(du -h bible.eng.db | cut -f1)), skipping download."
-else
-    echo "⏳ Downloading bible.eng.db (~1.5GB) — this will take a while..."
-    curl -L --progress-bar -o bible.eng.db "https://bible.helloao.org/bible.eng.db"
-    echo "✓ bible.eng.db downloaded ($(du -h bible.eng.db | cut -f1))"
-fi
-echo ""
+#if [ -f "bible.eng.db" ]; then
+#    echo "✓ bible.eng.db already exists ($(du -h bible.eng.db | cut -f1)), skipping download."
+#else
+#    echo "⏳ Downloading bible.eng.db (~1.5GB) — this will take a while..."
+#    curl -L --progress-bar -o bible.eng.db "https://bible.helloao.org/bible.eng.db"
+#    echo "✓ bible.eng.db downloaded ($(du -h bible.eng.db | cut -f1))"
+#fi
+#echo ""
 
 # ── 2. Strong's Dictionaries (~5MB) ──
-if [ -d "strongs" ]; then
-    echo "✓ strongs/ directory already exists, skipping clone."
-else
-    echo "⏳ Cloning openscriptures/strongs dictionaries..."
-    git clone --depth 1 https://github.com/openscriptures/strongs.git strongs
-    echo "✓ strongs/ cloned"
-fi
-echo ""
+#if [ -d "strongs" ]; then
+#    echo "✓ strongs/ directory already exists, skipping clone."
+#else
+#    echo "⏳ Cloning openscriptures/strongs dictionaries..."
+#    git clone --depth 1 https://github.com/openscriptures/strongs.git strongs
+#    echo "✓ strongs/ cloned"
+#fi
+#echo ""
 
 # ── 3. HelloAO API metadata ──
 echo "⏳ Fetching HelloAO API metadata..."

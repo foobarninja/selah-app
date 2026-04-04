@@ -9,6 +9,8 @@ import { narratives1Samuel } from './data/narratives-1samuel'
 import { narratives2Samuel } from './data/narratives-2samuel'
 import { narratives1Kings } from './data/narratives-1kings'
 import { narratives2Kings } from './data/narratives-2kings'
+import { narrativesChronicles } from './data/narratives-chronicles'
+import { narrativesEzraNehemiahEsther } from './data/narratives-ezra-nehemiah-esther'
 
 const ALL_NARRATIVES: NarrativeUnitRecord[] = [
   ...narrativesJoshua,
@@ -18,6 +20,8 @@ const ALL_NARRATIVES: NarrativeUnitRecord[] = [
   ...narratives2Samuel,
   ...narratives1Kings,
   ...narratives2Kings,
+  ...narrativesChronicles,
+  ...narrativesEzraNehemiahEsther,
 ]
 
 function main(): void {

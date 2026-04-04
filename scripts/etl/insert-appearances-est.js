@@ -1,0 +1,33 @@
+const db = require('better-sqlite3')('data/selah.db');
+const ins = db.prepare('INSERT INTO character_appearances (character_id,book_id,chapter,verse_start,verse_end,role,emotional_state,motivation,stakes,narrative_note,modern_parallel,source_tier) VALUES (?,?,?,?,?,?,?,?,?,?,?,?)');
+const batch = db.transaction((rows) => { for (const r of rows) ins.run(...r); });
+
+batch([
+  // est-vashtis-refusal (EST 1:1-22)
+  ['vashti','EST',1,1,22,'protagonist','dignified-refusal','refuse to display herself before drunken men','her dignity versus the king\'s command','Vashti says no to the most powerful man in the world at the height of a party. She loses everything and gains legend','The executive who walks out of the meeting rather than be humiliated, knowing it ends their career','scholarship'],
+  ['memucan','EST',1,1,22,'deuteragonist','politically-motivated','advise the king to depose Vashti','controlling women across the empire','Memucan panics: if Vashti gets away with this, every wife in the empire will disobey her husband. Fragile masculinity as imperial policy','The advisor who turns a personal embarrassment into a company-wide policy change','scholarship'],
+
+  // est-esther-becomes-queen (EST 2:1-23)
+  ['esther','EST',2,1,23,'protagonist','cautious-obedience','win the beauty contest and conceal her Jewish identity','her survival and position in the palace','Esther follows Mordecai\'s instructions: do not reveal your people. She wins favor with everyone she meets. Strategic hiddenness','The first-generation professional who code-switches perfectly and waits for the right moment to reveal who they really are','scholarship'],
+  ['mordecai','EST',2,1,23,'deuteragonist','protective-vigilance','guide Esther and uncover a plot against the king','Esther\'s safety and political positioning','Mordecai sits at the gate every day watching. He discovers an assassination plot and reports it through Esther. The good deed that will matter later','The mentor who networks behind the scenes and builds the political capital their protege will eventually need','scholarship'],
+  ['hegai','EST',2,1,23,'witness','favorable','prepare and promote Esther within the harem','his duty and his genuine preference for Esther','Hegai immediately favors Esther and gives her the best position and seven maids. Even the gatekeeper sees something special','The recruiter who fast-tracks a candidate because they can tell this one is different','scholarship'],
+
+  // est-hamans-plot (EST 3:1-4:17)
+  ['haman','EST',3,1,17,'antagonist','narcissistic-rage','destroy all Jews because Mordecai will not bow','personal ego escalated to genocide','Haman is not satisfied with punishing one man. He wants to annihilate an entire people. The most disproportionate response in scripture','The executive who tries to shut down a whole department because one person did not laugh at their joke','scholarship'],
+  ['mordecai','EST',3,1,17,'protagonist','defiant-then-mourning','refuse to bow to Haman and rally Esther to act','the survival of the Jewish people','Mordecai puts on sackcloth and wails at the gate. Then he sends the famous message: who knows whether you have come to the kingdom for such a time as this','The person who sounds the alarm and then tells the only person who can fix it that this is their moment','scholarship'],
+  ['esther','EST',3,1,17,'deuteragonist','fearful-then-resolved','approach the king uninvited to save her people','her life and the life of every Jew in Persia','If I perish, I perish. Three days of fasting before the most dangerous walk of her life. Courage is not the absence of fear','Deciding to blow the whistle knowing you might lose everything but the alternative is watching everyone else lose everything','scholarship'],
+  ['hatach','EST',3,1,17,'witness','faithful-service','carry messages between Esther and Mordecai','communication under dangerous circumstances','Hatach goes back and forth between the gate and the palace, the crucial link in the chain. Without him the plan never forms','The trusted assistant who carries sensitive messages between two people who cannot meet directly','scholarship'],
+
+  // est-esthers-banquet (EST 5:1-7:10)
+  ['esther','EST',5,1,10,'protagonist','strategic-courage','expose Haman at the banquet and save her people','the survival of the Jews','Esther invites the king and Haman to two banquets, building suspense. At the second she reveals: the enemy is this wicked Haman. Master timing','The person who does not blurt out the accusation in the hallway but waits for the right room and the right audience','scholarship'],
+  ['haman','EST',5,1,10,'antagonist','gloating-then-terrified','enjoy his special invitation then face his own destruction','his life','Haman brags to his wife about the private banquet, builds gallows for Mordecai, then falls on Esther\'s couch begging for mercy. The reversal is total','The person who posts about their big promotion right before getting fired','scholarship'],
+  ['mordecai','EST',5,1,10,'deuteragonist','vindicated','receive the honor Haman planned for himself','justice and the ironic reversal','The king cannot sleep, reads the chronicles, discovers Mordecai saved his life, and makes Haman lead Mordecai through the streets in royal robes. Divine comedy','The employee whose old good deed gets discovered in the files right when they need a champion','scholarship'],
+  ['zeresh','EST',5,1,10,'witness','ominous-clarity','advise Haman and then predict his fall','Haman\'s fate','Zeresh first says build the gallows, then says if Mordecai is Jewish you cannot stand against him. She sees the turn before Haman does','The spouse who first enables the bad idea and then is the first to see the disaster coming','scholarship'],
+
+  // est-purim-established (EST 8:1-10:3)
+  ['mordecai','EST',8,1,3,'protagonist','triumphant-authority','issue the counter-decree and rise to second in the kingdom','Jewish survival and political power','Mordecai goes out in royal robes of blue and white. The city of Susa shouts for joy. The man who sat in sackcloth now wears the crown','The person who went from being on the termination list to being named to the C-suite','scholarship'],
+  ['esther','EST',8,1,3,'deuteragonist','protective-power','secure the counter-decree and establish Purim','permanent remembrance of deliverance','Esther weeps and pleads at the king\'s feet for her people even after Haman is dead. The job is not done until the decree is reversed','The advocate who keeps pushing after the first victory because the systemic problem has not been fixed','scholarship'],
+]);
+
+console.log('Done EST -', 15, 'rows');
+db.close();

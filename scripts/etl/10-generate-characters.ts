@@ -9,6 +9,14 @@ import { exilePostExileCharacters } from './data/characters-exile-postexile'
 import { lifeOfChristCharacters } from './data/characters-life-of-christ'
 import { earlyChurchCharacters } from './data/characters-early-church'
 
+// Batch 2
+import { patriarchalCharactersB2 } from './data/characters-patriarchal-b2'
+import { exodusJudgesCharactersB2 } from './data/characters-exodus-judges-b2'
+import { monarchyCharactersB2 } from './data/characters-monarchy-b2'
+import { exilePostExileCharactersB2 } from './data/characters-exile-postexile-b2'
+import { lifeOfChristCharactersB2 } from './data/characters-life-of-christ-b2'
+import { earlyChurchCharactersB2 } from './data/characters-early-church-b2'
+
 const ALL_CHARACTERS: CharacterRecord[] = [
   ...patriarchalCharacters,
   ...exodusJudgesCharacters,
@@ -16,6 +24,13 @@ const ALL_CHARACTERS: CharacterRecord[] = [
   ...exilePostExileCharacters,
   ...lifeOfChristCharacters,
   ...earlyChurchCharacters,
+  // Batch 2
+  ...patriarchalCharactersB2,
+  ...exodusJudgesCharactersB2,
+  ...monarchyCharactersB2,
+  ...exilePostExileCharactersB2,
+  ...lifeOfChristCharactersB2,
+  ...earlyChurchCharactersB2,
 ]
 
 function main(): void {

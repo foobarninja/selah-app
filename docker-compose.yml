@@ -1,0 +1,15 @@
+version: '3.8'
+services:
+  selah:
+    build: .
+    ports:
+      - "3000:3000"
+    volumes:
+      - selah-data:/app/data
+      - selah-backups:/app/backups
+    environment:
+      - DATABASE_URL=file:/app/data/selah.db
+      - NODE_ENV=production
+volumes:
+  selah-data:
+  selah-backups:

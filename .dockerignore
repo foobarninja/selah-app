@@ -1,0 +1,12 @@
+node_modules
+.next
+.git
+.gitignore
+*.md
+pipeline/
+eval/
+scripts/
+data/sources/
+data/bible.eng.db
+.env.local
+.env.*.local

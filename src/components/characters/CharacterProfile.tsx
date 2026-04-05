@@ -267,7 +267,7 @@ export function CharacterProfileView({
           }}
         >
           <ArrowLeft size={16} strokeWidth={1.5} />
-          Back to characters
+          Back
         </button>
 
         {/* ── Profile header ── */}
@@ -356,9 +356,9 @@ export function CharacterProfileView({
                 }}>
                   {config.label}
                 </p>
-                {items.map((rel) => (
+                {items.map((rel, idx) => (
                   <RelationshipRow
-                    key={`${rel.characterId}-${rel.type}`}
+                    key={`${rel.characterId}-${rel.type}-${idx}`}
                     rel={rel}
                     onOpen={() => onOpenCharacter?.(rel.characterId)}
                   />

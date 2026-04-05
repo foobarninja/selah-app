@@ -246,9 +246,9 @@ export function ContextDrawer({
           accentColor="var(--selah-terra-400, #C47A63)"
           defaultOpen={true}
         >
-          {sceneCast.map((appearance) => (
+          {sceneCast.map((appearance, idx) => (
             <CastCard
-              key={appearance.characterId}
+              key={`${appearance.characterId}-${idx}`}
               appearance={appearance}
               onOpenProfile={
                 onOpenCharacterProfile

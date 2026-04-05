@@ -246,7 +246,7 @@ export function ThemeProfileView({
           }}
         >
           <ArrowLeft size={16} strokeWidth={1.5} />
-          Back to themes
+          Back
         </button>
 
         {/* Name */}

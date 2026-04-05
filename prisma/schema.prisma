@@ -683,3 +683,34 @@ model AiMessage {
   @@index([conversationId, createdAt])
   @@map("ai_messages")
 }
+
+model StudyProject {
+  id        Int     @id @default(autoincrement())
+  topic     String
+  format    String  @default("sermon")
+  status    String  @default("in-progress")
+  createdAt String  @default("") @map("created_at")
+  updatedAt String  @default("") @map("updated_at")
+
+  items StudyAssemblyItem[]
+
+  @@map("study_projects")
+}
+
+model StudyAssemblyItem {
+  id         Int     @id @default(autoincrement())
+  projectId  Int     @map("project_id")
+  entityType String  @map("entity_type")
+  entityId   String  @map("entity_id")
+  title      String
+  preview    String  @default("")
+  sourceTier Int     @default(2) @map("source_tier")
+  annotation String  @default("")
+  sortOrder  Int     @default(0) @map("sort_order")
+  createdAt  String  @default("") @map("created_at")
+
+  project StudyProject @relation(fields: [projectId], references: [id], onDelete: Cascade)
+
+  @@index([projectId, sortOrder])
+  @@map("study_assembly_items")
+}

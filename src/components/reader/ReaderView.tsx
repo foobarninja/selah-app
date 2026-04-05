@@ -82,8 +82,9 @@ function StrongsMarker({
           onMouseEnter={handleEnter}
           onMouseLeave={handleLeave}
         >
-          <p
+          <span
             style={{
+              display: 'block',
               fontFamily: font.mono,
               fontSize: '12px',
               color: 'var(--selah-teal-400, #4A9E88)',
@@ -91,9 +92,10 @@ function StrongsMarker({
             }}
           >
             {annotation.code}
-          </p>
-          <p
+          </span>
+          <span
             style={{
+              display: 'block',
               fontFamily: font.body,
               fontSize: '13px',
               fontWeight: 600,
@@ -102,9 +104,10 @@ function StrongsMarker({
             }}
           >
             {annotation.transliteration}
-          </p>
-          <p
+          </span>
+          <span
             style={{
+              display: 'block',
               fontFamily: font.body,
               fontSize: '12px',
               color: 'var(--selah-text-2, #A39E93)',
@@ -113,7 +116,7 @@ function StrongsMarker({
             }}
           >
             {annotation.brief}
-          </p>
+          </span>
           <button
             onClick={() => onOpen?.(annotation.code)}
             style={{
@@ -149,17 +152,80 @@ function VerseLine({
   onSelect?: () => void
   onOpenWordStudy?: (code: string) => void
 }) {
+  // Apply terracotta color to Jesus's words.
+  // If the verse has curly quotes, only color text inside them.
+  // If no quotes (continuation verse), color the entire verse.
+  const applyJesusWords = (nodes: React.ReactNode[]): React.ReactNode[] => {
+    if (!verse.wordsOfJesus) return nodes
+
+    const jesusColor = 'var(--selah-jesus-words, #D4836B)'
+
+    // Check if any text node contains curly quotes
+    const fullText = nodes.filter((n) => typeof n === 'string').join('')
+    const hasOpenQuote = fullText.includes('\u201C')
+    const hasCloseQuote = fullText.includes('\u201D')
+
+    // No quotes at all — continuation verse, color everything
+    if (!hasOpenQuote && !hasCloseQuote) {
+      return [<span key="jwoj" style={{ color: jesusColor }}>{nodes}</span>]
+    }
+
+    // Has quotes — only color text inside " ... "
+    // If no opening quote but has closing quote, this is the tail end of a
+    // multi-verse speech — start already inside the quote
+    const result: React.ReactNode[] = []
+    let inQuote = !hasOpenQuote && hasCloseQuote
+    let jKey = 0
+
+    for (const node of nodes) {
+      if (typeof node !== 'string' && typeof node !== 'number') {
+        if (inQuote) {
+          result.push(<span key={`j${jKey++}`} style={{ color: jesusColor }}>{node}</span>)
+        } else {
+          result.push(node)
+        }
+        continue
+      }
+
+      const text = String(node)
+      let pos = 0
+      for (let i = 0; i < text.length; i++) {
+        const ch = text[i]
+        if (ch === '\u201C') {
+          if (i > pos) {
+            const before = text.slice(pos, i)
+            result.push(inQuote
+              ? <span key={`j${jKey++}`} style={{ color: jesusColor }}>{before}</span>
+              : <Fragment key={`j${jKey++}`}>{before}</Fragment>)
+          }
+          inQuote = true
+          result.push(<Fragment key={`j${jKey++}`}>{ch}</Fragment>)
+          pos = i + 1
+        } else if (ch === '\u201D') {
+          if (i > pos) {
+            const quoted = text.slice(pos, i)
+            result.push(<span key={`j${jKey++}`} style={{ color: jesusColor }}>{quoted}</span>)
+          }
+          result.push(<Fragment key={`j${jKey++}`}>{ch}</Fragment>)
+          inQuote = false
+          pos = i + 1
+        }
+      }
+      if (pos < text.length) {
+        const tail = text.slice(pos)
+        result.push(inQuote
+          ? <span key={`j${jKey++}`} style={{ color: jesusColor }}>{tail}</span>
+          : <Fragment key={`j${jKey++}`}>{tail}</Fragment>)
+      }
+    }
+
+    return result
+  }
+
   // Build text segments: interleave plain text with Strong's-annotated words
   const renderText = () => {
     if (verse.strongs.length === 0) {
-      if (verse.wordsOfJesus) {
-        return (
-          <span style={{ color: 'var(--selah-jesus-words, #D4836B)' }}>
-            {verse.text}
-          </span>
-        )
-      }
-      return <>{verse.text}</>
+      return <>{applyJesusWords([verse.text])}</>
     }
 
     // Replace annotated words with interactive Strong's markers
@@ -173,7 +239,7 @@ function VerseLine({
 
       const before = remaining.slice(0, idx)
       if (before) {
-        segments.push(<Fragment key={key++}>{before}</Fragment>)
+        segments.push(before)
       }
 
       segments.push(
@@ -188,18 +254,10 @@ function VerseLine({
     }
 
     if (remaining) {
-      segments.push(<Fragment key={key++}>{remaining}</Fragment>)
+      segments.push(remaining)
     }
 
-    if (verse.wordsOfJesus) {
-      return (
-        <span style={{ color: 'var(--selah-jesus-words, #D4836B)' }}>
-          {segments}
-        </span>
-      )
-    }
-
-    return <>{segments}</>
+    return <>{applyJesusWords(segments)}</>
   }
 
   return (
@@ -310,8 +368,9 @@ function ResurfacingCard({
         borderLeftColor: 'var(--selah-gold-500, #C6A23C)',
       }}
     >
-      <p
+      <span
         style={{
+          display: 'block',
           fontFamily: font.body,
           fontSize: '10px',
           fontWeight: 500,
@@ -322,9 +381,10 @@ function ResurfacingCard({
         }}
       >
         You've been here before
-      </p>
-      <p
+      </span>
+      <span
         style={{
+          display: 'block',
           fontFamily: font.display,
           fontStyle: 'italic',
           fontSize: '14px',
@@ -334,11 +394,11 @@ function ResurfacingCard({
         }}
       >
         &ldquo;{entry.content}&rdquo;
-      </p>
-      <p style={{ fontFamily: font.body, fontSize: '12px', color: 'var(--selah-text-3, #6E695F)' }}>
+      </span>
+      <span style={{ display: 'block', fontFamily: font.body, fontSize: '12px', color: 'var(--selah-text-3, #6E695F)' }}>
         Journal &middot; {entry.noteType}
         {entry.tags.length > 0 && ` \u00b7 ${entry.tags.join(', ')}`}
-      </p>
+      </span>
     </button>
   )
 }
@@ -555,13 +615,14 @@ export function ReaderView({
 
           {/* ── Lens tag pills ── */}
           <div className="flex flex-wrap gap-1.5 mt-5 mb-6">
-            {lensTags.map((tag) => (
+            {lensTags.map((tag, i) => (
               <LensTagPill
-                key={tag.entityId}
+                key={`${tag.entityId}-${i}`}
                 tag={tag}
                 onClick={() => {
                   if (tag.lens === 'relational') onOpenCharacterProfile?.(tag.entityId)
                   else if (tag.lens === 'conceptual') onOpenThemeDetail?.(tag.entityId)
+                  else if (tag.lens === 'climate') { setDrawerOpen(true); setMobileDrawerOpen(true) }
                 }}
               />
             ))}

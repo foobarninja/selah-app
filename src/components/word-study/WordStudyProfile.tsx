@@ -248,8 +248,8 @@ export function WordStudyProfile({
     <div className="h-full overflow-y-auto" style={{ padding: '28px 32px' }}>
       <div style={{ maxWidth: '720px', margin: '0 auto' }}>
 
-        {/* Back link (if arrived from Reader) */}
-        {arrivedFrom && (
+        {/* Back link */}
+        {onBack && (
           <button
             onClick={onBack}
             className="flex items-center gap-2 mb-6 transition-colors duration-150"
@@ -260,7 +260,7 @@ export function WordStudyProfile({
             }}
           >
             <ArrowLeft size={16} strokeWidth={1.5} />
-            Back to {arrivedFrom.passageRef}
+            {arrivedFrom ? `Back to ${arrivedFrom.passageRef}` : 'Back'}
           </button>
         )}
 

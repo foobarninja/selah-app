@@ -33,6 +33,7 @@ export interface StudyBuilderProps {
 
   onCreateProject?: (topic: string, format: ProjectFormat) => void
   onOpenProject?: (projectId: string) => void
+  onDeleteProject?: (projectId: string) => void
   onAddItem?: (sourceItemId: string) => void
   onRemoveItem?: (assemblyItemId: string) => void
   onReorderItems?: (itemIds: string[]) => void

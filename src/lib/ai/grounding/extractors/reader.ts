@@ -7,30 +7,33 @@ export async function extractReaderContext(ctx: ReaderContext): Promise<string> 
   const { bookId, chapter, verse, translationId = 'BSB' } = ctx
   const bookName = BOOK_NAMES[bookId] ?? bookId
 
-  const [verses, passageCtx, narrativeUnit, strongsMappings, footnotes] = await Promise.all([
+  // Run queries individually so failures in enrichment don't break core data
+  const [verses, passageCtx] = await Promise.all([
     getChapterText(translationId, bookId, chapter),
     getPassageContext(bookId, chapter, 1, 999),
-    // Narrative unit for this chapter
-    prisma.narrativeUnit.findFirst({
-      where: {
-        bookId,
-        chapterStart: { lte: chapter },
-        OR: [{ chapterEnd: { gte: chapter } }, { chapterEnd: null }],
-      },
-      orderBy: [{ chapterStart: 'desc' }, { verseStart: 'desc' }],
-    }),
-    // Strong's Hebrew/Greek words mapped to this chapter
-    prisma.strongsVerseMap.findMany({
-      where: { bookId, chapter },
-      include: { entry: true },
-      orderBy: [{ verse: 'asc' }, { wordPosition: 'asc' }],
-    }),
-    // Footnotes for this chapter
-    prisma.footnote.findMany({
-      where: { bookId, chapter },
-      orderBy: { verse: 'asc' },
-    }),
   ])
+
+  const narrativeUnit = await prisma.narrativeUnit.findFirst({
+    where: {
+      bookId,
+      chapterStart: { lte: chapter },
+      OR: [{ chapterEnd: { gte: chapter } }, { chapterEnd: null }],
+    },
+    orderBy: [{ chapterStart: 'desc' }, { verseStart: 'desc' }],
+  }).catch((err) => { console.error('[reader-extractor] narrative query failed:', err); return null })
+
+  const strongsMappings = await prisma.strongsVerseMap.findMany({
+    where: { bookId, chapter },
+    include: { entry: true },
+    orderBy: [{ verse: 'asc' }, { wordPosition: 'asc' }],
+  }).catch((err) => { console.error('[reader-extractor] strongs query failed:', err); return [] })
+
+  const footnotes = await prisma.footnote.findMany({
+    where: { bookId, chapter },
+    orderBy: { verse: 'asc' },
+  }).catch((err) => { console.error('[reader-extractor] footnotes query failed:', err); return [] })
+
+  console.log(`[reader-extractor] ${bookId} ${chapter}: verses=${verses.length}, narrative=${!!narrativeUnit}, strongs=${strongsMappings.length}, footnotes=${footnotes.length}`)
 
   // ── Adjacent chapter text when narrative spans multiple chapters ─────────
   // If the narrative unit extends beyond this chapter, fetch surrounding chapters

@@ -1,9 +1,11 @@
-import { NextResponse } from 'next/server'
-import { prisma } from '@/lib/db'
+import { NextRequest, NextResponse } from 'next/server'
+import { getSetting } from '@/lib/settings/queries'
 
-export async function GET() {
-  const provider = await prisma.aiProvider.findUnique({ where: { id: 'ollama' } })
-  const baseUrl = provider?.apiBaseUrl || 'http://localhost:11434'
+export async function GET(request: NextRequest) {
+  // Allow URL override via query param (for settings UI before saving), fall back to stored setting
+  const urlParam = request.nextUrl.searchParams.get('url')
+  const storedUrl = await getSetting('ollama_url')
+  const baseUrl = urlParam || storedUrl || 'http://localhost:11434'
 
   try {
     const response = await fetch(`${baseUrl}/api/tags`, { signal: AbortSignal.timeout(5000) })

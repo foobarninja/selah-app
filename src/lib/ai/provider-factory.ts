@@ -1,6 +1,4 @@
-import { getAIConfig } from '@/lib/settings/queries'
-import { getSetting } from '@/lib/settings/queries'
-import { prisma } from '@/lib/db'
+import { getAIConfig, getSetting } from '@/lib/settings/queries'
 import type { AiProviderAdapter } from './providers/base'
 import type { ProviderCredentials } from './types'
 
@@ -9,15 +7,13 @@ async function getCredentials(): Promise<ProviderCredentials | null> {
   if (!config.isConfigured || !config.provider || !config.model) return null
 
   const apiKey = (await getSetting('ai_api_key')) || ''
-  const provider = await prisma.aiProvider.findUnique({
-    where: { id: config.provider },
-  })
+  const ollamaUrl = (await getSetting('ollama_url')) || ''
 
   return {
     providerId: config.provider,
     apiKey,
     model: config.model,
-    apiBaseUrl: provider?.apiBaseUrl,
+    apiBaseUrl: ollamaUrl || undefined,
   }
 }
 

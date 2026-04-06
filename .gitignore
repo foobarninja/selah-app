@@ -45,3 +45,6 @@ next-env.d.ts
 # Database
 /data/selah.db
 /data/selah.db-journal
+/data/selah.db-shm
+/data/selah.db-wal
+/data/bible.eng.db

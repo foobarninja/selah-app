@@ -9,6 +9,7 @@ interface Props {
   dailyBread: HomeProps['dailyBread']
   history: HomeProps['history']
   recentNotes: HomeProps['recentNotes']
+  isFirstLaunch?: boolean
 }
 
 const emptyResults: SearchResults = {
@@ -18,12 +19,13 @@ const emptyResults: SearchResults = {
   strongs: [],
 }
 
-export default function HomeClient({ dailyBread, history, recentNotes }: Props) {
+export default function HomeClient({ dailyBread, history, recentNotes, isFirstLaunch: initialFirstLaunch }: Props) {
   const router = useRouter()
   const searchParams = useSearchParams()
   const initialQuery = searchParams.get('q') ?? ''
   const [searchQuery, setSearchQuery] = useState(initialQuery)
   const [searchResults, setSearchResults] = useState<SearchResults>(emptyResults)
+  const [showWelcome, setShowWelcome] = useState(!!initialFirstLaunch)
 
   // Restore search results from URL param on mount
   useEffect(() => {
@@ -75,6 +77,76 @@ export default function HomeClient({ dailyBread, history, recentNotes }: Props) 
     }
   }, [])
 
+  const dismissWelcome = useCallback(async () => {
+    setShowWelcome(false)
+    await fetch('/api/settings/first-launch', { method: 'POST' })
+  }, [])
+
+  if (showWelcome) {
+    return (
+      <div className="h-full flex items-center justify-center" style={{ padding: '40px 32px' }}>
+        <div style={{ maxWidth: '520px', textAlign: 'center' }}>
+          <p style={{
+            fontFamily: "var(--selah-font-display, 'Cormorant Garamond', serif)",
+            fontSize: '48px',
+            fontWeight: 300,
+            letterSpacing: '1px',
+            color: 'var(--selah-gold-500, #C6A23C)',
+            marginBottom: '24px',
+          }}>
+            Selah
+          </p>
+          <p style={{
+            fontFamily: "var(--selah-font-display, 'Cormorant Garamond', serif)",
+            fontSize: '22px',
+            fontWeight: 400,
+            color: 'var(--selah-text-1, #E8E2D9)',
+            lineHeight: 1.6,
+            marginBottom: '16px',
+          }}>
+            A quiet place to study Scripture.
+          </p>
+          <p style={{
+            fontFamily: "var(--selah-font-body, 'Source Sans 3', sans-serif)",
+            fontSize: '15px',
+            color: 'var(--selah-text-2, #A39E93)',
+            lineHeight: 1.7,
+            marginBottom: '40px',
+          }}>
+            Everything here runs on your machine. Your notes, your highlights, your reading history
+            — none of it leaves this device. No account needed, no cloud sync, no tracking.
+            Just you and the text.
+          </p>
+          <button
+            onClick={dismissWelcome}
+            style={{
+              fontFamily: "var(--selah-font-body, 'Source Sans 3', sans-serif)",
+              fontSize: '16px',
+              fontWeight: 600,
+              padding: '14px 40px',
+              borderRadius: '10px',
+              backgroundColor: 'var(--selah-gold-500, #C6A23C)',
+              color: '#fff',
+              border: 'none',
+              cursor: 'pointer',
+              marginBottom: '24px',
+            }}
+          >
+            Begin reading
+          </button>
+          <p style={{
+            fontFamily: "var(--selah-font-body, 'Source Sans 3', sans-serif)",
+            fontSize: '12px',
+            color: 'var(--selah-text-3, #6E695F)',
+            fontStyle: 'italic',
+          }}>
+            &ldquo;Be still, and know that I am God.&rdquo; — Psalm 46:10
+          </p>
+        </div>
+      </div>
+    )
+  }
+
   return (
     <HomeView
       searchResults={searchResults}
@@ -83,7 +155,7 @@ export default function HomeClient({ dailyBread, history, recentNotes }: Props) 
       history={history}
       recentNotes={recentNotes}
       welcomeMessage="Welcome to Selah. Start anywhere — a passage, a question, a name you half-remember."
-      isFirstLaunch={history.length === 0}
+      isFirstLaunch={false}
       onSearch={onSearch}
       onNavigatePassage={(ref) => {
         // ref is display format like "John 1:3" — find the matching result to get the route

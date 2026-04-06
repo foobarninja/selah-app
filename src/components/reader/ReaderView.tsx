@@ -13,7 +13,13 @@ import { ContextDrawer } from './ContextDrawer'
 import { ChatProvider } from '@/lib/ai/chat-context'
 import { ConnectedAIPanel } from '@/components/ai-assistant/ConnectedAIPanel'
 import { AIToggleButton } from '@/components/ai-assistant/AIToggleButton'
+import { BOOK_NAMES } from '@/lib/constants'
 import type { ReaderProps, Verse, StrongsAnnotation, LensTag, ResurfacedEntry } from './types'
+
+/** Reverse lookup: display name -> book ID (e.g., "Job" -> "JOB") */
+const BOOK_IDS_BY_NAME = Object.fromEntries(
+  Object.entries(BOOK_NAMES).map(([id, name]) => [name, id])
+)
 
 /* ── Font shorthand ── */
 const font = {
@@ -496,7 +502,7 @@ export function ReaderView({
 
   return (
     <ChatProvider
-      grounding={{ page: 'reader', context: { bookId: passage.book, chapter: passage.chapter, verse: activeVerseNumber }, query: '' }}
+      grounding={{ page: 'reader', context: { bookId: BOOK_IDS_BY_NAME[passage.book] ?? passage.book, chapter: passage.chapter, verse: activeVerseNumber }, query: '' }}
       groundingDisplay={{ type: 'passage', passageRef: `${passage.book} ${passage.chapter}` }}
       isConfigured={true}
     >

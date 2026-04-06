@@ -95,8 +95,18 @@ export default function SettingsPage() {
         } : d)
       }}
 
-      onTestConnection={() => {
-        // Connection test is a future feature (requires actual API call)
+      onTestConnection={async () => {
+        setData((d) => d ? { ...d, aiConfig: { ...d.aiConfig, connectionStatus: 'testing' } } : d)
+        try {
+          const res = await fetch('/api/ai/test-connection')
+          const result = await res.json()
+          setData((d) => d ? {
+            ...d,
+            aiConfig: { ...d.aiConfig, connectionStatus: result.ok ? 'connected' : 'failed' },
+          } : d)
+        } catch {
+          setData((d) => d ? { ...d, aiConfig: { ...d.aiConfig, connectionStatus: 'failed' } } : d)
+        }
       }}
 
       onChangeCommentary={async (mode) => {

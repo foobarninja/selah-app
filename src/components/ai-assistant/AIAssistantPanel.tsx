@@ -1,6 +1,8 @@
 'use client'
 
 import { useState, useRef, useEffect } from 'react'
+import ReactMarkdown from 'react-markdown'
+import remarkGfm from 'remark-gfm'
 import { X, Clock, Send, Bookmark, ChevronLeft, Save, Plus } from 'lucide-react'
 import type { AIAssistantProps, Message, GroundingContext, ConversationThread } from './types'
 
@@ -72,7 +74,11 @@ function MessageBubble({ message, onSave, isStreaming }: { message: Message; onS
       <div className="relative rounded-xl" style={{ maxWidth: '85%', padding: '12px 16px', backgroundColor: isUser ? 'var(--selah-gold-900, #4A3711)' : 'var(--selah-bg-surface, #1C1917)', border: isUser ? 'none' : '1px solid var(--selah-border-color, #3D3835)' }}>
         {showDots
           ? <StreamingDots />
-          : <p style={{ fontFamily: font.body, fontSize: '14px', lineHeight: 1.7, color: isUser ? 'var(--selah-gold-100, #F5E4B8)' : 'var(--selah-text-1, #E8E2D9)', whiteSpace: 'pre-wrap' }}>{message.content}</p>
+          : isUser
+            ? <p style={{ fontFamily: font.body, fontSize: '14px', lineHeight: 1.7, color: 'var(--selah-gold-100, #F5E4B8)', whiteSpace: 'pre-wrap' }}>{message.content}</p>
+            : <div className="selah-md" style={{ fontFamily: font.body, fontSize: '14px', lineHeight: 1.7, color: 'var(--selah-text-1, #E8E2D9)' }}>
+                <ReactMarkdown remarkPlugins={[remarkGfm]}>{message.content}</ReactMarkdown>
+              </div>
         }
         {!isUser && !showDots && (
           <div className="flex items-center justify-between mt-2">
@@ -105,6 +111,45 @@ function HistoryList({ threads, onOpen, onBack }: { threads: ConversationThread[
   )
 }
 
+const mdStyles = `
+.selah-md h1, .selah-md h2, .selah-md h3, .selah-md h4 {
+  font-family: var(--selah-font-display, 'Cormorant Garamond', serif);
+  font-weight: 600;
+  color: var(--selah-text-1, #E8E2D9);
+  margin: 16px 0 8px;
+}
+.selah-md h1 { font-size: 20px; }
+.selah-md h2 { font-size: 18px; }
+.selah-md h3 { font-size: 16px; }
+.selah-md h4 { font-size: 15px; }
+.selah-md p { margin: 0 0 10px; }
+.selah-md p:last-child { margin-bottom: 0; }
+.selah-md ul, .selah-md ol { margin: 4px 0 10px; padding-left: 20px; }
+.selah-md li { margin-bottom: 4px; }
+.selah-md strong { color: var(--selah-gold-300, #E8C767); font-weight: 600; }
+.selah-md em { color: var(--selah-sky-300, #93B5D3); font-style: italic; }
+.selah-md blockquote {
+  border-left: 3px solid var(--selah-gold-500, #C6A23C);
+  margin: 8px 0;
+  padding: 4px 12px;
+  color: var(--selah-text-2, #A39E93);
+}
+.selah-md code {
+  font-size: 12px;
+  background: var(--selah-bg-elevated, #292524);
+  padding: 1px 5px;
+  border-radius: 4px;
+}
+.selah-md pre { background: var(--selah-bg-elevated, #292524); padding: 10px; border-radius: 8px; overflow-x: auto; margin: 8px 0; }
+.selah-md pre code { background: none; padding: 0; }
+.selah-md table { width: 100%; border-collapse: collapse; margin: 10px 0; font-size: 13px; }
+.selah-md th { text-align: left; padding: 6px 10px; border-bottom: 2px solid var(--selah-gold-500, #C6A23C); color: var(--selah-gold-300, #E8C767); font-weight: 600; }
+.selah-md td { padding: 6px 10px; border-bottom: 1px solid var(--selah-border-color, #3D3835); }
+.selah-md tr:last-child td { border-bottom: none; }
+.selah-md hr { border: none; border-top: 1px solid var(--selah-border-color, #3D3835); margin: 12px 0; }
+.selah-md a { color: var(--selah-sky-400, #6B91B5); text-decoration: underline; }
+`
+
 export function AIAssistantPanel({ groundingContext, messages, conversationHistory, isConfigured, isPanelOpen, isStreaming, onSendMessage, onClose, onSaveToJournal, onOpenThread, onNewConversation, onSaveConversation }: AIAssistantProps) {
   const [input, setInput] = useState('')
   const [showHistory, setShowHistory] = useState(false)
@@ -126,6 +171,7 @@ export function AIAssistantPanel({ groundingContext, messages, conversationHisto
 
   return (
     <div className="flex flex-col h-full" style={{ backgroundColor: 'var(--selah-bg-page, #0F0D0B)', borderLeft: '1px solid var(--selah-border-color, #3D3835)' }}>
+      <style>{mdStyles}</style>
       <div className="flex items-center justify-between shrink-0" style={{ padding: '12px 16px', borderBottom: '1px solid var(--selah-border-color, #3D3835)' }}>
         <span style={{ fontFamily: font.body, fontSize: '14px', fontWeight: 600, color: 'var(--selah-sky-400, #6B91B5)' }}>AI assistant</span>
         <div className="flex items-center gap-2">

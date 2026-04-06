@@ -45,6 +45,7 @@ export function SettingsView({ translations, aiConfig, aiProviders, studyPrefere
   const [ollamaModels, setOllamaModels] = useState<Array<{ name: string }>>([])
   const [ollamaLoading, setOllamaLoading] = useState(false)
   const [ollamaError, setOllamaError] = useState<string | null>(null)
+  const [ollamaDisableThinking, setOllamaDisableThinking] = useState(false)
 
   const isOllama = selectedProvider === 'ollama'
 
@@ -138,6 +139,8 @@ export function SettingsView({ translations, aiConfig, aiProviders, studyPrefere
                         <option value="">{ollamaModels.length === 0 ? 'Click "Detect models" first...' : 'Select a model...'}</option>
                         {ollamaModels.map((m) => (<option key={m.name} value={m.name}>{m.name}</option>))}
                       </select>
+                      <Toggle label="Disable thinking (for models like Qwen 3)" checked={ollamaDisableThinking} onChange={(v) => setOllamaDisableThinking(v)} />
+                      <div style={{ marginBottom: '8px' }} />
                     </>
                   ) : (
                     <>
@@ -158,7 +161,7 @@ export function SettingsView({ translations, aiConfig, aiProviders, studyPrefere
                     <button onClick={onTestConnection} className="transition-colors duration-150" style={{ fontFamily: font.body, fontSize: '13px', fontWeight: 500, padding: '8px 16px', borderRadius: '8px', backgroundColor: 'var(--selah-bg-surface, #1C1917)', color: 'var(--selah-text-1)', border: '1px solid var(--selah-border-color, #3D3835)', cursor: 'pointer' }}>{aiConfig.connectionStatus === 'testing' ? 'Testing...' : 'Test connection'}</button>
                     {aiConfig.connectionStatus === 'connected' && (<span className="flex items-center gap-1" style={{ fontFamily: font.body, fontSize: '11px', color: 'var(--selah-teal-400, #4A9E88)' }}><Check size={12} strokeWidth={2} /> Connected</span>)}
                     {aiConfig.connectionStatus === 'failed' && (<span className="flex items-center gap-1" style={{ fontFamily: font.body, fontSize: '11px', color: 'var(--selah-terra-400, #D4836B)' }}><X size={12} strokeWidth={2} /> Failed</span>)}
-                    <button onClick={() => selectedProvider && onSaveAIConfig?.(selectedProvider, isOllama ? ollamaUrl : apiKey, selectedModel)} className="transition-colors duration-150" style={{ fontFamily: font.body, fontSize: '13px', fontWeight: 600, padding: '8px 16px', borderRadius: '8px', backgroundColor: 'var(--selah-gold-500, #C6A23C)', color: '#fff', border: 'none', cursor: 'pointer' }}>Save</button>
+                    <button onClick={() => { if (!selectedProvider) return; onSaveAIConfig?.(selectedProvider, isOllama ? ollamaUrl : apiKey, selectedModel); if (isOllama) { fetch('/api/settings', { method: 'PATCH', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ ollama_disable_thinking: String(ollamaDisableThinking) }) }) } }} className="transition-colors duration-150" style={{ fontFamily: font.body, fontSize: '13px', fontWeight: 600, padding: '8px 16px', borderRadius: '8px', backgroundColor: 'var(--selah-gold-500, #C6A23C)', color: '#fff', border: 'none', cursor: 'pointer' }}>Save</button>
                     {aiConfig.isConfigured && (<button onClick={() => setShowAIConfig(false)} style={{ fontFamily: font.body, fontSize: '13px', color: 'var(--selah-text-3)', background: 'none', border: 'none', cursor: 'pointer' }}>Cancel</button>)}
                   </div>
                 </>

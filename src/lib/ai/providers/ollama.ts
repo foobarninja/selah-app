@@ -4,7 +4,7 @@ import type { ChatMessage, ModelConfig, ConnectionTestResult, OllamaModelInfo } 
 export class OllamaAdapter implements AiProviderAdapter {
   readonly id = 'ollama'
 
-  constructor(private baseUrl: string, private model: string) {}
+  constructor(private baseUrl: string, private model: string, private disableThinking = false) {}
 
   async *stream(messages: ChatMessage[], config: ModelConfig): AsyncIterable<string> {
     const response = await fetch(`${this.baseUrl}/api/chat`, {
@@ -14,6 +14,7 @@ export class OllamaAdapter implements AiProviderAdapter {
         model: config.model || this.model,
         messages: messages.map((m) => ({ role: m.role, content: m.content })),
         stream: true,
+        ...(this.disableThinking ? { think: false } : {}),
       }),
     })
 

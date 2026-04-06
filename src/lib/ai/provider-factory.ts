@@ -36,7 +36,8 @@ export async function getProvider(): Promise<AiProviderAdapter | null> {
     }
     case 'ollama': {
       const { OllamaAdapter } = await import('./providers/ollama')
-      return new OllamaAdapter(creds.apiBaseUrl || 'http://localhost:11434', creds.model)
+      const disableThinking = (await getSetting('ollama_disable_thinking')) === 'true'
+      return new OllamaAdapter(creds.apiBaseUrl || 'http://localhost:11434', creds.model, disableThinking)
     }
     default:
       return null

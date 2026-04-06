@@ -2,7 +2,6 @@ import { getChapterText, getPassageContext } from '@/lib/reader/queries'
 import { BOOK_NAMES } from '@/lib/constants'
 import type { ReaderContext } from '../../types'
 
-const MAX_VERSES = 30
 const MAX_COMMENTARY_EXCERPTS = 3
 const MAX_CROSS_REFS = 5
 
@@ -20,18 +19,11 @@ export async function extractReaderContext(ctx: ReaderContext): Promise<string> 
   // ── Passage header ────────────────────────────────────────────────────────
   parts.push(`## Passage: ${bookName} ${chapter}`)
 
-  // ── Verse text ────────────────────────────────────────────────────────────
-  const targetVerses = verse
-    ? verses.filter((v) => Math.abs(v.number - verse) <= 5).slice(0, MAX_VERSES)
-    : verses.slice(0, MAX_VERSES)
-
-  if (targetVerses.length > 0) {
-    parts.push('\n### Text')
-    for (const v of targetVerses) {
+  // ── Full chapter text — the model MUST have the actual words to quote from
+  if (verses.length > 0) {
+    parts.push('\n### Full Text')
+    for (const v of verses) {
       parts.push(`${v.number}. ${v.text}`)
-    }
-    if (targetVerses.length < verses.length) {
-      parts.push(`*(${verses.length - targetVerses.length} more verses in this chapter)*`)
     }
   }
 

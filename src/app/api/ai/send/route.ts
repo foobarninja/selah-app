@@ -6,7 +6,7 @@ import { extractCitations } from '@/lib/ai/post-processing/citation-extractor'
 import type { AiSendRequest, ChatMessage, StreamEvent } from '@/lib/ai/types'
 
 const MAX_HISTORY_MESSAGES = 20
-const STREAM_TIMEOUT_MS = 30000
+const STREAM_TIMEOUT_MS = 300000 // 5 minutes — local models can be slow
 
 function encodeSSE(event: StreamEvent): string {
   return `data: ${JSON.stringify(event)}\n\n`

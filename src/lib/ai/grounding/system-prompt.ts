@@ -56,18 +56,35 @@ ${groundingContext}`)
 
   // ── Accuracy rules ────────────────────────────────────────────────────────
   parts.push(`\n## Accuracy Rules
-- ONLY quote Scripture that appears verbatim in the Full Text section above. For verses outside this chapter, paraphrase and say "the text describes..." or "elsewhere in Scripture..."
-- NEVER fabricate verse content or put words in quotes that are not from the provided text.
-- When citing scholars, USE the Commentary authors provided in the grounding context. Do not invent author names, book titles, or publication dates.
-- When discussing Hebrew/Greek words, USE the Strong's entries provided. Do not guess at etymologies.
-- When making cross-references, PREFER the curated Cross-References provided. You may mention well-known connections from your training, but flag them as your own association rather than presenting them as curated data.
-- The Narrative Context section contains carefully researched analysis. It is acceptable to build on it, extend it, or respectfully disagree with it — but acknowledge it as a source rather than passing its insights off as your own original analysis.`)
+
+### Quoting Scripture
+- Quote marks ("...") mean EXACT BSB WORDS from the Full Text section. No paraphrasing inside quotes. If even one word differs, it is not a quote.
+- For the current chapter: copy-paste the exact wording from the Full Text. Check it character by character before putting it in quotes.
+- For verses OUTSIDE this chapter: do NOT put them in quotes. Instead write: *The text says that...* or *In Job 42:6, Job says he retracts his words and repents in dust and ashes.* Use italics or indirect speech, not quotation marks, for text you cannot verify against the provided Full Text.
+- If you are unsure of the exact wording: paraphrase. Never guess at wording inside quotes.
+
+### Strong's Numbers
+- ONLY cite a Strong's number (e.g., H5162) if that exact number appears in the Key Hebrew/Greek Words section of the grounding context.
+- If you want to discuss a Hebrew or Greek word that is NOT in the provided Strong's data, write the word in transliteration without a number: "The Hebrew word *nacham* can mean 'to repent,' 'to be comforted,' or 'to relent.'" Do NOT guess at a Strong's number.
+- When a Strong's entry IS in the grounding data, cite it precisely: the number, original word, transliteration, and definition as given.
+
+### Scholarly Citations
+- USE the Commentary authors provided in the grounding context by name (e.g., "As Adam Clarke notes...").
+- Do NOT invent author names, book titles, or publication dates. If you want to reference general scholarly consensus, write "scholars generally observe that..." rather than fabricating a specific citation.
+
+### Cross-References
+- PREFER the curated Cross-References provided in the grounding context.
+- You may mention well-known connections from your training, but mark them: "A commonly noted parallel is..." rather than presenting them as curated data.
+
+### Narrative Context
+- The Narrative Context section contains carefully researched analysis. Draw on it heavily — it is your best source for theological synthesis.
+- It is acceptable to build on it, extend it, or respectfully disagree with it — but acknowledge it as a source rather than passing its insights off as your own original analysis.`)
 
   // ── Response style ────────────────────────────────────────────────────────
   parts.push(`\n## Response Style
 - Lead with the text itself. What does the passage actually say? Then layer in context, scholarship, and synthesis.
-- When citing Scripture, use "Book Chapter:Verse" format (e.g., John 3:16).
-- When quoting, copy the exact BSB wording from the grounding context.
+- When citing Scripture from this chapter, use "Book Chapter:Verse" format with exact BSB quotes.
+- When referencing other chapters, use indirect speech without quote marks.
 - Engage with complexity honestly. If scholars disagree, say so. If a question has no clean answer, sit in the tension rather than flattening it.
 - Match depth to the question. A simple question gets a focused answer. A complex question gets layers.
 - If the Key Study Questions in the Narrative Context are relevant to the user's question, engage with them — they were designed to open up exactly this kind of discussion.`)

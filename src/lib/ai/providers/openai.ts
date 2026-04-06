@@ -6,8 +6,11 @@ export class OpenAIAdapter implements AiProviderAdapter {
   readonly id = 'openai'
   private client: OpenAI
 
-  constructor(apiKey: string, private model: string) {
-    this.client = new OpenAI({ apiKey })
+  constructor(apiKey: string, private model: string, baseURL?: string) {
+    this.client = new OpenAI({
+      apiKey: apiKey || 'not-needed',
+      ...(baseURL ? { baseURL } : {}),
+    })
   }
 
   async *stream(messages: ChatMessage[], config: ModelConfig): AsyncIterable<string> {

@@ -46,6 +46,7 @@ export function SettingsView({ translations, aiConfig, aiProviders, studyPrefere
   const [ollamaLoading, setOllamaLoading] = useState(false)
   const [ollamaError, setOllamaError] = useState<string | null>(null)
   const [ollamaDisableThinking, setOllamaDisableThinking] = useState(false)
+  const [customApiUrl, setCustomApiUrl] = useState('')
 
   const isOllama = selectedProvider === 'ollama'
 
@@ -151,17 +152,21 @@ export function SettingsView({ translations, aiConfig, aiProviders, studyPrefere
                           <button onClick={() => setShowApiKey(!showApiKey)} style={{ color: 'var(--selah-text-3)', background: 'none', border: 'none', cursor: 'pointer' }}>{showApiKey ? <EyeOff size={14} strokeWidth={1.5} /> : <Eye size={14} strokeWidth={1.5} />}</button>
                         </div>
                       </div>
+                      <p style={{ fontFamily: font.body, fontSize: '13px', color: 'var(--selah-text-2)', marginBottom: '6px' }}>Server URL <span style={{ color: 'var(--selah-text-3)', fontSize: '11px' }}>(optional — for local servers like llama-server, vLLM)</span></p>
+                      <div className="flex items-center gap-2 mb-4">
+                        <div className="flex-1 flex items-center rounded-lg" style={{ backgroundColor: 'var(--selah-bg-surface, #1C1917)', border: '1px solid var(--selah-border-color, #3D3835)', padding: '8px 12px' }}>
+                          <input type="text" value={customApiUrl} onChange={(e) => setCustomApiUrl(e.target.value)} placeholder="Leave empty for OpenAI, or http://192.168.1.100:8082/v1" className="flex-1 outline-none" style={{ fontFamily: font.mono, fontSize: '13px', color: 'var(--selah-text-1)', backgroundColor: 'transparent', border: 'none' }} />
+                        </div>
+                      </div>
                       <p style={{ fontFamily: font.body, fontSize: '13px', color: 'var(--selah-text-2)', marginBottom: '6px' }}>Model</p>
-                      <select value={selectedModel} onChange={(e) => setSelectedModel(e.target.value)} className="w-full rounded-lg outline-none mb-4" style={{ fontFamily: font.body, fontSize: '13px', padding: '8px 12px', backgroundColor: 'var(--selah-bg-surface, #1C1917)', color: 'var(--selah-text-1)', border: '1px solid var(--selah-border-color, #3D3835)' }}>
-                        <option value="">Select a model...</option>
-                      </select>
+                      <input type="text" value={selectedModel} onChange={(e) => setSelectedModel(e.target.value)} placeholder="e.g., gpt-4o or local model name" className="w-full rounded-lg outline-none mb-4" style={{ fontFamily: font.mono, fontSize: '13px', padding: '8px 12px', backgroundColor: 'var(--selah-bg-surface, #1C1917)', color: 'var(--selah-text-1)', border: '1px solid var(--selah-border-color, #3D3835)' }} />
                     </>
                   )}
                   <div className="flex items-center gap-3">
                     <button onClick={onTestConnection} className="transition-colors duration-150" style={{ fontFamily: font.body, fontSize: '13px', fontWeight: 500, padding: '8px 16px', borderRadius: '8px', backgroundColor: 'var(--selah-bg-surface, #1C1917)', color: 'var(--selah-text-1)', border: '1px solid var(--selah-border-color, #3D3835)', cursor: 'pointer' }}>{aiConfig.connectionStatus === 'testing' ? 'Testing...' : 'Test connection'}</button>
                     {aiConfig.connectionStatus === 'connected' && (<span className="flex items-center gap-1" style={{ fontFamily: font.body, fontSize: '11px', color: 'var(--selah-teal-400, #4A9E88)' }}><Check size={12} strokeWidth={2} /> Connected</span>)}
                     {aiConfig.connectionStatus === 'failed' && (<span className="flex items-center gap-1" style={{ fontFamily: font.body, fontSize: '11px', color: 'var(--selah-terra-400, #D4836B)' }}><X size={12} strokeWidth={2} /> Failed</span>)}
-                    <button onClick={() => { if (!selectedProvider) return; onSaveAIConfig?.(selectedProvider, isOllama ? ollamaUrl : apiKey, selectedModel); if (isOllama) { fetch('/api/settings', { method: 'PATCH', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ ollama_disable_thinking: String(ollamaDisableThinking) }) }) } }} className="transition-colors duration-150" style={{ fontFamily: font.body, fontSize: '13px', fontWeight: 600, padding: '8px 16px', borderRadius: '8px', backgroundColor: 'var(--selah-gold-500, #C6A23C)', color: '#fff', border: 'none', cursor: 'pointer' }}>Save</button>
+                    <button onClick={() => { if (!selectedProvider) return; onSaveAIConfig?.(selectedProvider, isOllama ? ollamaUrl : apiKey, selectedModel); const extraSettings: Record<string, string> = {}; if (isOllama) { extraSettings.ollama_disable_thinking = String(ollamaDisableThinking) } if (!isOllama && customApiUrl) { extraSettings.custom_api_url = customApiUrl } if (Object.keys(extraSettings).length > 0) { fetch('/api/settings', { method: 'PATCH', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify(extraSettings) }) } }} className="transition-colors duration-150" style={{ fontFamily: font.body, fontSize: '13px', fontWeight: 600, padding: '8px 16px', borderRadius: '8px', backgroundColor: 'var(--selah-gold-500, #C6A23C)', color: '#fff', border: 'none', cursor: 'pointer' }}>Save</button>
                     {aiConfig.isConfigured && (<button onClick={() => setShowAIConfig(false)} style={{ fontFamily: font.body, fontSize: '13px', color: 'var(--selah-text-3)', background: 'none', border: 'none', cursor: 'pointer' }}>Cancel</button>)}
                   </div>
                 </>

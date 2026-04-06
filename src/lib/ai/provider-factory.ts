@@ -8,12 +8,13 @@ async function getCredentials(): Promise<ProviderCredentials | null> {
 
   const apiKey = (await getSetting('ai_api_key')) || ''
   const ollamaUrl = (await getSetting('ollama_url')) || ''
+  const customApiUrl = (await getSetting('custom_api_url')) || ''
 
   return {
     providerId: config.provider,
     apiKey,
     model: config.model,
-    apiBaseUrl: ollamaUrl || undefined,
+    apiBaseUrl: ollamaUrl || customApiUrl || undefined,
   }
 }
 
@@ -28,7 +29,7 @@ export async function getProvider(): Promise<AiProviderAdapter | null> {
     }
     case 'openai': {
       const { OpenAIAdapter } = await import('./providers/openai')
-      return new OpenAIAdapter(creds.apiKey, creds.model)
+      return new OpenAIAdapter(creds.apiKey, creds.model, creds.apiBaseUrl)
     }
     case 'google': {
       const { GoogleAdapter } = await import('./providers/google')

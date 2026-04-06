@@ -83,10 +83,14 @@ export async function getAIConfig(): Promise<AIConfig> {
   const apiKey = await getSetting('ai_api_key')
   const ollamaUrl = await getSetting('ollama_url')
 
-  // Ollama doesn't need an API key — just a server URL
+  const customApiUrl = await getSetting('custom_api_url')
+
+  // Ollama and local OpenAI-compatible servers don't need an API key
   const isConfigured = provider === 'ollama'
     ? !!(provider && model)
-    : !!(provider && apiKey)
+    : customApiUrl
+      ? !!(provider && model)  // local server: no API key needed
+      : !!(provider && apiKey) // cloud provider: API key required
 
   return {
     isConfigured,

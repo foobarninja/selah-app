@@ -1,7 +1,7 @@
 'use client'
 
 import { useState, useRef, useEffect } from 'react'
-import { X, Clock, Send, Bookmark, ChevronLeft } from 'lucide-react'
+import { X, Clock, Send, Bookmark, ChevronLeft, Save, Plus } from 'lucide-react'
 import type { AIAssistantProps, Message, GroundingContext, ConversationThread } from './types'
 
 const font = {
@@ -37,13 +37,44 @@ function GroundingHeader({ context }: { context: GroundingContext }) {
   )
 }
 
-function MessageBubble({ message, onSave }: { message: Message; onSave?: () => void }) {
+function StreamingDots() {
+  return (
+    <span style={{ display: 'inline-flex', alignItems: 'center', gap: '3px', padding: '2px 0' }}>
+      {[0, 1, 2].map((i) => (
+        <span
+          key={i}
+          style={{
+            width: '6px',
+            height: '6px',
+            borderRadius: '50%',
+            backgroundColor: 'var(--selah-sky-400, #6B91B5)',
+            display: 'inline-block',
+            animation: 'selahPulse 1.2s ease-in-out infinite',
+            animationDelay: `${i * 0.2}s`,
+          }}
+        />
+      ))}
+      <style>{`
+        @keyframes selahPulse {
+          0%, 80%, 100% { opacity: 0.3; transform: scale(0.8); }
+          40% { opacity: 1; transform: scale(1); }
+        }
+      `}</style>
+    </span>
+  )
+}
+
+function MessageBubble({ message, onSave, isStreaming }: { message: Message; onSave?: () => void; isStreaming?: boolean }) {
   const isUser = message.role === 'user'
+  const showDots = !isUser && isStreaming && message.content === ''
   return (
     <div className={`flex ${isUser ? 'justify-end' : 'justify-start'} mb-4 group`}>
       <div className="relative rounded-xl" style={{ maxWidth: '85%', padding: '12px 16px', backgroundColor: isUser ? 'var(--selah-gold-900, #4A3711)' : 'var(--selah-bg-surface, #1C1917)', border: isUser ? 'none' : '1px solid var(--selah-border-color, #3D3835)' }}>
-        <p style={{ fontFamily: font.body, fontSize: '14px', lineHeight: 1.7, color: isUser ? 'var(--selah-gold-100, #F5E4B8)' : 'var(--selah-text-1, #E8E2D9)', whiteSpace: 'pre-wrap' }}>{message.content}</p>
-        {!isUser && (
+        {showDots
+          ? <StreamingDots />
+          : <p style={{ fontFamily: font.body, fontSize: '14px', lineHeight: 1.7, color: isUser ? 'var(--selah-gold-100, #F5E4B8)' : 'var(--selah-text-1, #E8E2D9)', whiteSpace: 'pre-wrap' }}>{message.content}</p>
+        }
+        {!isUser && !showDots && (
           <div className="flex items-center justify-between mt-2">
             {message.sourceTier && <AITierPill tier={message.sourceTier} />}
             {onSave && (<button onClick={onSave} title="Save to journal" className="opacity-0 group-hover:opacity-100 transition-opacity duration-150" style={{ color: 'var(--selah-sky-400, #6B91B5)', background: 'none', border: 'none', cursor: 'pointer', padding: '2px' }}><Bookmark size={14} strokeWidth={1.5} /></button>)}
@@ -74,16 +105,16 @@ function HistoryList({ threads, onOpen, onBack }: { threads: ConversationThread[
   )
 }
 
-export function AIAssistantPanel({ groundingContext, messages, conversationHistory, isConfigured, isPanelOpen, onSendMessage, onClose, onSaveToJournal, onOpenThread, onNewConversation }: AIAssistantProps) {
+export function AIAssistantPanel({ groundingContext, messages, conversationHistory, isConfigured, isPanelOpen, isStreaming, onSendMessage, onClose, onSaveToJournal, onOpenThread, onNewConversation, onSaveConversation }: AIAssistantProps) {
   const [input, setInput] = useState('')
   const [showHistory, setShowHistory] = useState(false)
   const messagesEndRef = useRef<HTMLDivElement>(null)
 
-  useEffect(() => { messagesEndRef.current?.scrollIntoView({ behavior: 'smooth' }) }, [messages.length])
+  useEffect(() => { messagesEndRef.current?.scrollIntoView({ behavior: 'smooth' }) }, [messages.length, messages[messages.length - 1]?.content])
 
   if (!isConfigured || !isPanelOpen) return null
 
-  const handleSend = () => { if (!input.trim()) return; onSendMessage?.(input); setInput('') }
+  const handleSend = () => { if (!input.trim() || isStreaming) return; onSendMessage?.(input); setInput('') }
 
   if (showHistory) {
     return (
@@ -98,6 +129,12 @@ export function AIAssistantPanel({ groundingContext, messages, conversationHisto
       <div className="flex items-center justify-between shrink-0" style={{ padding: '12px 16px', borderBottom: '1px solid var(--selah-border-color, #3D3835)' }}>
         <span style={{ fontFamily: font.body, fontSize: '14px', fontWeight: 600, color: 'var(--selah-sky-400, #6B91B5)' }}>AI assistant</span>
         <div className="flex items-center gap-2">
+          {messages.length > 0 && onSaveConversation && (
+            <button onClick={onSaveConversation} title="Save conversation" disabled={isStreaming} style={{ color: 'var(--selah-text-3, #6E695F)', background: 'none', border: 'none', cursor: isStreaming ? 'default' : 'pointer', padding: '4px', opacity: isStreaming ? 0.4 : 1 }}><Save size={16} strokeWidth={1.5} /></button>
+          )}
+          {onNewConversation && (
+            <button onClick={onNewConversation} title="New conversation" style={{ color: 'var(--selah-text-3, #6E695F)', background: 'none', border: 'none', cursor: 'pointer', padding: '4px' }}><Plus size={16} strokeWidth={1.5} /></button>
+          )}
           <button onClick={() => setShowHistory(true)} title="Past conversations" style={{ color: 'var(--selah-text-3, #6E695F)', background: 'none', border: 'none', cursor: 'pointer', padding: '4px' }}><Clock size={16} strokeWidth={1.5} /></button>
           <button onClick={onClose} style={{ color: 'var(--selah-text-3, #6E695F)', background: 'none', border: 'none', cursor: 'pointer', padding: '4px' }}><X size={16} strokeWidth={1.5} /></button>
         </div>
@@ -107,14 +144,21 @@ export function AIAssistantPanel({ groundingContext, messages, conversationHisto
 
       <div className="flex-1 overflow-y-auto" style={{ padding: '16px' }}>
         {messages.length === 0 && (<div className="text-center py-12"><p style={{ fontFamily: font.body, fontSize: '14px', color: 'var(--selah-text-3, #6E695F)' }}>Ask anything about what you&rsquo;re reading.</p></div>)}
-        {messages.map((msg) => (<MessageBubble key={msg.id} message={msg} onSave={msg.role === 'assistant' ? () => onSaveToJournal?.(msg.id, 'insight', msg.content, [], []) : undefined} />))}
+        {messages.map((msg) => (
+          <MessageBubble
+            key={msg.id}
+            message={msg}
+            isStreaming={isStreaming && msg.id === 'streaming'}
+            onSave={msg.role === 'assistant' && msg.id !== 'streaming' ? () => onSaveToJournal?.(msg.id, 'insight', msg.content, [], []) : undefined}
+          />
+        ))}
         <div ref={messagesEndRef} />
       </div>
 
       <div className="shrink-0" style={{ padding: '12px 16px', borderTop: '1px solid var(--selah-border-color, #3D3835)' }}>
         <div className="flex items-end gap-2 rounded-xl" style={{ backgroundColor: 'var(--selah-bg-surface, #1C1917)', border: '1px solid var(--selah-border-color, #3D3835)', padding: '10px 14px' }}>
-          <textarea value={input} onChange={(e) => setInput(e.target.value)} onKeyDown={(e) => { if (e.key === 'Enter' && !e.shiftKey) { e.preventDefault(); handleSend() } }} placeholder="Ask anything about what you're reading..." rows={1} className="flex-1 outline-none resize-none" style={{ fontFamily: font.body, fontSize: '14px', lineHeight: 1.5, color: 'var(--selah-text-1, #E8E2D9)', backgroundColor: 'transparent', border: 'none', maxHeight: '100px' }} />
-          <button onClick={handleSend} className="shrink-0 rounded-lg transition-colors duration-150" style={{ padding: '6px 10px', backgroundColor: input.trim() ? 'var(--selah-sky-400, #6B91B5)' : 'var(--selah-border-color, #3D3835)', color: '#fff', border: 'none', cursor: input.trim() ? 'pointer' : 'default' }}><Send size={14} strokeWidth={2} /></button>
+          <textarea value={input} onChange={(e) => setInput(e.target.value)} onKeyDown={(e) => { if (e.key === 'Enter' && !e.shiftKey) { e.preventDefault(); handleSend() } }} placeholder="Ask anything about what you're reading..." rows={1} disabled={isStreaming} className="flex-1 outline-none resize-none" style={{ fontFamily: font.body, fontSize: '14px', lineHeight: 1.5, color: 'var(--selah-text-1, #E8E2D9)', backgroundColor: 'transparent', border: 'none', maxHeight: '100px', opacity: isStreaming ? 0.5 : 1 }} />
+          <button onClick={handleSend} disabled={isStreaming} className="shrink-0 rounded-lg transition-colors duration-150" style={{ padding: '6px 10px', backgroundColor: input.trim() && !isStreaming ? 'var(--selah-sky-400, #6B91B5)' : 'var(--selah-border-color, #3D3835)', color: '#fff', border: 'none', cursor: input.trim() && !isStreaming ? 'pointer' : 'default' }}><Send size={14} strokeWidth={2} /></button>
         </div>
       </div>
     </div>

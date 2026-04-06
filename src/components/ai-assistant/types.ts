@@ -33,6 +33,7 @@ export interface AIAssistantProps {
   conversationHistory: ConversationThread[]
   isConfigured: boolean
   isPanelOpen: boolean
+  isStreaming?: boolean
 
   onSendMessage?: (content: string) => void
   onClose?: () => void
@@ -40,4 +41,5 @@ export interface AIAssistantProps {
   onSaveToJournal?: (messageId: string, noteType: NoteType, content: string, anchors: Anchor[], tags: string[]) => void
   onOpenThread?: (threadId: string) => void
   onNewConversation?: () => void
+  onSaveConversation?: () => void
 }

@@ -13,7 +13,7 @@ import { extractWordStudyContext } from './extractors/word-study'
 import { extractStudyBuilderContext } from './extractors/study-builder'
 import { getCharacterNames, getThemeNames } from '../post-processing/entity-matcher'
 
-const MAX_CONTEXT_CHARS = 24000 // ~8,000 tokens — full chapter text + enrichments
+const MAX_CONTEXT_CHARS = 90000 // ~30,000 tokens — rich grounding for 128K context models
 
 export async function buildGroundingContext(grounding: GroundingRequest): Promise<string> {
   // 1. Primary context from current page

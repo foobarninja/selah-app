@@ -1,17 +1,35 @@
 import { getChapterText, getPassageContext } from '@/lib/reader/queries'
 import { BOOK_NAMES } from '@/lib/constants'
+import { prisma } from '@/lib/db'
 import type { ReaderContext } from '../../types'
-
-const MAX_COMMENTARY_EXCERPTS = 3
-const MAX_CROSS_REFS = 5
 
 export async function extractReaderContext(ctx: ReaderContext): Promise<string> {
   const { bookId, chapter, verse, translationId = 'BSB' } = ctx
   const bookName = BOOK_NAMES[bookId] ?? bookId
 
-  const [verses, passageCtx] = await Promise.all([
+  const [verses, passageCtx, narrativeUnit, strongsMappings, footnotes] = await Promise.all([
     getChapterText(translationId, bookId, chapter),
     getPassageContext(bookId, chapter, 1, 999),
+    // Narrative unit for this chapter
+    prisma.narrativeUnit.findFirst({
+      where: {
+        bookId,
+        chapterStart: { lte: chapter },
+        OR: [{ chapterEnd: { gte: chapter } }, { chapterEnd: null }],
+      },
+      orderBy: [{ chapterStart: 'desc' }, { verseStart: 'desc' }],
+    }),
+    // Strong's Hebrew/Greek words mapped to this chapter
+    prisma.strongsVerseMap.findMany({
+      where: { bookId, chapter },
+      include: { entry: true },
+      orderBy: [{ verse: 'asc' }, { wordPosition: 'asc' }],
+    }),
+    // Footnotes for this chapter
+    prisma.footnote.findMany({
+      where: { bookId, chapter },
+      orderBy: { verse: 'asc' },
+    }),
   ])
 
   const parts: string[] = []
@@ -19,7 +37,23 @@ export async function extractReaderContext(ctx: ReaderContext): Promise<string> 
   // ── Passage header ────────────────────────────────────────────────────────
   parts.push(`## Passage: ${bookName} ${chapter}`)
 
-  // ── Full chapter text — the model MUST have the actual words to quote from
+  // ── Narrative context — the richest layer of curated analysis ────────────
+  if (narrativeUnit) {
+    parts.push(`\n### Narrative Context: "${narrativeUnit.title}"`)
+    if (narrativeUnit.summary) parts.push(narrativeUnit.summary)
+    if (narrativeUnit.significance) parts.push(`\n**Theological Significance:** ${narrativeUnit.significance}`)
+    if (narrativeUnit.relationalNote) parts.push(`\n**Relational Dynamics:** ${narrativeUnit.relationalNote}`)
+    if (narrativeUnit.conceptualNote) parts.push(`\n**Conceptual Background:** ${narrativeUnit.conceptualNote}`)
+    if (narrativeUnit.keyQuestions) {
+      try {
+        const questions = JSON.parse(narrativeUnit.keyQuestions) as string[]
+        parts.push(`\n**Key Questions for Study:**`)
+        for (const q of questions) parts.push(`- ${q}`)
+      } catch { /* skip malformed JSON */ }
+    }
+  }
+
+  // ── Full chapter text ─────────────────────────────────────────────────────
   if (verses.length > 0) {
     parts.push('\n### Full Text')
     for (const v of verses) {
@@ -27,30 +61,95 @@ export async function extractReaderContext(ctx: ReaderContext): Promise<string> 
     }
   }
 
-  // ── Characters ────────────────────────────────────────────────────────────
+  // ── Characters with mini-profiles ─────────────────────────────────────────
   const { sceneCast, themes, crossReferences, commentaries } = passageCtx
+
   if (sceneCast.length > 0) {
+    // Get full character profiles for scene cast
+    const charIds = [...new Set(sceneCast.map((c) => c.characterId))]
+    const charProfiles = await prisma.character.findMany({
+      where: { id: { in: charIds } },
+      select: {
+        id: true, name: true, era: true, occupation: true,
+        bioBrief: true, faithJourney: true, modernParallel: true,
+        relationshipsA: {
+          select: { relationship: true, charB: { select: { name: true } } },
+          take: 8,
+        },
+      },
+    })
+    const profileMap = new Map(charProfiles.map((p) => [p.id, p]))
+
     parts.push('\n### Characters Present')
     for (const c of sceneCast) {
-      const details: string[] = [`**${c.name}** (${c.role})`]
-      if (c.emotion) details.push(`emotional state: ${c.emotion}`)
-      if (c.motivation) details.push(`motivation: ${c.motivation}`)
-      if (c.stakes) details.push(`stakes: ${c.stakes}`)
-      parts.push(details.join(' — '))
+      const lines: string[] = [`**${c.name}** (${c.role})`]
+      if (c.emotion) lines.push(`  Emotional state: ${c.emotion}`)
+      if (c.motivation) lines.push(`  Motivation: ${c.motivation}`)
+      if (c.stakes) lines.push(`  Stakes: ${c.stakes}`)
+
+      const profile = profileMap.get(c.characterId)
+      if (profile) {
+        if (profile.bioBrief) lines.push(`  Bio: ${profile.bioBrief}`)
+        if (profile.era) lines.push(`  Era: ${profile.era}`)
+        if (profile.faithJourney) lines.push(`  Faith journey: ${profile.faithJourney.slice(0, 300)}`)
+        if (profile.relationshipsA.length > 0) {
+          const rels = profile.relationshipsA.map((r: { relationship: string; charB: { name: string } }) => `${r.relationship}: ${r.charB.name}`).join(', ')
+          lines.push(`  Key relationships: ${rels}`)
+        }
+      }
+      parts.push(lines.join('\n'))
     }
   }
 
-  // ── Themes ────────────────────────────────────────────────────────────────
+  // ── Themes with definitions ───────────────────────────────────────────────
   if (themes.length > 0) {
+    const themeIds = themes.map((t) => t.themeId)
+    const themeDetails = await prisma.theme.findMany({
+      where: { id: { in: themeIds } },
+      select: { id: true, name: true, definition: true, category: true },
+    })
+    const themeMap = new Map(themeDetails.map((t) => [t.id, t]))
+
     parts.push('\n### Themes')
     for (const t of themes) {
-      const note = t.annotation ? `: ${t.annotation}` : ''
-      parts.push(`- ${t.name}${note}`)
+      const detail = themeMap.get(t.themeId)
+      const def = detail?.definition ? ` — ${detail.definition}` : ''
+      const note = t.annotation ? ` (${t.annotation})` : ''
+      parts.push(`- **${t.name}**${def}${note}`)
     }
   }
 
-  // ── Cross-references ──────────────────────────────────────────────────────
-  const topRefs = crossReferences.slice(0, MAX_CROSS_REFS)
+  // ── Key Hebrew/Greek words ────────────────────────────────────────────────
+  if (strongsMappings.length > 0) {
+    // Deduplicate by strongs number — show each word once
+    const seen = new Set<string>()
+    const uniqueEntries: Array<{ number: string; word: string; transliteration: string; definition: string; verse: number }> = []
+    for (const m of strongsMappings) {
+      if (!seen.has(m.strongsNumber)) {
+        seen.add(m.strongsNumber)
+        uniqueEntries.push({
+          number: m.strongsNumber,
+          word: m.entry.word,
+          transliteration: m.entry.transliteration ?? '',
+          definition: m.entry.definition ?? m.entry.shortDefinition ?? '',
+          verse: m.verse,
+        })
+      }
+    }
+
+    // Cap at 20 entries — theologically significant words first
+    const topEntries = uniqueEntries.slice(0, 20)
+    if (topEntries.length > 0) {
+      parts.push('\n### Key Hebrew/Greek Words')
+      for (const e of topEntries) {
+        const def = e.definition.length > 150 ? e.definition.slice(0, 150) + '...' : e.definition
+        parts.push(`- **${e.word}** (${e.transliteration}, ${e.number}) v.${e.verse}: ${def}`)
+      }
+    }
+  }
+
+  // ── Cross-references (top 15 by relevance) ────────────────────────────────
+  const topRefs = crossReferences.slice(0, 15)
   if (topRefs.length > 0) {
     parts.push('\n### Cross-References')
     for (const ref of topRefs) {
@@ -59,16 +158,28 @@ export async function extractReaderContext(ctx: ReaderContext): Promise<string> 
     }
   }
 
-  // ── Commentary excerpts ───────────────────────────────────────────────────
-  const curatedCommentary = commentaries
-    .filter((c) => c.displayTier === 'curated')
-    .slice(0, MAX_COMMENTARY_EXCERPTS)
+  // ── Commentary (curated + top extended, capped at ~8K chars) ──────────────
+  if (commentaries.length > 0) {
+    const curated = commentaries.filter((c) => c.displayTier === 'curated')
+    const extended = commentaries.filter((c) => c.displayTier !== 'curated').slice(0, 10)
+    const selected = [...curated, ...extended]
 
-  if (curatedCommentary.length > 0) {
     parts.push('\n### Commentary')
-    for (const c of curatedCommentary) {
-      const excerpt = c.excerpt.length > 300 ? c.excerpt.slice(0, 300) + '...' : c.excerpt
+    let commentaryChars = 0
+    const MAX_COMMENTARY_CHARS = 8000
+    for (const c of selected) {
+      const excerpt = c.excerpt.length > 600 ? c.excerpt.slice(0, 600) + '...' : c.excerpt
+      if (commentaryChars + excerpt.length > MAX_COMMENTARY_CHARS) break
       parts.push(`**${c.author}** (${c.verseRange}): ${excerpt}`)
+      commentaryChars += excerpt.length
+    }
+  }
+
+  // ── Footnotes ─────────────────────────────────────────────────────────────
+  if (footnotes.length > 0) {
+    parts.push('\n### Translation Footnotes')
+    for (const fn of footnotes) {
+      parts.push(`- v.${fn.verse}: ${fn.noteText}`)
     }
   }
 

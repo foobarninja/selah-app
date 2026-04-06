@@ -32,6 +32,37 @@ export async function extractReaderContext(ctx: ReaderContext): Promise<string> 
     }),
   ])
 
+  // ── Adjacent chapter text when narrative spans multiple chapters ─────────
+  // If the narrative unit extends beyond this chapter, fetch surrounding chapters
+  // so the model has the resolution text (e.g., Job 42 when reading Job 38)
+  const adjacentChapters: Array<{ chapter: number; verses: Array<{ number: number; text: string }> }> = []
+  if (narrativeUnit) {
+    const chaptersToFetch: number[] = []
+    const nuStart = narrativeUnit.chapterStart
+    const nuEnd = narrativeUnit.chapterEnd ?? narrativeUnit.chapterStart
+
+    // Fetch other chapters in this narrative unit (up to 4 additional)
+    for (let c = nuStart; c <= nuEnd && chaptersToFetch.length < 4; c++) {
+      if (c !== chapter) chaptersToFetch.push(c)
+    }
+
+    // Also fetch the resolution chapter (one past the narrative unit end)
+    const resolutionChapter = nuEnd + 1
+    if (resolutionChapter !== chapter && !chaptersToFetch.includes(resolutionChapter)) {
+      chaptersToFetch.push(resolutionChapter)
+    }
+
+    const adjacentResults = await Promise.all(
+      chaptersToFetch.map(async (c) => {
+        const v = await getChapterText(translationId, bookId, c)
+        return { chapter: c, verses: v }
+      })
+    )
+    for (const r of adjacentResults) {
+      if (r.verses.length > 0) adjacentChapters.push(r)
+    }
+  }
+
   const parts: string[] = []
 
   // ── Passage header ────────────────────────────────────────────────────────
@@ -55,9 +86,19 @@ export async function extractReaderContext(ctx: ReaderContext): Promise<string> 
 
   // ── Full chapter text ─────────────────────────────────────────────────────
   if (verses.length > 0) {
-    parts.push('\n### Full Text')
+    parts.push(`\n### Full Text: ${bookName} ${chapter}`)
     for (const v of verses) {
       parts.push(`${v.number}. ${v.text}`)
+    }
+  }
+
+  // ── Adjacent chapters (narrative context + resolution) ────────────────────
+  if (adjacentChapters.length > 0) {
+    for (const adj of adjacentChapters) {
+      parts.push(`\n### Full Text: ${bookName} ${adj.chapter}`)
+      for (const v of adj.verses) {
+        parts.push(`${v.number}. ${v.text}`)
+      }
     }
   }
 

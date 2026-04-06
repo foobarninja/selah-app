@@ -3,6 +3,9 @@
 import { useState } from 'react'
 import { ArrowLeft, ChevronDown, ChevronRight } from 'lucide-react'
 import { TierPill } from '@/components/reader/TierPill'
+import { ChatProvider } from '@/lib/ai/chat-context'
+import { ConnectedAIPanel } from '@/components/ai-assistant/ConnectedAIPanel'
+import { AIToggleButton } from '@/components/ai-assistant/AIToggleButton'
 import type {
   ThemeProfile as ThemeProfileType,
   ThemePassage,
@@ -233,6 +236,11 @@ export function ThemeProfileView({
   const passageEras = eraOrder.filter((era) => profile.passages[era]?.length > 0)
 
   return (
+    <ChatProvider
+      grounding={{ page: 'theme', context: { themeId: profile.id }, query: '' }}
+      groundingDisplay={{ type: 'theme', themeName: profile.name }}
+      isConfigured={true}
+    >
     <div className="h-full overflow-y-auto" style={{ padding: '28px 32px' }}>
       <div style={{ maxWidth: '720px', margin: '0 auto' }}>
         {/* Back button */}
@@ -364,6 +372,10 @@ export function ThemeProfileView({
           </div>
         )}
       </div>
+
+      <ConnectedAIPanel />
+      <AIToggleButton />
     </div>
+    </ChatProvider>
   )
 }

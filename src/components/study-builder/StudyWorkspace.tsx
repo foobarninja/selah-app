@@ -3,6 +3,9 @@
 import { useState } from 'react'
 import { ArrowLeft, GripVertical, X, Plus, Search, Download, ExternalLink, BookOpen, Users, Sparkles, CloudSun, HelpCircle, PenLine, Check } from 'lucide-react'
 import { TierPill } from '@/components/reader/TierPill'
+import { ChatProvider } from '@/lib/ai/chat-context'
+import { ConnectedAIPanel } from '@/components/ai-assistant/ConnectedAIPanel'
+import { AIToggleButton } from '@/components/ai-assistant/AIToggleButton'
 import type { StudyBuilderProps, AssemblyItem, SourceSection, SourceItem } from './types'
 import type { SourceTier } from '@/components/reader/types'
 
@@ -75,6 +78,11 @@ export function StudyWorkspace({ activeProject, assemblyItems, sourceSections, s
   const currentSection = sourceSections.find((s) => s.id === activeSourceSection) || sourceSections[0]
 
   return (
+    <ChatProvider
+      grounding={{ page: 'study-builder', context: { projectId: Number(activeProject.id) }, query: '' }}
+      groundingDisplay={{ type: 'general' }}
+      isConfigured={true}
+    >
     <div className="h-full flex flex-col">
       <div className="flex items-center gap-4 shrink-0" style={{ padding: '12px 20px', borderBottom: '1px solid var(--selah-border-color, #3D3835)', backgroundColor: 'var(--selah-bg-surface, #1C1917)' }}>
         <button onClick={onBackToList} style={{ color: 'var(--selah-text-3, #6E695F)', background: 'none', border: 'none', cursor: 'pointer' }}><ArrowLeft size={18} strokeWidth={1.5} /></button>
@@ -135,6 +143,10 @@ export function StudyWorkspace({ activeProject, assemblyItems, sourceSections, s
           </div>
         </>
       )}
+
+      <ConnectedAIPanel />
+      <AIToggleButton />
     </div>
+    </ChatProvider>
   )
 }

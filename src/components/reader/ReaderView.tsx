@@ -10,6 +10,9 @@ import {
 } from 'lucide-react'
 import { TierPill } from './TierPill'
 import { ContextDrawer } from './ContextDrawer'
+import { ChatProvider } from '@/lib/ai/chat-context'
+import { ConnectedAIPanel } from '@/components/ai-assistant/ConnectedAIPanel'
+import { AIToggleButton } from '@/components/ai-assistant/AIToggleButton'
 import type { ReaderProps, Verse, StrongsAnnotation, LensTag, ResurfacedEntry } from './types'
 
 /* ── Font shorthand ── */
@@ -492,6 +495,11 @@ export function ReaderView({
   ])].sort()
 
   return (
+    <ChatProvider
+      grounding={{ page: 'reader', context: { bookId: passage.book, chapter: passage.chapter, verse: activeVerseNumber }, query: '' }}
+      groundingDisplay={{ type: 'passage', passageRef: `${passage.book} ${passage.chapter}` }}
+      isConfigured={true}
+    >
     <div className="h-full flex relative">
       {/* ── Reading pane ── */}
       <div
@@ -734,6 +742,10 @@ export function ReaderView({
           </div>
         </>
       )}
+
+      <ConnectedAIPanel />
+      <AIToggleButton />
     </div>
+    </ChatProvider>
   )
 }

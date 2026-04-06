@@ -27,7 +27,8 @@ export async function getProvider(): Promise<AiProviderAdapter | null> {
       const { AnthropicAdapter } = await import('./providers/anthropic')
       return new AnthropicAdapter(creds.apiKey, creds.model)
     }
-    case 'openai': {
+    case 'openai':
+    case 'custom': {
       const { OpenAIAdapter } = await import('./providers/openai')
       return new OpenAIAdapter(creds.apiKey, creds.model, creds.apiBaseUrl)
     }

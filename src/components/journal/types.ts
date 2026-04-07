@@ -20,6 +20,7 @@ export interface JournalEntry {
   id: string; noteType: NoteType; content: string; anchors: Anchor[]
   themeTags: string[]; userTags: string[]; studyContext: StudyContext
   createdAt: string; timeAgo: string
+  journalId?: string; journalName?: string
 }
 
 export interface Collection { id: string; title: string; description: string; itemCount: number; lastEdited: string }

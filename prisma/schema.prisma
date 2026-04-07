@@ -527,6 +527,27 @@ model AppSetting {
   @@map("app_settings")
 }
 
+model Journal {
+  id          String  @id @default(cuid())
+  name        String
+  description String?
+  anchorBookId     String? @map("anchor_book_id")
+  anchorChapter    Int?    @map("anchor_chapter")
+  anchorVerse      Int?    @map("anchor_verse")
+  anchorCharacterId String? @map("anchor_character_id")
+  anchorThemeId    String? @map("anchor_theme_id")
+  coverColor  String? @map("cover_color")
+  journalType String  @default("study") @map("journal_type")
+  sortOrder   Int     @default(0) @map("sort_order")
+  isDefault   Boolean @default(false) @map("is_default")
+  createdAt   String  @default("") @map("created_at")
+  updatedAt   String  @default("") @map("updated_at")
+
+  notes UserNote[]
+
+  @@map("journals")
+}
+
 model UserNote {
   id               Int     @id @default(autoincrement())
   title            String?
@@ -536,12 +557,14 @@ model UserNote {
   isPinned         Boolean @default(false) @map("is_pinned")
   studyContext     String? @map("study_context")
   aiConversationId Int?    @map("ai_conversation_id")
+  journalId        String? @map("journal_id")
   createdAt        String  @default("") @map("created_at")
   updatedAt        String  @default("") @map("updated_at")
 
   anchors    UserNoteAnchor[]
   noteThemes UserNoteTheme[]
   noteTags   UserNoteTag[]
+  journal    Journal? @relation(fields: [journalId], references: [id])
 
   @@map("user_notes")
 }
@@ -714,3 +737,4 @@ model StudyAssemblyItem {
   @@index([projectId, sortOrder])
   @@map("study_assembly_items")
 }
+

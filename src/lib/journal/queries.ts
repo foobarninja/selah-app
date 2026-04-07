@@ -10,6 +10,45 @@ import type {
   JournalTab,
 } from '@/components/journal/types'
 
+// ── Journal interfaces ─────────────────────────────────────────────────────────
+
+export interface JournalSummary {
+  id: string
+  name: string
+  description: string | null
+  coverColor: string | null
+  journalType: string
+  sortOrder: number
+  isDefault: boolean
+  noteCount: number
+  lastEntryAt: string | null
+  updatedAt: string
+}
+
+export interface JournalDetail {
+  id: string
+  name: string
+  description: string | null
+  coverColor: string | null
+  journalType: string
+  anchorBookId: string | null
+  anchorChapter: number | null
+  anchorVerse: number | null
+  anchorCharacterId: string | null
+  anchorThemeId: string | null
+  sortOrder: number
+  isDefault: boolean
+  createdAt: string
+  updatedAt: string
+}
+
+export interface JournalPickerItem {
+  id: string
+  name: string
+  noteCount: number
+  isDefault: boolean
+}
+
 function timeAgo(dateStr: string): string {
   if (!dateStr) return ''
   const diff = Date.now() - new Date(dateStr).getTime()
@@ -28,14 +67,17 @@ export async function getJournalEntries(opts?: {
   search?: string
   noteType?: string
   limit?: number
+  journalId?: string
 }): Promise<JournalEntry[]> {
   const notes = await prisma.userNote.findMany({
+    where: opts?.journalId ? { journalId: opts.journalId } : undefined,
     orderBy: { createdAt: 'desc' },
     take: opts?.limit ?? 100,
     include: {
       anchors: true,
       noteThemes: true,
       noteTags: { include: { tag: true } },
+      journal: { select: { id: true, name: true } },
     },
   })
 
@@ -64,6 +106,7 @@ export async function getJournalEntry(id: number): Promise<JournalEntry | null> 
       anchors: true,
       noteThemes: true,
       noteTags: { include: { tag: true } },
+      journal: { select: { id: true, name: true } },
     },
   })
   if (!note) return null
@@ -76,10 +119,12 @@ function mapEntry(n: {
   content: string
   noteType: string
   studyContext: string | null
+  journalId: string | null
   createdAt: string
   anchors: Array<{ anchorType: string; bookId: string | null; chapter: number | null; verseStart: number | null; refId: string | null }>
   noteThemes: Array<{ themeId: string }>
   noteTags: Array<{ tag: { id: string; name: string } }>
+  journal?: { id: string; name: string } | null
 }): JournalEntry {
   return {
     id: String(n.id),
@@ -105,6 +150,8 @@ function mapEntry(n: {
     studyContext: (n.studyContext ?? 'freestanding') as StudyContext,
     createdAt: n.createdAt,
     timeAgo: timeAgo(n.createdAt),
+    journalId: n.journalId ?? undefined,
+    journalName: n.journal?.name ?? undefined,
   }
 }
 
@@ -112,16 +159,19 @@ export async function createNote(data: {
   content: string
   noteType: string
   studyContext?: string
+  journalId?: string
   anchors?: Array<{ type: string; bookId?: string; chapter?: number; verseStart?: number; verseEnd?: number; refId?: string }>
   themeIds?: string[]
   userTags?: string[]
 }): Promise<number> {
   const now = new Date().toISOString()
+  const journalId = data.journalId ?? 'default'
   const note = await prisma.userNote.create({
     data: {
       content: data.content,
       noteType: data.noteType,
       studyContext: data.studyContext ?? 'freestanding',
+      journalId,
       createdAt: now,
       updatedAt: now,
     },
@@ -168,6 +218,12 @@ export async function createNote(data: {
       })
     }
   }
+
+  // Update journal's updatedAt to reflect new entry
+  await prisma.journal.update({
+    where: { id: journalId },
+    data: { updatedAt: now },
+  })
 
   return note.id
 }
@@ -323,4 +379,132 @@ export async function createBookmark(bookId: string, chapter: number, verse?: nu
 
 export async function deleteBookmark(id: number): Promise<void> {
   await prisma.userBookmark.delete({ where: { id } })
+}
+
+// ── Journals ──────────────────────────────────────────────────────────────────
+
+export async function getJournals(): Promise<JournalSummary[]> {
+  const journals = await prisma.journal.findMany({
+    orderBy: [{ isDefault: 'desc' }, { updatedAt: 'desc' }],
+    include: {
+      _count: { select: { notes: true } },
+      notes: {
+        orderBy: { createdAt: 'desc' },
+        take: 1,
+        select: { createdAt: true },
+      },
+    },
+  })
+
+  return journals.map((j) => ({
+    id: j.id,
+    name: j.name,
+    description: j.description,
+    coverColor: j.coverColor,
+    journalType: j.journalType,
+    sortOrder: j.sortOrder,
+    isDefault: j.isDefault,
+    noteCount: j._count.notes,
+    lastEntryAt: j.notes[0]?.createdAt ?? null,
+    updatedAt: j.updatedAt,
+  }))
+}
+
+export async function getJournalDetail(id: string): Promise<JournalDetail | null> {
+  const j = await prisma.journal.findUnique({ where: { id } })
+  if (!j) return null
+  return {
+    id: j.id,
+    name: j.name,
+    description: j.description,
+    coverColor: j.coverColor,
+    journalType: j.journalType,
+    anchorBookId: j.anchorBookId,
+    anchorChapter: j.anchorChapter,
+    anchorVerse: j.anchorVerse,
+    anchorCharacterId: j.anchorCharacterId,
+    anchorThemeId: j.anchorThemeId,
+    sortOrder: j.sortOrder,
+    isDefault: j.isDefault,
+    createdAt: j.createdAt,
+    updatedAt: j.updatedAt,
+  }
+}
+
+export async function createJournal(data: {
+  name: string
+  description?: string
+  coverColor?: string
+  journalType?: string
+  anchorBookId?: string
+  anchorChapter?: number
+  anchorVerse?: number
+  anchorCharacterId?: string
+  anchorThemeId?: string
+}): Promise<string> {
+  const now = new Date().toISOString()
+  const j = await prisma.journal.create({
+    data: {
+      name: data.name,
+      description: data.description ?? null,
+      coverColor: data.coverColor ?? null,
+      journalType: data.journalType ?? 'study',
+      anchorBookId: data.anchorBookId ?? null,
+      anchorChapter: data.anchorChapter ?? null,
+      anchorVerse: data.anchorVerse ?? null,
+      anchorCharacterId: data.anchorCharacterId ?? null,
+      anchorThemeId: data.anchorThemeId ?? null,
+      isDefault: false,
+      sortOrder: 0,
+      createdAt: now,
+      updatedAt: now,
+    },
+  })
+  return j.id
+}
+
+export async function updateJournal(
+  id: string,
+  data: {
+    name?: string
+    description?: string | null
+    coverColor?: string | null
+    journalType?: string
+    anchorBookId?: string | null
+    anchorChapter?: number | null
+    anchorVerse?: number | null
+    anchorCharacterId?: string | null
+    anchorThemeId?: string | null
+    sortOrder?: number
+  },
+): Promise<void> {
+  await prisma.journal.update({
+    where: { id },
+    data: {
+      ...data,
+      updatedAt: new Date().toISOString(),
+    },
+  })
+}
+
+export async function deleteJournal(id: string): Promise<void> {
+  // Move all notes to the default journal before deleting
+  await prisma.userNote.updateMany({
+    where: { journalId: id },
+    data: { journalId: 'default' },
+  })
+  await prisma.journal.delete({ where: { id } })
+}
+
+export async function getJournalPickerList(): Promise<JournalPickerItem[]> {
+  const journals = await prisma.journal.findMany({
+    orderBy: [{ isDefault: 'desc' }, { name: 'asc' }],
+    include: { _count: { select: { notes: true } } },
+  })
+  return journals.map((j) => ({
+    id: j.id,
+    name: j.name,
+    noteCount: j._count.notes,
+    isDefault: j.isDefault,
+  }))
 }

@@ -3,6 +3,7 @@
 import { useState } from 'react'
 import { ArrowLeft, ChevronDown, ChevronRight } from 'lucide-react'
 import { TierPill } from '@/components/reader/TierPill'
+import { BOOK_NAMES } from '@/lib/constants'
 import { ChatProvider } from '@/lib/ai/chat-context'
 import { ConnectedAIPanel } from '@/components/ai-assistant/ConnectedAIPanel'
 import { AIToggleButton } from '@/components/ai-assistant/AIToggleButton'
@@ -33,7 +34,7 @@ const eraLabels: Record<string, string> = {
 }
 
 /* ── Trace bar: 66-book density map ── */
-function TraceBar({ segments }: { segments: TraceSegment[] }) {
+function TraceBar({ segments, onBookClick }: { segments: TraceSegment[]; onBookClick?: (bookId: string, chapter: number) => void }) {
   const [hoveredBook, setHoveredBook] = useState<string | null>(null)
   const maxCount = Math.max(...segments.map((s) => s.count), 1)
 
@@ -62,6 +63,11 @@ function TraceBar({ segments }: { segments: TraceSegment[] }) {
               }}
               onMouseEnter={() => setHoveredBook(seg.book)}
               onMouseLeave={() => setHoveredBook(null)}
+              onClick={() => {
+                if (seg.count > 0 && seg.firstChapter && onBookClick) {
+                  onBookClick(seg.book, seg.firstChapter)
+                }
+              }}
             >
               {hoveredBook === seg.book && (
                 <div
@@ -78,7 +84,7 @@ function TraceBar({ segments }: { segments: TraceSegment[] }) {
                     color: 'var(--selah-text-1, #E8E2D9)',
                   }}
                 >
-                  {seg.book} {seg.count > 0 && `\u00b7 ${seg.count}`}
+                  {BOOK_NAMES[seg.book] ?? seg.book} {seg.count > 0 && `\u00b7 ${seg.count}`}
                 </div>
               )}
             </div>
@@ -295,7 +301,9 @@ export function ThemeProfileView({
         </p>
 
         {/* Trace bar */}
-        <TraceBar segments={profile.traceSegments} />
+        <TraceBar segments={profile.traceSegments} onBookClick={(bookId, chapter) => {
+          onNavigatePassage?.(`${BOOK_NAMES[bookId] ?? bookId} ${chapter}`)
+        }} />
 
         {/* Passages by era */}
         <div className="mb-10">

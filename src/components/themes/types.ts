@@ -38,6 +38,7 @@ export interface ThreadPrompt {
 export interface TraceSegment {
   book: string
   count: number
+  firstChapter?: number
 }
 
 export interface ThemePassage {

@@ -126,8 +126,10 @@ export function StudyWorkspace({ activeProject, assemblyItems, sourceSections, s
             {currentSection?.items.length === 0 && (<p style={{ fontFamily: font.body, fontSize: '13px', color: 'var(--selah-text-3, #6E695F)', textAlign: 'center', paddingTop: '24px' }}>No items in this category.</p>)}
           </div>
         </ResizablePanel>
+        <ConnectedAIPanel />
       </div>
 
+      <AIToggleButton />
       <button onClick={() => setMobileSourceOpen(true)} className="md:hidden fixed bottom-6 right-6 z-30 flex items-center gap-2 rounded-full shadow-lg transition-all duration-150" style={{ padding: '12px 20px', backgroundColor: 'var(--selah-gold-500, #C6A23C)', color: '#fff', border: 'none', cursor: 'pointer', fontFamily: font.body, fontSize: '14px', fontWeight: 600 }}><Plus size={16} strokeWidth={2} />Add material</button>
 
       {mobileSourceOpen && (
@@ -145,8 +147,6 @@ export function StudyWorkspace({ activeProject, assemblyItems, sourceSections, s
         </>
       )}
 
-      <ConnectedAIPanel />
-      <AIToggleButton />
     </div>
     </ChatProvider>
   )

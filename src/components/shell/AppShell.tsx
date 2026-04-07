@@ -25,15 +25,19 @@ export default function AppShell({
   onToggleAI,
   onLogout,
 }: AppShellProps) {
-  const [isCollapsed, setIsCollapsed] = useState(() => {
-    if (typeof window === 'undefined') return false
-    return localStorage.getItem(COLLAPSE_KEY) === 'true'
-  })
+  const [isCollapsed, setIsCollapsed] = useState(false)
+  const [hydrated, setHydrated] = useState(false)
   const [isMobileOpen, setIsMobileOpen] = useState(false)
 
   useEffect(() => {
-    localStorage.setItem(COLLAPSE_KEY, String(isCollapsed))
-  }, [isCollapsed])
+    const stored = localStorage.getItem(COLLAPSE_KEY) === 'true'
+    setIsCollapsed(stored)
+    setHydrated(true)
+  }, [])
+
+  useEffect(() => {
+    if (hydrated) localStorage.setItem(COLLAPSE_KEY, String(isCollapsed))
+  }, [isCollapsed, hydrated])
 
   const sidebarWidth = isCollapsed ? SIDEBAR_COLLAPSED : SIDEBAR_EXPANDED
 
@@ -88,7 +92,7 @@ export default function AppShell({
 
       {/* Sidebar */}
       <aside
-        className={`fixed top-0 left-0 h-full z-50 flex flex-col transition-all duration-250 ease-out md:relative md:translate-x-0 ${
+        className={`fixed top-0 left-0 h-full z-50 flex flex-col ${hydrated ? 'transition-all duration-250 ease-out' : ''} md:relative md:translate-x-0 ${
           isMobileOpen ? 'translate-x-0' : '-translate-x-full md:translate-x-0'
         }`}
         style={{

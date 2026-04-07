@@ -34,7 +34,7 @@ export default function ReaderClient({
   const [noteCharAnchors, setNoteCharAnchors] = useState<Set<string>>(new Set())
   const [noteThemeTags, setNoteThemeTags] = useState<Set<string>>(new Set())
   const [showCollectPicker, setShowCollectPicker] = useState(false)
-  const [availableCollections, setAvailableCollections] = useState<Array<{ id: string; title: string }>>([])
+  const [availableCollections, setAvailableCollections] = useState<Array<{ id: string; title: string; type: 'collection' | 'study' }>>([])
   const [collectNote, setCollectNote] = useState('')
   const [pickerBook, setPickerBook] = useState<string | null>(null)
   const bookPickerRef = useRef<HTMLDivElement>(null)
@@ -158,7 +158,7 @@ export default function ReaderClient({
           </button>
           <button
             onClick={async () => {
-              const resp = await fetch('/api/collections')
+              const resp = await fetch('/api/collections', { cache: 'no-store' })
               const cols = await resp.json()
               setAvailableCollections(cols)
               setCollectNote('')
@@ -197,18 +197,30 @@ export default function ReaderClient({
                     key={col.id}
                     onClick={async () => {
                       const verseRef = `${readerProps.passage.book} ${readerProps.passage.chapter}:${activeVerse}`
-                      await fetch(`/api/collections/${col.id}/items`, {
-                        method: 'POST',
-                        headers: { 'Content-Type': 'application/json' },
-                        body: JSON.stringify({ itemType: 'verse', itemRef: verseRef, note: collectNote }),
-                      })
+                      const [kind, rawId] = col.id.split(':')
+                      if (kind === 'study') {
+                        await fetch(`/api/study-builder/projects/${rawId}/items`, {
+                          method: 'POST',
+                          headers: { 'Content-Type': 'application/json' },
+                          body: JSON.stringify({ entityType: 'verse', entityId: verseRef, title: verseRef, preview: collectNote || verseRef, sourceTier: 1 }),
+                        })
+                      } else {
+                        await fetch(`/api/collections/${rawId}/items`, {
+                          method: 'POST',
+                          headers: { 'Content-Type': 'application/json' },
+                          body: JSON.stringify({ itemType: 'verse', itemRef: verseRef, note: collectNote }),
+                        })
+                      }
                       setShowCollectPicker(false)
                       setActiveVerse(undefined)
                     }}
                     className="w-full text-left rounded-lg transition-colors duration-100"
                     style={{ padding: '10px 14px', backgroundColor: 'var(--selah-bg-page)', border: '1px solid var(--selah-border-color)', cursor: 'pointer', fontFamily: "var(--selah-font-body)", fontSize: '14px', color: 'var(--selah-text-1)' }}
                   >
-                    {col.title}
+                    <span>{col.title}</span>
+                    <span style={{ marginLeft: '8px', fontSize: '10px', fontWeight: 500, padding: '1px 6px', borderRadius: '4px', backgroundColor: col.type === 'study' ? 'var(--selah-sky-900, #1A3348)' : 'var(--selah-gold-900, #4A3711)', color: col.type === 'study' ? 'var(--selah-sky-300, #93B5D3)' : 'var(--selah-gold-300, #E8C767)' }}>
+                      {col.type === 'study' ? 'Study' : 'Collection'}
+                    </span>
                   </button>
                 ))}
               </div>

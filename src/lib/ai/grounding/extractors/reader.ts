@@ -1,9 +1,9 @@
 import { getChapterText, getPassageContext } from '@/lib/reader/queries'
 import { BOOK_NAMES } from '@/lib/constants'
 import { prisma } from '@/lib/db'
-import type { ReaderContext } from '../../types'
+import type { ReaderContext, ContextSection } from '../../types'
 
-export async function extractReaderContext(ctx: ReaderContext): Promise<string> {
+export async function extractReaderContext(ctx: ReaderContext): Promise<ContextSection[]> {
   const { bookId, chapter, verse, translationId = 'BSB' } = ctx
   const bookName = BOOK_NAMES[bookId] ?? bookId
 
@@ -66,42 +66,57 @@ export async function extractReaderContext(ctx: ReaderContext): Promise<string> 
     }
   }
 
-  const parts: string[] = []
+  const sections: ContextSection[] = []
 
-  // ── Passage header ────────────────────────────────────────────────────────
-  parts.push(`## Passage: ${bookName} ${chapter}`)
-
-  // ── Narrative context — the richest layer of curated analysis ────────────
-  if (narrativeUnit) {
-    parts.push(`\n### Narrative Context: "${narrativeUnit.title}"`)
-    if (narrativeUnit.summary) parts.push(narrativeUnit.summary)
-    if (narrativeUnit.significance) parts.push(`\n**Theological Significance:** ${narrativeUnit.significance}`)
-    if (narrativeUnit.relationalNote) parts.push(`\n**Relational Dynamics:** ${narrativeUnit.relationalNote}`)
-    if (narrativeUnit.conceptualNote) parts.push(`\n**Conceptual Background:** ${narrativeUnit.conceptualNote}`)
-    if (narrativeUnit.keyQuestions) {
-      try {
-        const questions = JSON.parse(narrativeUnit.keyQuestions) as string[]
-        parts.push(`\n**Key Questions for Study:**`)
-        for (const q of questions) parts.push(`- ${q}`)
-      } catch { /* skip malformed JSON */ }
+  // ── Passage header + Narrative context ────────────────────────────────────
+  {
+    const lines: string[] = []
+    lines.push(`## Passage: ${bookName} ${chapter}`)
+    if (narrativeUnit) {
+      lines.push(`\n### Narrative Context: "${narrativeUnit.title}"`)
+      if (narrativeUnit.summary) lines.push(narrativeUnit.summary)
+      if (narrativeUnit.significance) lines.push(`\n**Theological Significance:** ${narrativeUnit.significance}`)
+      if (narrativeUnit.relationalNote) lines.push(`\n**Relational Dynamics:** ${narrativeUnit.relationalNote}`)
+      if (narrativeUnit.conceptualNote) lines.push(`\n**Conceptual Background:** ${narrativeUnit.conceptualNote}`)
+      if (narrativeUnit.keyQuestions) {
+        try {
+          const questions = JSON.parse(narrativeUnit.keyQuestions) as string[]
+          lines.push(`\n**Key Questions for Study:**`)
+          for (const q of questions) lines.push(`- ${q}`)
+        } catch { /* skip malformed JSON */ }
+      }
+    }
+    const content = lines.join('\n')
+    if (content) {
+      sections.push({ id: 'narrative', label: 'Narrative Context', content, estimatedTokens: Math.ceil(content.length / 4), defaultEnabled: true })
     }
   }
 
   // ── Full chapter text ─────────────────────────────────────────────────────
   if (verses.length > 0) {
-    parts.push(`\n### Full Text: ${bookName} ${chapter}`)
+    const lines: string[] = []
+    lines.push(`\n### Full Text: ${bookName} ${chapter}`)
     for (const v of verses) {
-      parts.push(`${v.number}. ${v.text}`)
+      lines.push(`${v.number}. ${v.text}`)
+    }
+    const content = lines.join('\n')
+    if (content) {
+      sections.push({ id: 'chapter-text', label: 'Chapter Text', content, estimatedTokens: Math.ceil(content.length / 4), defaultEnabled: true })
     }
   }
 
   // ── Adjacent chapters (narrative context + resolution) ────────────────────
   if (adjacentChapters.length > 0) {
+    const lines: string[] = []
     for (const adj of adjacentChapters) {
-      parts.push(`\n### Full Text: ${bookName} ${adj.chapter}`)
+      lines.push(`\n### Full Text: ${bookName} ${adj.chapter}`)
       for (const v of adj.verses) {
-        parts.push(`${v.number}. ${v.text}`)
+        lines.push(`${v.number}. ${v.text}`)
       }
+    }
+    const content = lines.join('\n')
+    if (content) {
+      sections.push({ id: 'adjacent-text', label: 'Adjacent Chapters', content, estimatedTokens: Math.ceil(content.length / 4), defaultEnabled: true })
     }
   }
 
@@ -124,24 +139,29 @@ export async function extractReaderContext(ctx: ReaderContext): Promise<string> 
     })
     const profileMap = new Map(charProfiles.map((p) => [p.id, p]))
 
-    parts.push('\n### Characters Present')
+    const lines: string[] = []
+    lines.push('\n### Characters Present')
     for (const c of sceneCast) {
-      const lines: string[] = [`**${c.name}** (${c.role})`]
-      if (c.emotion) lines.push(`  Emotional state: ${c.emotion}`)
-      if (c.motivation) lines.push(`  Motivation: ${c.motivation}`)
-      if (c.stakes) lines.push(`  Stakes: ${c.stakes}`)
+      const charLines: string[] = [`**${c.name}** (${c.role})`]
+      if (c.emotion) charLines.push(`  Emotional state: ${c.emotion}`)
+      if (c.motivation) charLines.push(`  Motivation: ${c.motivation}`)
+      if (c.stakes) charLines.push(`  Stakes: ${c.stakes}`)
 
       const profile = profileMap.get(c.characterId)
       if (profile) {
-        if (profile.bioBrief) lines.push(`  Bio: ${profile.bioBrief}`)
-        if (profile.era) lines.push(`  Era: ${profile.era}`)
-        if (profile.faithJourney) lines.push(`  Faith journey: ${profile.faithJourney.slice(0, 300)}`)
+        if (profile.bioBrief) charLines.push(`  Bio: ${profile.bioBrief}`)
+        if (profile.era) charLines.push(`  Era: ${profile.era}`)
+        if (profile.faithJourney) charLines.push(`  Faith journey: ${profile.faithJourney.slice(0, 300)}`)
         if (profile.relationshipsA.length > 0) {
           const rels = profile.relationshipsA.map((r: { relationship: string; charB: { name: string } }) => `${r.relationship}: ${r.charB.name}`).join(', ')
-          lines.push(`  Key relationships: ${rels}`)
+          charLines.push(`  Key relationships: ${rels}`)
         }
       }
-      parts.push(lines.join('\n'))
+      lines.push(charLines.join('\n'))
+    }
+    const content = lines.join('\n')
+    if (content) {
+      sections.push({ id: 'characters', label: 'Characters', content, estimatedTokens: Math.ceil(content.length / 4), defaultEnabled: true })
     }
   }
 
@@ -154,12 +174,17 @@ export async function extractReaderContext(ctx: ReaderContext): Promise<string> 
     })
     const themeMap = new Map(themeDetails.map((t) => [t.id, t]))
 
-    parts.push('\n### Themes')
+    const lines: string[] = []
+    lines.push('\n### Themes')
     for (const t of themes) {
       const detail = themeMap.get(t.themeId)
       const def = detail?.definition ? ` — ${detail.definition}` : ''
       const note = t.annotation ? ` (${t.annotation})` : ''
-      parts.push(`- **${t.name}**${def}${note}`)
+      lines.push(`- **${t.name}**${def}${note}`)
+    }
+    const content = lines.join('\n')
+    if (content) {
+      sections.push({ id: 'themes', label: 'Themes', content, estimatedTokens: Math.ceil(content.length / 4), defaultEnabled: true })
     }
   }
 
@@ -184,10 +209,15 @@ export async function extractReaderContext(ctx: ReaderContext): Promise<string> 
     // Cap at 20 entries — theologically significant words first
     const topEntries = uniqueEntries.slice(0, 20)
     if (topEntries.length > 0) {
-      parts.push('\n### Key Hebrew/Greek Words')
+      const lines: string[] = []
+      lines.push('\n### Key Hebrew/Greek Words')
       for (const e of topEntries) {
         const def = e.definition.length > 150 ? e.definition.slice(0, 150) + '...' : e.definition
-        parts.push(`- **${e.word}** (${e.transliteration}, ${e.number}) v.${e.verse}: ${def}`)
+        lines.push(`- **${e.word}** (${e.transliteration}, ${e.number}) v.${e.verse}: ${def}`)
+      }
+      const content = lines.join('\n')
+      if (content) {
+        sections.push({ id: 'strongs', label: "Strong's Hebrew/Greek", content, estimatedTokens: Math.ceil(content.length / 4), defaultEnabled: true })
       }
     }
   }
@@ -195,10 +225,15 @@ export async function extractReaderContext(ctx: ReaderContext): Promise<string> 
   // ── Cross-references (top 15 by relevance) ────────────────────────────────
   const topRefs = crossReferences.slice(0, 15)
   if (topRefs.length > 0) {
-    parts.push('\n### Cross-References')
+    const lines: string[] = []
+    lines.push('\n### Cross-References')
     for (const ref of topRefs) {
       const snippet = ref.snippet ? ` — "${ref.snippet}"` : ''
-      parts.push(`- ${ref.targetPassage}${snippet}`)
+      lines.push(`- ${ref.targetPassage}${snippet}`)
+    }
+    const content = lines.join('\n')
+    if (content) {
+      sections.push({ id: 'cross-refs', label: 'Cross-References', content, estimatedTokens: Math.ceil(content.length / 4), defaultEnabled: true })
     }
   }
 
@@ -208,24 +243,34 @@ export async function extractReaderContext(ctx: ReaderContext): Promise<string> 
     const extended = commentaries.filter((c) => c.displayTier !== 'curated').slice(0, 10)
     const selected = [...curated, ...extended]
 
-    parts.push('\n### Commentary')
+    const lines: string[] = []
+    lines.push('\n### Commentary')
     let commentaryChars = 0
     const MAX_COMMENTARY_CHARS = 8000
     for (const c of selected) {
       const excerpt = c.excerpt.length > 600 ? c.excerpt.slice(0, 600) + '...' : c.excerpt
       if (commentaryChars + excerpt.length > MAX_COMMENTARY_CHARS) break
-      parts.push(`**${c.author}** (${c.verseRange}): ${excerpt}`)
+      lines.push(`**${c.author}** (${c.verseRange}): ${excerpt}`)
       commentaryChars += excerpt.length
+    }
+    const content = lines.join('\n')
+    if (content) {
+      sections.push({ id: 'commentary', label: 'Commentary', content, estimatedTokens: Math.ceil(content.length / 4), defaultEnabled: true })
     }
   }
 
   // ── Footnotes ─────────────────────────────────────────────────────────────
   if (footnotes.length > 0) {
-    parts.push('\n### Translation Footnotes')
+    const lines: string[] = []
+    lines.push('\n### Translation Footnotes')
     for (const fn of footnotes) {
-      parts.push(`- v.${fn.verse}: ${fn.noteText}`)
+      lines.push(`- v.${fn.verse}: ${fn.noteText}`)
+    }
+    const content = lines.join('\n')
+    if (content) {
+      sections.push({ id: 'footnotes', label: 'Footnotes', content, estimatedTokens: Math.ceil(content.length / 4), defaultEnabled: false })
     }
   }
 
-  return parts.join('\n')
+  return sections
 }

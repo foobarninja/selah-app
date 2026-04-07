@@ -33,7 +33,7 @@ export async function POST(request: NextRequest) {
   // Build grounding context and system prompt
   let systemPrompt: string
   try {
-    const groundingContext = await buildGroundingContext(grounding)
+    const { assembled: groundingContext } = await buildGroundingContext(grounding, body.contextToggles)
     console.log(`[ai/send] grounding context: ${groundingContext.length} chars (~${Math.round(groundingContext.length / 3.5)} tokens)`)
     systemPrompt = await buildSystemPrompt(groundingContext)
     console.log(`[ai/send] system prompt: ${systemPrompt.length} chars (~${Math.round(systemPrompt.length / 3.5)} tokens)`)

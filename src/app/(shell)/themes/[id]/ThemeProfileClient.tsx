@@ -14,6 +14,9 @@ export default function ThemeProfileClient({ profile }: { profile: ThemeProfile 
       onNavigatePassage={(ref) => {
         router.push(`/reader?passage=${encodeURIComponent(ref)}`)
       }}
+      onNavigateBook={(bookId, chapter) => {
+        router.push(`/reader/${bookId}/${chapter}`)
+      }}
       onOpenCharacter={(id) => router.push(`/characters/${id}`)}
       onOpenRelatedTheme={(id) => router.push(`/themes/${id}`)}
     />

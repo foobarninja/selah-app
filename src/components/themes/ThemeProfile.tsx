@@ -41,7 +41,7 @@ function TraceBar({ segments, onBookClick }: { segments: TraceSegment[]; onBookC
   return (
     <div className="mb-8">
       <div
-        className="flex rounded-md overflow-hidden relative"
+        className="flex rounded-md relative"
         style={{ height: '40px', gap: '1px' }}
       >
         {segments.map((seg) => {
@@ -227,6 +227,7 @@ interface ThemeProfileProps {
   profile: ThemeProfileType
   onBack?: () => void
   onNavigatePassage?: (passageRef: string) => void
+  onNavigateBook?: (bookId: string, chapter: number) => void
   onOpenCharacter?: (characterId: string) => void
   onOpenRelatedTheme?: (themeId: string) => void
 }
@@ -235,6 +236,7 @@ export function ThemeProfileView({
   profile,
   onBack,
   onNavigatePassage,
+  onNavigateBook,
   onOpenCharacter,
   onOpenRelatedTheme,
 }: ThemeProfileProps) {
@@ -302,7 +304,7 @@ export function ThemeProfileView({
 
         {/* Trace bar */}
         <TraceBar segments={profile.traceSegments} onBookClick={(bookId, chapter) => {
-          onNavigatePassage?.(`${BOOK_NAMES[bookId] ?? bookId} ${chapter}`)
+          onNavigateBook?.(bookId, chapter)
         }} />
 
         {/* Passages by era */}

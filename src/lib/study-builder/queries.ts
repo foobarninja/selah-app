@@ -196,8 +196,16 @@ export async function assembleMaterial(topic: string): Promise<SourceSection[]> 
       }
     })
 
-    // 2. Characters matching the topic
-    const characters = db.prepare(`
+    // 2. Characters matching the topic — exact name match first, then FTS
+    const nameMatches = db.prepare(`
+      SELECT id, name, bio_brief, source_tier FROM characters
+      WHERE name LIKE ? OR aliases LIKE ?
+      LIMIT 4
+    `).all(likeQuery, likeQuery) as Array<{ id: string; name: string; bio_brief: string | null; source_tier: string }>
+
+    const nameMatchIds = new Set(nameMatches.map((c) => c.id))
+
+    const ftsMatches = db.prepare(`
       SELECT c.id, c.name, c.bio_brief, c.source_tier
       FROM characters_fts f
       JOIN characters c ON c.rowid = f.rowid
@@ -205,6 +213,12 @@ export async function assembleMaterial(topic: string): Promise<SourceSection[]> 
       ORDER BY rank
       LIMIT 8
     `).all(ftsQuery) as Array<{ id: string; name: string; bio_brief: string | null; source_tier: string }>
+
+    // Deduplicate: name matches first, then FTS results
+    const characters = [
+      ...nameMatches,
+      ...ftsMatches.filter((c) => !nameMatchIds.has(c.id)),
+    ].slice(0, 10)
 
     const characterItems: SourceItem[] = characters.map((c) => ({
       id: `character:${c.id}`,

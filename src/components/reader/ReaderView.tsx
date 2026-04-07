@@ -154,6 +154,7 @@ function StrongsMarker({
 function VerseLine({
   verse,
   isActive,
+  isSelected = false,
   onSelect,
   onOpenWordStudy,
   showStrongs = true,
@@ -161,7 +162,8 @@ function VerseLine({
 }: {
   verse: Verse
   isActive: boolean
-  onSelect?: () => void
+  isSelected?: boolean
+  onSelect?: (e?: React.MouseEvent) => void
   showStrongs?: boolean
   showFootnotes?: boolean
   onOpenWordStudy?: (code: string) => void
@@ -276,7 +278,7 @@ function VerseLine({
 
   return (
     <p
-      onClick={onSelect}
+      onClick={(e) => onSelect?.(e)}
       className="transition-all duration-200 cursor-pointer"
       style={{
         fontFamily: font.body,
@@ -286,7 +288,12 @@ function VerseLine({
         padding: '2px 0 2px 20px',
         borderLeft: isActive
           ? '2px solid var(--selah-gold-500, #C6A23C)'
-          : '2px solid transparent',
+          : isSelected
+            ? '2px solid var(--selah-sky-400, #6B91B5)'
+            : '2px solid transparent',
+        backgroundColor: isSelected && !isActive
+          ? 'var(--selah-sky-900, rgba(26, 51, 72, 0.3))'
+          : undefined,
       }}
     >
       {/* Verse number */}
@@ -477,6 +484,7 @@ export function ReaderView({
   onOpenWordStudy,
   onFollowCrossReference,
   onOpenJournalEntry,
+  selectedVerses,
   showStrongs = true,
   showCrossReferences = true,
   showFootnotes = true,
@@ -620,7 +628,8 @@ export function ReaderView({
               <VerseLine
                 verse={verse}
                 isActive={verse.number === activeVerseNumber}
-                onSelect={() => onSelectVerse?.(verse.number)}
+                isSelected={selectedVerses?.has(verse.number) ?? false}
+                onSelect={(e) => onSelectVerse?.(verse.number, e ? { ctrlKey: e.ctrlKey, metaKey: e.metaKey, shiftKey: e.shiftKey } : undefined)}
                 onOpenWordStudy={onOpenWordStudy}
                 showStrongs={showStrongs}
                 showFootnotes={showFootnotes}

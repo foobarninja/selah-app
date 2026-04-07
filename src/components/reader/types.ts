@@ -134,6 +134,7 @@ export interface ReaderProps {
   passage: Passage
   verses: Verse[]
   activeVerseNumber?: number
+  selectedVerses?: Set<number>
 
   activeTranslation: string
   availableTranslations: Translation[]
@@ -162,7 +163,7 @@ export interface ReaderProps {
   /** Toggle a parallel translation on or off */
   onToggleParallelTranslation?: (translationId: string) => void
   /** Select a verse (highlights it, anchors context) */
-  onSelectVerse?: (verseNumber: number) => void
+  onSelectVerse?: (verseNumber: number, event?: { ctrlKey?: boolean; metaKey?: boolean; shiftKey?: boolean }) => void
   /** Open a character profile in the context drawer (deep dive) */
   onOpenCharacterProfile?: (characterId: string) => void
   /** Open a theme detail in the context drawer (deep dive) */

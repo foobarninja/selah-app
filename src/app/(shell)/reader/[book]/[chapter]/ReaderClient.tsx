@@ -15,6 +15,28 @@ interface ReaderClientProps extends Omit<ReaderProps, 'activeVerseNumber' | 'par
 
 const BOOK_IDS = Object.keys(BOOK_NAMES)
 
+/** Format a set of verse numbers into a compact range string like "1-3,5,7-9" */
+function formatVerseRange(verses: Set<number>): string {
+  const sorted = [...verses].sort((a, b) => a - b)
+  if (sorted.length === 0) return ''
+  if (sorted.length === 1) return String(sorted[0])
+
+  const ranges: string[] = []
+  let start = sorted[0]
+  let end = sorted[0]
+  for (let i = 1; i < sorted.length; i++) {
+    if (sorted[i] === end + 1) {
+      end = sorted[i]
+    } else {
+      ranges.push(start === end ? String(start) : `${start}-${end}`)
+      start = sorted[i]
+      end = sorted[i]
+    }
+  }
+  ranges.push(start === end ? String(start) : `${start}-${end}`)
+  return ranges.join(',')
+}
+
 export default function ReaderClient({
   prevUnit,
   nextUnit,
@@ -24,6 +46,8 @@ export default function ReaderClient({
 }: ReaderClientProps) {
   const router = useRouter()
   const [activeVerse, setActiveVerse] = useState<number | undefined>(undefined)
+  const [selectedVerses, setSelectedVerses] = useState<Set<number>>(new Set())
+  const lastClickedVerse = useRef<number | undefined>(undefined)
   const [parallelTranslations] = useState<string[]>([])
   const [showBookPicker, setShowBookPicker] = useState(false)
   const [showTranslationPicker, setShowTranslationPicker] = useState(false)
@@ -55,6 +79,40 @@ export default function ReaderClient({
     return () => document.removeEventListener('mousedown', handleClick)
   }, [])
 
+  const handleVerseSelect = useCallback((verseNumber: number, event?: { ctrlKey?: boolean; metaKey?: boolean; shiftKey?: boolean }) => {
+    if (event?.ctrlKey || event?.metaKey) {
+      // Ctrl/Cmd+click: toggle individual verse
+      setSelectedVerses((prev) => {
+        const next = new Set(prev)
+        if (next.has(verseNumber)) {
+          next.delete(verseNumber)
+        } else {
+          next.add(verseNumber)
+        }
+        return next
+      })
+      setActiveVerse(verseNumber)
+      lastClickedVerse.current = verseNumber
+    } else if (event?.shiftKey && lastClickedVerse.current !== undefined) {
+      // Shift+click: range select from last clicked to current
+      const start = Math.min(lastClickedVerse.current, verseNumber)
+      const end = Math.max(lastClickedVerse.current, verseNumber)
+      setSelectedVerses((prev) => {
+        const next = new Set(prev)
+        for (let v = start; v <= end; v++) {
+          next.add(v)
+        }
+        return next
+      })
+      setActiveVerse(verseNumber)
+    } else {
+      // Normal click: select single verse, clear multi-select
+      setActiveVerse(verseNumber)
+      setSelectedVerses(new Set([verseNumber]))
+      lastClickedVerse.current = verseNumber
+    }
+  }, [])
+
   const navigateTo = useCallback((book: string, chapter: number) => {
     setShowBookPicker(false)
     setPickerBook(null)
@@ -66,8 +124,9 @@ export default function ReaderClient({
       <ReaderView
         {...readerProps}
         activeVerseNumber={activeVerse}
+        selectedVerses={selectedVerses}
         parallelTranslations={parallelTranslations}
-        onSelectVerse={setActiveVerse}
+        onSelectVerse={handleVerseSelect}
         onPreviousUnit={prevUnit ? () => router.push(`/reader/${prevUnit.bookId}/${prevUnit.chapter}`) : undefined}
         onNextUnit={nextUnit ? () => router.push(`/reader/${nextUnit.bookId}/${nextUnit.chapter}`) : undefined}
         onNavigatePassage={() => setShowBookPicker(true)}
@@ -94,7 +153,7 @@ export default function ReaderClient({
       />
 
       {/* ── Verse Action Bar (shown when a verse is selected) ── */}
-      {activeVerse && !showNoteEditor && !showBookPicker && !showTranslationPicker && (
+      {selectedVerses.size > 0 && !showNoteEditor && !showBookPicker && !showTranslationPicker && (
         <div
           className="fixed bottom-6 left-1/2 z-40 flex items-center gap-2 rounded-full shadow-lg"
           style={{
@@ -109,7 +168,7 @@ export default function ReaderClient({
             fontSize: '12px',
             color: 'var(--selah-gold-500, #C6A23C)',
           }}>
-            {readerProps.passage.book} {readerProps.passage.chapter}:{activeVerse}
+            {readerProps.passage.book} {readerProps.passage.chapter}:{formatVerseRange(selectedVerses)}
           </span>
           <button
             onClick={() => {
@@ -138,9 +197,10 @@ export default function ReaderClient({
               await fetch('/api/bookmarks', {
                 method: 'POST',
                 headers: { 'Content-Type': 'application/json' },
-                body: JSON.stringify({ bookId, chapter: readerProps.passage.chapter, verse: activeVerse }),
+                body: JSON.stringify({ bookId, chapter: readerProps.passage.chapter, verse: activeVerse ?? [...selectedVerses][0] }),
               })
               setActiveVerse(undefined)
+              setSelectedVerses(new Set())
             }}
             style={{
               padding: '4px 14px',
@@ -182,11 +242,11 @@ export default function ReaderClient({
       )}
 
       {/* ── Collection Picker ── */}
-      {showCollectPicker && activeVerse && (
+      {showCollectPicker && selectedVerses.size > 0 && (
         <div className="fixed inset-0 z-50 flex items-center justify-center" style={{ backgroundColor: 'rgba(0,0,0,0.5)' }} onClick={() => setShowCollectPicker(false)}>
           <div className="rounded-lg shadow-xl" style={{ backgroundColor: 'var(--selah-bg-surface, #1C1917)', border: '1px solid var(--selah-border-color)', width: '360px', padding: '20px' }} onClick={(e) => e.stopPropagation()}>
             <h3 style={{ fontFamily: "var(--selah-font-display)", fontSize: '18px', fontWeight: 400, color: 'var(--selah-text-1)', marginBottom: '4px' }}>Add to Collection</h3>
-            <p style={{ fontFamily: "var(--selah-font-mono)", fontSize: '11px', color: 'var(--selah-gold-500)', marginBottom: '12px' }}>{readerProps.passage.book} {readerProps.passage.chapter}:{activeVerse}</p>
+            <p style={{ fontFamily: "var(--selah-font-mono)", fontSize: '11px', color: 'var(--selah-gold-500)', marginBottom: '12px' }}>{readerProps.passage.book} {readerProps.passage.chapter}:{formatVerseRange(selectedVerses)}</p>
             <input type="text" value={collectNote} onChange={(e) => setCollectNote(e.target.value)} placeholder="Why include this? (optional)" style={{ width: '100%', padding: '8px 12px', borderRadius: '8px', border: '1px solid var(--selah-border-color)', backgroundColor: 'var(--selah-bg-page)', color: 'var(--selah-text-1)', fontFamily: "var(--selah-font-body)", fontSize: '13px', marginBottom: '12px' }} />
             {availableCollections.length === 0 ? (
               <p style={{ fontFamily: "var(--selah-font-body)", fontSize: '13px', color: 'var(--selah-text-3)', textAlign: 'center', padding: '16px 0' }}>No collections yet. Create one in Journal first.</p>
@@ -196,7 +256,7 @@ export default function ReaderClient({
                   <button
                     key={col.id}
                     onClick={async () => {
-                      const verseRef = `${readerProps.passage.book} ${readerProps.passage.chapter}:${activeVerse}`
+                      const verseRef = `${readerProps.passage.book} ${readerProps.passage.chapter}:${formatVerseRange(selectedVerses)}`
                       const [kind, rawId] = col.id.split(':')
                       if (kind === 'study') {
                         await fetch(`/api/study-builder/projects/${rawId}/items`, {
@@ -213,6 +273,7 @@ export default function ReaderClient({
                       }
                       setShowCollectPicker(false)
                       setActiveVerse(undefined)
+                      setSelectedVerses(new Set())
                     }}
                     className="w-full text-left rounded-lg transition-colors duration-100"
                     style={{ padding: '10px 14px', backgroundColor: 'var(--selah-bg-page)', border: '1px solid var(--selah-border-color)', cursor: 'pointer', fontFamily: "var(--selah-font-body)", fontSize: '14px', color: 'var(--selah-text-1)' }}
@@ -233,7 +294,7 @@ export default function ReaderClient({
       )}
 
       {/* ── Note Editor Modal (from Reader) ── */}
-      {showNoteEditor && activeVerse && (
+      {showNoteEditor && selectedVerses.size > 0 && (
         <div
           className="fixed inset-0 z-50 flex items-center justify-center"
           style={{ backgroundColor: 'rgba(0,0,0,0.5)' }}
@@ -264,7 +325,7 @@ export default function ReaderClient({
               color: 'var(--selah-gold-500, #C6A23C)',
               marginBottom: '16px',
             }}>
-              Anchored to {readerProps.passage.book} {readerProps.passage.chapter}:{activeVerse}
+              Anchored to {readerProps.passage.book} {readerProps.passage.chapter}:{formatVerseRange(selectedVerses)}
             </p>
 
             <div className="flex flex-wrap gap-2" style={{ marginBottom: '12px' }}>
@@ -387,7 +448,7 @@ export default function ReaderClient({
                         noteType,
                         studyContext: 'reading',
                         anchors: [
-                          { type: 'verse', bookId, chapter: readerProps.passage.chapter, verseStart: activeVerse },
+                          ...[...selectedVerses].map((v) => ({ type: 'verse', bookId, chapter: readerProps.passage.chapter, verseStart: v })),
                           ...Array.from(noteCharAnchors).map((id) => ({ type: 'character', refId: id })),
                         ],
                         themeIds: Array.from(noteThemeTags),
@@ -395,6 +456,7 @@ export default function ReaderClient({
                     })
                     setShowNoteEditor(false)
                     setActiveVerse(undefined)
+                    setSelectedVerses(new Set())
                     router.refresh()
                   } finally {
                     setNoteSaving(false)

@@ -3,6 +3,9 @@
 import { useState } from 'react'
 import { ArrowLeft, ChevronDown, ChevronRight } from 'lucide-react'
 import { TierPill } from '@/components/reader/TierPill'
+import { ChatProvider } from '@/lib/ai/chat-context'
+import { ConnectedAIPanel } from '@/components/ai-assistant/ConnectedAIPanel'
+import { AIToggleButton } from '@/components/ai-assistant/AIToggleButton'
 import type {
   CharacterProfile as CharacterProfileType,
   CharacterAppearance,
@@ -254,6 +257,11 @@ export function CharacterProfileView({
     .filter((g) => g.items.length > 0)
 
   return (
+    <ChatProvider
+      grounding={{ page: 'character', context: { characterId: profile.id }, query: '' }}
+      groundingDisplay={{ type: 'character', characterName: profile.name }}
+      isConfigured={true}
+    >
     <div className="h-full overflow-y-auto" style={{ padding: '28px 32px' }}>
       <div style={{ maxWidth: '720px', margin: '0 auto' }}>
         {/* Back button */}
@@ -396,6 +404,10 @@ export function CharacterProfileView({
           </div>
         )}
       </div>
+
+      <ConnectedAIPanel />
+      <AIToggleButton />
     </div>
+    </ChatProvider>
   )
 }

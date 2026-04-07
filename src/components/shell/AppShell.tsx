@@ -1,7 +1,7 @@
 'use client'
 
 import { useState, useEffect } from 'react'
-import { Menu, X, MessageCircle } from 'lucide-react'
+import { Menu, X } from 'lucide-react'
 import { MainNav } from './MainNav'
 import { UserMenu } from './UserMenu'
 import { navigationItems } from './navigation'
@@ -10,7 +10,6 @@ interface AppShellProps {
   children: React.ReactNode
   user?: { name: string; avatarUrl?: string }
   isAIConfigured?: boolean
-  onToggleAI?: () => void
   onLogout?: () => void
 }
 
@@ -22,18 +21,21 @@ export default function AppShell({
   children,
   user,
   isAIConfigured = false,
-  onToggleAI,
   onLogout,
 }: AppShellProps) {
-  const [isCollapsed, setIsCollapsed] = useState(() => {
-    if (typeof window === 'undefined') return false
-    return localStorage.getItem(COLLAPSE_KEY) === 'true'
-  })
+  const [isCollapsed, setIsCollapsed] = useState(false)
+  const [hydrated, setHydrated] = useState(false)
   const [isMobileOpen, setIsMobileOpen] = useState(false)
 
   useEffect(() => {
-    localStorage.setItem(COLLAPSE_KEY, String(isCollapsed))
-  }, [isCollapsed])
+    const stored = localStorage.getItem(COLLAPSE_KEY) === 'true'
+    setIsCollapsed(stored)
+    setHydrated(true)
+  }, [])
+
+  useEffect(() => {
+    if (hydrated) localStorage.setItem(COLLAPSE_KEY, String(isCollapsed))
+  }, [isCollapsed, hydrated])
 
   const sidebarWidth = isCollapsed ? SIDEBAR_COLLAPSED : SIDEBAR_EXPANDED
 
@@ -88,7 +90,7 @@ export default function AppShell({
 
       {/* Sidebar */}
       <aside
-        className={`fixed top-0 left-0 h-full z-50 flex flex-col transition-all duration-250 ease-out md:relative md:translate-x-0 ${
+        className={`fixed top-0 left-0 h-full z-50 flex flex-col ${hydrated ? 'transition-all duration-250 ease-out' : ''} md:relative md:translate-x-0 ${
           isMobileOpen ? 'translate-x-0' : '-translate-x-full md:translate-x-0'
         }`}
         style={{
@@ -165,23 +167,6 @@ export default function AppShell({
         <div className="h-14 md:hidden" />
 
         {children}
-
-        {/* AI assistant floating trigger */}
-        {isAIConfigured && (
-          <button
-            onClick={onToggleAI}
-            title="Ask the AI assistant"
-            className="fixed bottom-6 right-6 z-30 flex items-center justify-center rounded-full shadow-lg transition-all duration-150"
-            style={{
-              width: '48px',
-              height: '48px',
-              backgroundColor: 'var(--selah-sky-400, #6B91B5)',
-              color: '#fff',
-            }}
-          >
-            <MessageCircle size={20} strokeWidth={1.5} />
-          </button>
-        )}
       </main>
     </div>
   )

@@ -3,6 +3,10 @@
 import { useState } from 'react'
 import { ArrowLeft, ChevronDown, ChevronRight } from 'lucide-react'
 import { TierPill } from '@/components/reader/TierPill'
+import { BOOK_NAMES } from '@/lib/constants'
+import { ChatProvider } from '@/lib/ai/chat-context'
+import { ConnectedAIPanel } from '@/components/ai-assistant/ConnectedAIPanel'
+import { AIToggleButton } from '@/components/ai-assistant/AIToggleButton'
 import type {
   ThemeProfile as ThemeProfileType,
   ThemePassage,
@@ -30,14 +34,14 @@ const eraLabels: Record<string, string> = {
 }
 
 /* ── Trace bar: 66-book density map ── */
-function TraceBar({ segments }: { segments: TraceSegment[] }) {
+function TraceBar({ segments, onBookClick }: { segments: TraceSegment[]; onBookClick?: (bookId: string, chapter: number) => void }) {
   const [hoveredBook, setHoveredBook] = useState<string | null>(null)
   const maxCount = Math.max(...segments.map((s) => s.count), 1)
 
   return (
     <div className="mb-8">
       <div
-        className="flex rounded-md overflow-hidden relative"
+        className="flex rounded-md relative"
         style={{ height: '40px', gap: '1px' }}
       >
         {segments.map((seg) => {
@@ -59,6 +63,11 @@ function TraceBar({ segments }: { segments: TraceSegment[] }) {
               }}
               onMouseEnter={() => setHoveredBook(seg.book)}
               onMouseLeave={() => setHoveredBook(null)}
+              onClick={() => {
+                if (seg.count > 0 && seg.firstChapter && onBookClick) {
+                  onBookClick(seg.book, seg.firstChapter)
+                }
+              }}
             >
               {hoveredBook === seg.book && (
                 <div
@@ -75,7 +84,7 @@ function TraceBar({ segments }: { segments: TraceSegment[] }) {
                     color: 'var(--selah-text-1, #E8E2D9)',
                   }}
                 >
-                  {seg.book} {seg.count > 0 && `\u00b7 ${seg.count}`}
+                  {BOOK_NAMES[seg.book] ?? seg.book} {seg.count > 0 && `\u00b7 ${seg.count}`}
                 </div>
               )}
             </div>
@@ -218,6 +227,7 @@ interface ThemeProfileProps {
   profile: ThemeProfileType
   onBack?: () => void
   onNavigatePassage?: (passageRef: string) => void
+  onNavigateBook?: (bookId: string, chapter: number) => void
   onOpenCharacter?: (characterId: string) => void
   onOpenRelatedTheme?: (themeId: string) => void
 }
@@ -226,6 +236,7 @@ export function ThemeProfileView({
   profile,
   onBack,
   onNavigatePassage,
+  onNavigateBook,
   onOpenCharacter,
   onOpenRelatedTheme,
 }: ThemeProfileProps) {
@@ -233,6 +244,11 @@ export function ThemeProfileView({
   const passageEras = eraOrder.filter((era) => profile.passages[era]?.length > 0)
 
   return (
+    <ChatProvider
+      grounding={{ page: 'theme', context: { themeId: profile.id }, query: '' }}
+      groundingDisplay={{ type: 'theme', themeName: profile.name }}
+      isConfigured={true}
+    >
     <div className="h-full overflow-y-auto" style={{ padding: '28px 32px' }}>
       <div style={{ maxWidth: '720px', margin: '0 auto' }}>
         {/* Back button */}
@@ -287,7 +303,9 @@ export function ThemeProfileView({
         </p>
 
         {/* Trace bar */}
-        <TraceBar segments={profile.traceSegments} />
+        <TraceBar segments={profile.traceSegments} onBookClick={(bookId, chapter) => {
+          onNavigateBook?.(bookId, chapter)
+        }} />
 
         {/* Passages by era */}
         <div className="mb-10">
@@ -364,6 +382,10 @@ export function ThemeProfileView({
           </div>
         )}
       </div>
+
+      <ConnectedAIPanel />
+      <AIToggleButton />
     </div>
+    </ChatProvider>
   )
 }

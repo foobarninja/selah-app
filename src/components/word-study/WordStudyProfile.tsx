@@ -3,6 +3,9 @@
 import { useState } from 'react'
 import { ArrowLeft, ChevronDown, ChevronRight, BookOpen } from 'lucide-react'
 import { TierPill } from '@/components/reader/TierPill'
+import { ChatProvider } from '@/lib/ai/chat-context'
+import { ConnectedAIPanel } from '@/components/ai-assistant/ConnectedAIPanel'
+import { AIToggleButton } from '@/components/ai-assistant/AIToggleButton'
 import type {
   WordStudyProps,
   ConcordanceEntry,
@@ -245,6 +248,11 @@ export function WordStudyProfile({
   const accent = langColor(entry.language)
 
   return (
+    <ChatProvider
+      grounding={{ page: 'word-study', context: { strongsNumber: entry.strongsNumber }, query: '' }}
+      groundingDisplay={{ type: 'general' }}
+      isConfigured={true}
+    >
     <div className="h-full overflow-y-auto" style={{ padding: '28px 32px' }}>
       <div style={{ maxWidth: '720px', margin: '0 auto' }}>
 
@@ -455,6 +463,10 @@ export function WordStudyProfile({
           </div>
         )}
       </div>
+
+      <ConnectedAIPanel />
+      <AIToggleButton />
     </div>
+    </ChatProvider>
   )
 }

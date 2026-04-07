@@ -22,8 +22,8 @@ export default function WordStudyClient(props: Props) {
         router.push(`/reader?passage=${encodeURIComponent(ref)}`)
       }}
       onOpenEntry={(number) => router.push(`/word-study/${number}`)}
-      onOpenNarrativeUnit={(id) => {
-        console.log('[WordStudy] Open narrative:', id)
+      onOpenNarrativeUnit={(ref) => {
+        router.push(`/reader?passage=${encodeURIComponent(ref)}`)
       }}
     />
   )

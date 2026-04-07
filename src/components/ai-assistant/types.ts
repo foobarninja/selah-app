@@ -2,6 +2,7 @@
 
 import type { SourceTier } from '@/components/reader/types'
 import type { NoteType, Anchor } from '@/components/journal/types'
+import type { ContextToggles, GroundingRequest } from '@/lib/ai/types'
 
 /** Message sender */
 export type MessageRole = 'user' | 'assistant'
@@ -33,11 +34,18 @@ export interface AIAssistantProps {
   conversationHistory: ConversationThread[]
   isConfigured: boolean
   isPanelOpen: boolean
+  isStreaming?: boolean
 
   onSendMessage?: (content: string) => void
   onClose?: () => void
   onTogglePanel?: () => void
   onSaveToJournal?: (messageId: string, noteType: NoteType, content: string, anchors: Anchor[], tags: string[]) => void
   onOpenThread?: (threadId: string) => void
+  onDeleteThread?: (threadId: string) => void
   onNewConversation?: () => void
+  onSaveConversation?: () => void | Promise<void>
+
+  contextToggles?: ContextToggles
+  grounding?: GroundingRequest
+  onContextToggle?: (sectionId: string, enabled: boolean) => void
 }

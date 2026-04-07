@@ -28,7 +28,7 @@ export interface TranslationConfig {
 }
 
 export interface AIProviderOption { id: AIProvider; name: string; note: string }
-export interface AIConfig { isConfigured: boolean; provider: AIProvider | null; model: string | null; connectionStatus: ConnectionStatus }
+export interface AIConfig { isConfigured: boolean; provider: AIProvider | null; model: string | null; connectionStatus: ConnectionStatus; ollamaUrl: string | null }
 
 export interface SourceTierVisibility { canon: boolean; scholarship: boolean; historical: boolean; aiAssisted: boolean; conjecture: boolean }
 

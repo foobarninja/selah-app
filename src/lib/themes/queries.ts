@@ -204,18 +204,23 @@ async function getThemeCharacters(themeId: string): Promise<ConnectedCharacter[]
   }))
 }
 
-async function getThemeTrace(themeId: string): Promise<Array<{ book: string; count: number }>> {
-  // Count passages per book for this theme
+async function getThemeTrace(themeId: string): Promise<Array<{ book: string; count: number; firstChapter?: number }>> {
+  // Count passages per book and find earliest chapter for this theme
   const rows = await prisma.passageTheme.groupBy({
     by: ['bookId'],
     where: { themeId },
     _count: true,
+    _min: { chapter: true },
   })
 
-  const countMap = new Map(rows.map((r) => [r.bookId, r._count]))
+  const countMap = new Map(rows.map((r) => [r.bookId, { count: r._count, firstChapter: r._min.chapter ?? undefined }]))
 
-  return BOOK_ORDER.map((bookId) => ({
-    book: bookId,
-    count: countMap.get(bookId) ?? 0,
-  }))
+  return BOOK_ORDER.map((bookId) => {
+    const data = countMap.get(bookId)
+    return {
+      book: bookId,
+      count: data?.count ?? 0,
+      firstChapter: data?.firstChapter,
+    }
+  })
 }

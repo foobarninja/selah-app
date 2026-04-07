@@ -3,6 +3,10 @@
 import { useState } from 'react'
 import { ArrowLeft, GripVertical, X, Plus, Search, Download, ExternalLink, BookOpen, Users, Sparkles, CloudSun, HelpCircle, PenLine, Check } from 'lucide-react'
 import { TierPill } from '@/components/reader/TierPill'
+import { ResizablePanel } from '@/components/ui/ResizablePanel'
+import { ChatProvider } from '@/lib/ai/chat-context'
+import { ConnectedAIPanel } from '@/components/ai-assistant/ConnectedAIPanel'
+import { AIToggleButton } from '@/components/ai-assistant/AIToggleButton'
 import type { StudyBuilderProps, AssemblyItem, SourceSection, SourceItem } from './types'
 import type { SourceTier } from '@/components/reader/types'
 
@@ -75,6 +79,11 @@ export function StudyWorkspace({ activeProject, assemblyItems, sourceSections, s
   const currentSection = sourceSections.find((s) => s.id === activeSourceSection) || sourceSections[0]
 
   return (
+    <ChatProvider
+      grounding={{ page: 'study-builder', context: { projectId: Number(activeProject.id) }, query: '' }}
+      groundingDisplay={{ type: 'general' }}
+      isConfigured={true}
+    >
     <div className="h-full flex flex-col">
       <div className="flex items-center gap-4 shrink-0" style={{ padding: '12px 20px', borderBottom: '1px solid var(--selah-border-color, #3D3835)', backgroundColor: 'var(--selah-bg-surface, #1C1917)' }}>
         <button onClick={onBackToList} style={{ color: 'var(--selah-text-3, #6E695F)', background: 'none', border: 'none', cursor: 'pointer' }}><ArrowLeft size={18} strokeWidth={1.5} /></button>
@@ -102,7 +111,7 @@ export function StudyWorkspace({ activeProject, assemblyItems, sourceSections, s
           )}
         </div>
 
-        <div className="hidden md:flex flex-col shrink-0 overflow-hidden" style={{ width: '360px', borderLeft: '1px solid var(--selah-border-color, #3D3835)', backgroundColor: 'var(--selah-bg-page, #0F0D0B)' }}>
+        <ResizablePanel defaultWidth={360} minWidth={280} maxWidth={600} side="right" storageKey="selah-source-panel-width" className="hidden md:flex flex-col overflow-hidden" style={{ borderLeft: '1px solid var(--selah-border-color, #3D3835)', backgroundColor: 'var(--selah-bg-page, #0F0D0B)' }}>
           <div style={{ padding: '12px 16px', borderBottom: '1px solid var(--selah-border-color, #3D3835)' }}>
             <div className="flex items-center gap-2 rounded-lg" style={{ backgroundColor: 'var(--selah-bg-surface, #1C1917)', border: '1px solid var(--selah-border-color, #3D3835)', padding: '8px 12px' }}>
               <Search size={14} strokeWidth={1.5} style={{ color: 'var(--selah-text-3, #6E695F)' }} />
@@ -116,9 +125,11 @@ export function StudyWorkspace({ activeProject, assemblyItems, sourceSections, s
             {currentSection?.items.map((item) => (<SourceRow key={item.id} item={item} onAdd={() => onAddItem?.(item.id)} />))}
             {currentSection?.items.length === 0 && (<p style={{ fontFamily: font.body, fontSize: '13px', color: 'var(--selah-text-3, #6E695F)', textAlign: 'center', paddingTop: '24px' }}>No items in this category.</p>)}
           </div>
-        </div>
+        </ResizablePanel>
+        <ConnectedAIPanel />
       </div>
 
+      <AIToggleButton />
       <button onClick={() => setMobileSourceOpen(true)} className="md:hidden fixed bottom-6 right-6 z-30 flex items-center gap-2 rounded-full shadow-lg transition-all duration-150" style={{ padding: '12px 20px', backgroundColor: 'var(--selah-gold-500, #C6A23C)', color: '#fff', border: 'none', cursor: 'pointer', fontFamily: font.body, fontSize: '14px', fontWeight: 600 }}><Plus size={16} strokeWidth={2} />Add material</button>
 
       {mobileSourceOpen && (
@@ -135,6 +146,8 @@ export function StudyWorkspace({ activeProject, assemblyItems, sourceSections, s
           </div>
         </>
       )}
+
     </div>
+    </ChatProvider>
   )
 }

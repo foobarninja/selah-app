@@ -10,7 +10,17 @@ import {
 } from 'lucide-react'
 import { TierPill } from './TierPill'
 import { ContextDrawer } from './ContextDrawer'
+import { ResizablePanel } from '@/components/ui/ResizablePanel'
+import { ChatProvider } from '@/lib/ai/chat-context'
+import { ConnectedAIPanel } from '@/components/ai-assistant/ConnectedAIPanel'
+import { AIToggleButton } from '@/components/ai-assistant/AIToggleButton'
+import { BOOK_NAMES } from '@/lib/constants'
 import type { ReaderProps, Verse, StrongsAnnotation, LensTag, ResurfacedEntry } from './types'
+
+/** Reverse lookup: display name -> book ID (e.g., "Job" -> "JOB") */
+const BOOK_IDS_BY_NAME = Object.fromEntries(
+  Object.entries(BOOK_NAMES).map(([id, name]) => [name, id])
+)
 
 /* ── Font shorthand ── */
 const font = {
@@ -144,12 +154,18 @@ function StrongsMarker({
 function VerseLine({
   verse,
   isActive,
+  isSelected = false,
   onSelect,
   onOpenWordStudy,
+  showStrongs = true,
+  showFootnotes = true,
 }: {
   verse: Verse
   isActive: boolean
-  onSelect?: () => void
+  isSelected?: boolean
+  onSelect?: (e?: React.MouseEvent) => void
+  showStrongs?: boolean
+  showFootnotes?: boolean
   onOpenWordStudy?: (code: string) => void
 }) {
   // Apply terracotta color to Jesus's words.
@@ -224,7 +240,7 @@ function VerseLine({
 
   // Build text segments: interleave plain text with Strong's-annotated words
   const renderText = () => {
-    if (verse.strongs.length === 0) {
+    if (!showStrongs || verse.strongs.length === 0) {
       return <>{applyJesusWords([verse.text])}</>
     }
 
@@ -262,7 +278,7 @@ function VerseLine({
 
   return (
     <p
-      onClick={onSelect}
+      onClick={(e) => onSelect?.(e)}
       className="transition-all duration-200 cursor-pointer"
       style={{
         fontFamily: font.body,
@@ -272,7 +288,12 @@ function VerseLine({
         padding: '2px 0 2px 20px',
         borderLeft: isActive
           ? '2px solid var(--selah-gold-500, #C6A23C)'
-          : '2px solid transparent',
+          : isSelected
+            ? '2px solid var(--selah-sky-400, #6B91B5)'
+            : '2px solid transparent',
+        backgroundColor: isSelected && !isActive
+          ? 'var(--selah-sky-900, rgba(26, 51, 72, 0.3))'
+          : undefined,
       }}
     >
       {/* Verse number */}
@@ -293,7 +314,7 @@ function VerseLine({
       {renderText()}
 
       {/* Footnote markers */}
-      {verse.footnotes.map((fn) => (
+      {showFootnotes && verse.footnotes.map((fn) => (
         <sup
           key={fn.id}
           title={fn.text}
@@ -463,6 +484,10 @@ export function ReaderView({
   onOpenWordStudy,
   onFollowCrossReference,
   onOpenJournalEntry,
+  selectedVerses,
+  showStrongs = true,
+  showCrossReferences = true,
+  showFootnotes = true,
 }: ReaderProps) {
   const [drawerOpen, setDrawerOpen] = useState(true)
   const [mobileDrawerOpen, setMobileDrawerOpen] = useState(false)
@@ -492,6 +517,11 @@ export function ReaderView({
   ])].sort()
 
   return (
+    <ChatProvider
+      grounding={{ page: 'reader', context: { bookId: BOOK_IDS_BY_NAME[passage.book] ?? passage.book, chapter: passage.chapter, verse: activeVerseNumber }, query: '' }}
+      groundingDisplay={{ type: 'passage', passageRef: `${passage.book} ${passage.chapter}` }}
+      isConfigured={true}
+    >
     <div className="h-full flex relative">
       {/* ── Reading pane ── */}
       <div
@@ -598,8 +628,11 @@ export function ReaderView({
               <VerseLine
                 verse={verse}
                 isActive={verse.number === activeVerseNumber}
-                onSelect={() => onSelectVerse?.(verse.number)}
+                isSelected={selectedVerses?.has(verse.number) ?? false}
+                onSelect={(e) => onSelectVerse?.(verse.number, e ? { ctrlKey: e.ctrlKey, metaKey: e.metaKey, shiftKey: e.shiftKey } : undefined)}
                 onOpenWordStudy={onOpenWordStudy}
+                showStrongs={showStrongs}
+                showFootnotes={showFootnotes}
               />
 
               {/* Resurfaced entries after matching verses */}
@@ -632,19 +665,19 @@ export function ReaderView({
 
       {/* ── Desktop context drawer ── */}
       {drawerOpen ? (
-        <div className="hidden md:flex w-[340px] shrink-0">
+        <ResizablePanel defaultWidth={340} minWidth={280} maxWidth={600} side="right" storageKey="selah-context-drawer-width" className="hidden md:flex">
           <ContextDrawer
             sceneCast={sceneCast}
             themes={themes}
             climateContexts={climateContexts}
-            crossReferences={crossReferences}
+            crossReferences={showCrossReferences ? crossReferences : []}
             commentaries={commentaries}
             onClose={() => setDrawerOpen(false)}
             onOpenCharacterProfile={onOpenCharacterProfile}
             onOpenThemeDetail={onOpenThemeDetail}
             onFollowCrossReference={onFollowCrossReference}
           />
-        </div>
+        </ResizablePanel>
       ) : (
         <button
           onClick={() => setDrawerOpen(true)}
@@ -723,7 +756,7 @@ export function ReaderView({
                 sceneCast={sceneCast}
                 themes={themes}
                 climateContexts={climateContexts}
-                crossReferences={crossReferences}
+                crossReferences={showCrossReferences ? crossReferences : []}
                 commentaries={commentaries}
                 onClose={() => setMobileDrawerOpen(false)}
                 onOpenCharacterProfile={onOpenCharacterProfile}
@@ -734,6 +767,10 @@ export function ReaderView({
           </div>
         </>
       )}
+
+      <ConnectedAIPanel />
+      <AIToggleButton />
     </div>
+    </ChatProvider>
   )
 }

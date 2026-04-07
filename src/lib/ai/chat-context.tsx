@@ -2,7 +2,7 @@
 
 import { createContext, useContext, useState, useCallback, useRef, type ReactNode } from 'react'
 import { useChatStream } from './use-chat-stream'
-import type { ChatMessage, Citation, GroundingRequest } from './types'
+import type { ChatMessage, Citation, GroundingRequest, ContextToggles } from './types'
 import type { Message, ConversationThread, GroundingContext } from '@/components/ai-assistant/types'
 
 interface ChatContextValue {
@@ -12,6 +12,10 @@ interface ChatContextValue {
   conversationHistory: ConversationThread[]
   isPanelOpen: boolean
   groundingContext: GroundingContext
+
+  contextToggles: ContextToggles
+  setContextToggle: (sectionId: string, enabled: boolean) => void
+  grounding: GroundingRequest
 
   sendMessage: (content: string) => void
   togglePanel: () => void
@@ -43,7 +47,12 @@ export function ChatProvider({ children, grounding, groundingDisplay, isConfigur
   const [isPanelOpen, setIsPanelOpen] = useState(false)
   const [conversationHistory, setConversationHistory] = useState<ConversationThread[]>([])
   const [conversationId, setConversationId] = useState<string | null>(null)
+  const [contextToggles, setContextToggles] = useState<ContextToggles>({})
   const streamingContentRef = useRef('')
+
+  const setContextToggle = useCallback((sectionId: string, enabled: boolean) => {
+    setContextToggles((prev) => ({ ...prev, [sectionId]: enabled }))
+  }, [])
 
   const { send, abort } = useChatStream({
     onToken: (content) => {
@@ -114,9 +123,9 @@ export function ChatProvider({ children, grounding, groundingDisplay, isConfigur
         query: content,
       }
 
-      send(chatMessages, groundingWithQuery, conversationId || undefined)
+      send(chatMessages, groundingWithQuery, conversationId || undefined, contextToggles)
     },
-    [messages, isStreaming, grounding, conversationId, send]
+    [messages, isStreaming, grounding, conversationId, send, contextToggles]
   )
 
   const newConversation = useCallback(() => {
@@ -202,6 +211,9 @@ export function ChatProvider({ children, grounding, groundingDisplay, isConfigur
         conversationHistory,
         isPanelOpen,
         groundingContext: groundingDisplay,
+        contextToggles,
+        setContextToggle,
+        grounding,
         sendMessage,
         togglePanel: togglePanelWithHistory,
         closePanel,

@@ -4,6 +4,7 @@ import { useState, useRef, useEffect } from 'react'
 import ReactMarkdown from 'react-markdown'
 import remarkGfm from 'remark-gfm'
 import { X, Clock, Send, Bookmark, ChevronLeft, Save, Plus } from 'lucide-react'
+import { ContextControls } from './ContextControls'
 import type { AIAssistantProps, Message, GroundingContext, ConversationThread } from './types'
 
 const font = {
@@ -150,7 +151,7 @@ const mdStyles = `
 .selah-md a { color: var(--selah-sky-400, #6B91B5); text-decoration: underline; }
 `
 
-export function AIAssistantPanel({ groundingContext, messages, conversationHistory, isConfigured, isPanelOpen, isStreaming, onSendMessage, onClose, onSaveToJournal, onOpenThread, onNewConversation, onSaveConversation }: AIAssistantProps) {
+export function AIAssistantPanel({ groundingContext, messages, conversationHistory, isConfigured, isPanelOpen, isStreaming, onSendMessage, onClose, onSaveToJournal, onOpenThread, onNewConversation, onSaveConversation, grounding, contextToggles, onContextToggle }: AIAssistantProps) {
   const [input, setInput] = useState('')
   const [showHistory, setShowHistory] = useState(false)
   const messagesEndRef = useRef<HTMLDivElement>(null)
@@ -187,6 +188,14 @@ export function AIAssistantPanel({ groundingContext, messages, conversationHisto
       </div>
 
       <GroundingHeader context={groundingContext} />
+
+      {grounding && onContextToggle && contextToggles && (
+        <ContextControls
+          grounding={grounding}
+          toggles={contextToggles}
+          onToggle={onContextToggle}
+        />
+      )}
 
       <div className="flex-1 overflow-y-auto" style={{ padding: '16px' }}>
         {messages.length === 0 && (<div className="text-center py-12"><p style={{ fontFamily: font.body, fontSize: '14px', color: 'var(--selah-text-3, #6E695F)' }}>Ask anything about what you&rsquo;re reading.</p></div>)}

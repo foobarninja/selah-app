@@ -1,5 +1,5 @@
 import { useCallback, useRef } from 'react'
-import type { StreamEvent, Citation, GroundingRequest, ChatMessage } from './types'
+import type { StreamEvent, Citation, GroundingRequest, ChatMessage, ContextToggles } from './types'
 
 interface UseChatStreamOptions {
   onToken: (content: string) => void
@@ -11,7 +11,7 @@ export function useChatStream({ onToken, onDone, onError }: UseChatStreamOptions
   const abortRef = useRef<AbortController | null>(null)
 
   const send = useCallback(
-    async (messages: ChatMessage[], grounding: GroundingRequest, conversationId?: string) => {
+    async (messages: ChatMessage[], grounding: GroundingRequest, conversationId?: string, contextToggles?: ContextToggles) => {
       // Abort any in-flight request
       abortRef.current?.abort()
       const controller = new AbortController()
@@ -21,7 +21,7 @@ export function useChatStream({ onToken, onDone, onError }: UseChatStreamOptions
         const response = await fetch('/api/ai/send', {
           method: 'POST',
           headers: { 'Content-Type': 'application/json' },
-          body: JSON.stringify({ messages, grounding, conversationId }),
+          body: JSON.stringify({ messages, grounding, conversationId, contextToggles }),
           signal: controller.signal,
         })
 

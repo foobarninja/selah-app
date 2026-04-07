@@ -10,6 +10,9 @@ export function ConnectedAIPanel() {
     conversationHistory,
     isPanelOpen,
     groundingContext,
+    contextToggles,
+    setContextToggle,
+    grounding,
     sendMessage,
     closePanel,
     newConversation,
@@ -43,6 +46,9 @@ export function ConnectedAIPanel() {
       onOpenThread={openThread}
       onNewConversation={newConversation}
       onSaveConversation={saveConversation}
+      contextToggles={contextToggles}
+      grounding={grounding}
+      onContextToggle={setContextToggle}
     />
   )
 }

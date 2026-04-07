@@ -2,6 +2,7 @@
 
 import type { SourceTier } from '@/components/reader/types'
 import type { NoteType, Anchor } from '@/components/journal/types'
+import type { ContextToggles, GroundingRequest } from '@/lib/ai/types'
 
 /** Message sender */
 export type MessageRole = 'user' | 'assistant'
@@ -42,4 +43,8 @@ export interface AIAssistantProps {
   onOpenThread?: (threadId: string) => void
   onNewConversation?: () => void
   onSaveConversation?: () => void
+
+  contextToggles?: ContextToggles
+  grounding?: GroundingRequest
+  onContextToggle?: (sectionId: string, enabled: boolean) => void
 }

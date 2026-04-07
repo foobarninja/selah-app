@@ -3,6 +3,7 @@
 import { useState } from 'react'
 import { AppShell } from '@/components/shell'
 import { AIAssistantPanel } from '@/components/ai-assistant'
+import { ResizablePanel } from '@/components/ui/ResizablePanel'
 import sampleAIData from '@/components/ai-assistant/sample-data.json'
 import type { AIAssistantProps } from '@/components/ai-assistant/types'
 
@@ -31,7 +32,7 @@ export default function ShellLayout({
           {children}
         </div>
         {aiPanelOpen && (
-          <div className="w-[380px] shrink-0 hidden md:block">
+          <ResizablePanel defaultWidth={380} minWidth={300} maxWidth={600} side="right" storageKey="selah-ai-panel-width" className="hidden md:block">
             <AIAssistantPanel
               groundingContext={aiData.groundingContext}
               messages={aiData.messages}
@@ -44,7 +45,7 @@ export default function ShellLayout({
               onOpenThread={(id) => console.log('[AI] Open thread:', id)}
               onNewConversation={() => console.log('[AI] New conversation')}
             />
-          </div>
+          </ResizablePanel>
         )}
       </div>
     </AppShell>

@@ -10,6 +10,7 @@ import {
 } from 'lucide-react'
 import { TierPill } from './TierPill'
 import { ContextDrawer } from './ContextDrawer'
+import { ResizablePanel } from '@/components/ui/ResizablePanel'
 import { ChatProvider } from '@/lib/ai/chat-context'
 import { ConnectedAIPanel } from '@/components/ai-assistant/ConnectedAIPanel'
 import { AIToggleButton } from '@/components/ai-assistant/AIToggleButton'
@@ -646,7 +647,7 @@ export function ReaderView({
 
       {/* ── Desktop context drawer ── */}
       {drawerOpen ? (
-        <div className="hidden md:flex w-[340px] shrink-0">
+        <ResizablePanel defaultWidth={340} minWidth={280} maxWidth={600} side="right" storageKey="selah-context-drawer-width" className="hidden md:flex">
           <ContextDrawer
             sceneCast={sceneCast}
             themes={themes}
@@ -658,7 +659,7 @@ export function ReaderView({
             onOpenThemeDetail={onOpenThemeDetail}
             onFollowCrossReference={onFollowCrossReference}
           />
-        </div>
+        </ResizablePanel>
       ) : (
         <button
           onClick={() => setDrawerOpen(true)}

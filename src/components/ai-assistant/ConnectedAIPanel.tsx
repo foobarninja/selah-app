@@ -45,6 +45,7 @@ export function ConnectedAIPanel() {
               anchors,
               tags,
               studyContext: 'ai-conversation',
+              journalId: 'default',
             }),
           })
         }}

@@ -5,6 +5,7 @@ import { useRouter } from 'next/navigation'
 import { ReaderView } from '@/components/reader'
 import { BOOK_NAMES, BOOK_CHAPTERS } from '@/lib/constants'
 import type { ReaderProps, Translation } from '@/components/reader/types'
+import JournalPicker from '@/components/journal/JournalPicker'
 
 interface ReaderClientProps extends Omit<ReaderProps, 'activeVerseNumber' | 'parallelTranslations' | 'onNavigatePassage' | 'onPreviousUnit' | 'onNextUnit' | 'onChangeTranslation' | 'onToggleParallelTranslation' | 'onSelectVerse' | 'onOpenCharacterProfile' | 'onOpenThemeDetail' | 'onOpenWordStudy' | 'onFollowCrossReference' | 'onOpenJournalEntry'> {
   prevUnit: { bookId: string; chapter: number } | null
@@ -63,6 +64,8 @@ export default function ReaderClient({
   const [pickerBook, setPickerBook] = useState<string | null>(null)
   const bookPickerRef = useRef<HTMLDivElement>(null)
   const translationPickerRef = useRef<HTMLDivElement>(null)
+  const [showJournalPicker, setShowJournalPicker] = useState(false)
+  const [pendingNoteData, setPendingNoteData] = useState<object | null>(null)
 
   // Close pickers on outside click
   useEffect(() => {
@@ -419,7 +422,7 @@ export default function ReaderClient({
               autoFocus
             />
 
-            <div className="flex justify-end gap-3">
+            <div className="flex justify-end gap-3" style={{ position: 'relative' }}>
               <button
                 onClick={() => setShowNoteEditor(false)}
                 style={{
@@ -435,6 +438,7 @@ export default function ReaderClient({
               >
                 Cancel
               </button>
+              {/* Quick save — saves to default journal immediately */}
               <button
                 onClick={async () => {
                   if (!noteContent.trim()) return
@@ -447,6 +451,7 @@ export default function ReaderClient({
                         content: noteContent,
                         noteType,
                         studyContext: 'reading',
+                        journalId: 'default',
                         anchors: [
                           ...[...selectedVerses].map((v) => ({ type: 'verse', bookId, chapter: readerProps.passage.chapter, verseStart: v })),
                           ...Array.from(noteCharAnchors).map((id) => ({ type: 'character', refId: id })),
@@ -478,6 +483,74 @@ export default function ReaderClient({
               >
                 {noteSaving ? 'Saving...' : 'Save'}
               </button>
+              {/* Save to... — opens journal picker */}
+              <button
+                onClick={() => {
+                  if (!noteContent.trim()) return
+                  setPendingNoteData({
+                    content: noteContent,
+                    noteType,
+                    studyContext: 'reading',
+                    anchors: [
+                      ...[...selectedVerses].map((v) => ({ type: 'verse', bookId, chapter: readerProps.passage.chapter, verseStart: v })),
+                      ...Array.from(noteCharAnchors).map((id) => ({ type: 'character', refId: id })),
+                    ],
+                    themeIds: Array.from(noteThemeTags),
+                  })
+                  setShowJournalPicker(true)
+                }}
+                disabled={noteSaving || !noteContent.trim()}
+                style={{
+                  padding: '8px 14px',
+                  borderRadius: '8px',
+                  backgroundColor: 'transparent',
+                  color: !noteContent.trim() ? 'var(--selah-text-3)' : 'var(--selah-gold-500, #C6A23C)',
+                  border: '1px solid var(--selah-border-color)',
+                  fontFamily: "var(--selah-font-body)",
+                  fontSize: '13px',
+                  cursor: noteSaving || !noteContent.trim() ? 'not-allowed' : 'pointer',
+                  opacity: !noteContent.trim() ? 0.5 : 1,
+                }}
+              >
+                Save to...
+              </button>
+              {/* Journal Picker dropdown */}
+              {showJournalPicker && (
+                <div
+                  style={{
+                    position: 'absolute',
+                    bottom: '44px',
+                    right: 0,
+                    zIndex: 60,
+                  }}
+                >
+                  <JournalPicker
+                    onSave={async (journalId) => {
+                      if (!pendingNoteData) return
+                      setNoteSaving(true)
+                      setShowJournalPicker(false)
+                      try {
+                        await fetch('/api/notes', {
+                          method: 'POST',
+                          headers: { 'Content-Type': 'application/json' },
+                          body: JSON.stringify({ ...pendingNoteData, journalId }),
+                        })
+                        setPendingNoteData(null)
+                        setShowNoteEditor(false)
+                        setActiveVerse(undefined)
+                        setSelectedVerses(new Set())
+                        router.refresh()
+                      } finally {
+                        setNoteSaving(false)
+                      }
+                    }}
+                    onCancel={() => {
+                      setShowJournalPicker(false)
+                      setPendingNoteData(null)
+                    }}
+                  />
+                </div>
+              )}
             </div>
           </div>
         </div>

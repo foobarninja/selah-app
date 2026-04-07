@@ -1,5 +1,6 @@
 import { getProject, getProjectItems } from '@/lib/study-builder/queries'
 import { getChapterText } from '@/lib/reader/queries'
+import { prisma } from '@/lib/db'
 import { BOOK_NAMES } from '@/lib/constants'
 import type { StudyBuilderContext } from '../../types'
 
@@ -88,6 +89,50 @@ export async function extractStudyBuilderContext(ctx: StudyBuilderContext): Prom
       // Include the full chapter so the model has proper context
       for (const v of chapterVerses) {
         parts.push(`${v.number}. ${v.text}`)
+      }
+    }
+  }
+
+  // ── Fetch commentary text for commentary items ─────────────────────────
+  const commentaryItems = displayItems.filter((i) => i.entityType === 'commentary')
+  if (commentaryItems.length > 0) {
+    parts.push('\n### Commentary Excerpts')
+    for (const item of commentaryItems) {
+      const commentaryId = parseInt(item.entityId || item.id.replace('commentary:', ''), 10)
+      if (isNaN(commentaryId)) continue
+      const entry = await prisma.commentaryEntry.findUnique({
+        where: { id: commentaryId },
+        include: { source: { select: { englishName: true } } },
+      }).catch(() => null)
+      if (entry) {
+        const bookName = BOOK_NAMES[entry.bookId] ?? entry.bookId
+        const verseRef = entry.verse ? `:${entry.verse}` : ''
+        const excerpt = entry.text.length > 600 ? entry.text.slice(0, 600) + '...' : entry.text
+        parts.push(`\n**${entry.source.englishName}** (${bookName} ${entry.chapter}${verseRef}): ${excerpt}`)
+      }
+    }
+  }
+
+  // ── Fetch scene cast details for scene-cast items ─────────────────────
+  const sceneCastItems = displayItems.filter((i) => i.entityType === 'scene-cast')
+  if (sceneCastItems.length > 0) {
+    parts.push('\n### Scene Cast')
+    for (const item of sceneCastItems) {
+      const castId = parseInt(item.entityId || item.id.replace('scene-cast:', ''), 10)
+      if (isNaN(castId)) continue
+      const appearance = await prisma.characterAppearance.findUnique({
+        where: { id: castId },
+        include: { character: { select: { name: true, bioBrief: true, faithJourney: true } } },
+      }).catch(() => null)
+      if (appearance) {
+        const bookName = BOOK_NAMES[appearance.bookId] ?? appearance.bookId
+        const lines = [`**${appearance.character.name}** in ${bookName} ${appearance.chapter} (${appearance.role})`]
+        if (appearance.emotionalState) lines.push(`  Emotional state: ${appearance.emotionalState}`)
+        if (appearance.motivation) lines.push(`  Motivation: ${appearance.motivation}`)
+        if (appearance.stakes) lines.push(`  Stakes: ${appearance.stakes}`)
+        if (appearance.narrativeNote) lines.push(`  ${appearance.narrativeNote}`)
+        if (appearance.character.bioBrief) lines.push(`  Bio: ${appearance.character.bioBrief}`)
+        parts.push('\n' + lines.join('\n'))
       }
     }
   }

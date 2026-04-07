@@ -147,6 +147,10 @@ export interface ReaderProps {
   resurfacedEntries: ResurfacedEntry[]
   lensTags: LensTag[]
 
+  showStrongs?: boolean
+  showCrossReferences?: boolean
+  showFootnotes?: boolean
+
   /** Navigate to a different passage by narrative unit ID or passage reference */
   onNavigatePassage?: (passageRef: string) => void
   /** Move to the previous narrative unit in the current book */

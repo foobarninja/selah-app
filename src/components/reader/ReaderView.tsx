@@ -156,10 +156,14 @@ function VerseLine({
   isActive,
   onSelect,
   onOpenWordStudy,
+  showStrongs = true,
+  showFootnotes = true,
 }: {
   verse: Verse
   isActive: boolean
   onSelect?: () => void
+  showStrongs?: boolean
+  showFootnotes?: boolean
   onOpenWordStudy?: (code: string) => void
 }) {
   // Apply terracotta color to Jesus's words.
@@ -234,7 +238,7 @@ function VerseLine({
 
   // Build text segments: interleave plain text with Strong's-annotated words
   const renderText = () => {
-    if (verse.strongs.length === 0) {
+    if (!showStrongs || verse.strongs.length === 0) {
       return <>{applyJesusWords([verse.text])}</>
     }
 
@@ -303,7 +307,7 @@ function VerseLine({
       {renderText()}
 
       {/* Footnote markers */}
-      {verse.footnotes.map((fn) => (
+      {showFootnotes && verse.footnotes.map((fn) => (
         <sup
           key={fn.id}
           title={fn.text}
@@ -473,6 +477,9 @@ export function ReaderView({
   onOpenWordStudy,
   onFollowCrossReference,
   onOpenJournalEntry,
+  showStrongs = true,
+  showCrossReferences = true,
+  showFootnotes = true,
 }: ReaderProps) {
   const [drawerOpen, setDrawerOpen] = useState(true)
   const [mobileDrawerOpen, setMobileDrawerOpen] = useState(false)
@@ -615,6 +622,8 @@ export function ReaderView({
                 isActive={verse.number === activeVerseNumber}
                 onSelect={() => onSelectVerse?.(verse.number)}
                 onOpenWordStudy={onOpenWordStudy}
+                showStrongs={showStrongs}
+                showFootnotes={showFootnotes}
               />
 
               {/* Resurfaced entries after matching verses */}
@@ -652,7 +661,7 @@ export function ReaderView({
             sceneCast={sceneCast}
             themes={themes}
             climateContexts={climateContexts}
-            crossReferences={crossReferences}
+            crossReferences={showCrossReferences ? crossReferences : []}
             commentaries={commentaries}
             onClose={() => setDrawerOpen(false)}
             onOpenCharacterProfile={onOpenCharacterProfile}
@@ -738,7 +747,7 @@ export function ReaderView({
                 sceneCast={sceneCast}
                 themes={themes}
                 climateContexts={climateContexts}
-                crossReferences={crossReferences}
+                crossReferences={showCrossReferences ? crossReferences : []}
                 commentaries={commentaries}
                 onClose={() => setMobileDrawerOpen(false)}
                 onOpenCharacterProfile={onOpenCharacterProfile}

@@ -71,6 +71,14 @@ export async function getTranslationConfig(): Promise<TranslationConfig> {
   }
 }
 
+export async function getDisplaySettings(): Promise<{ showStrongs: boolean; showCrossReferences: boolean; showFootnotes: boolean }> {
+  return {
+    showStrongs: await getSettingBool('show_strongs', true),
+    showCrossReferences: await getSettingBool('show_cross_references', true),
+    showFootnotes: await getSettingBool('show_footnotes', true),
+  }
+}
+
 export async function updateTranslationSetting(key: string, value: string): Promise<void> {
   await setSetting(key, value)
 }

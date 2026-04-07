@@ -1,6 +1,7 @@
 import { notFound } from 'next/navigation'
 import { BOOK_NAMES, BOOK_CHAPTERS } from '@/lib/constants'
 import { getChapterText, getNarrativeContext, getPassageContext, getTranslations } from '@/lib/reader/queries'
+import { getDisplaySettings } from '@/lib/settings/queries'
 import { recordReading } from '@/lib/reader/history'
 import { surfaceNotes } from '@/lib/resurfacing'
 import ReaderClient from './ReaderClient'
@@ -25,9 +26,10 @@ export default async function ReaderPage({ params, searchParams }: Props) {
     notFound()
   }
 
-  const [narrativeCtx, translations] = await Promise.all([
+  const [narrativeCtx, translations, displaySettings] = await Promise.all([
     getNarrativeContext(bookId, chapter),
     getTranslations(),
+    getDisplaySettings(),
   ])
 
   // Use requested translation or default to BSB
@@ -67,6 +69,9 @@ export default async function ReaderPage({ params, searchParams }: Props) {
       nextUnit={nextUnit}
       bookId={bookId}
       maxChapters={maxChapters}
+      showStrongs={displaySettings.showStrongs}
+      showCrossReferences={displaySettings.showCrossReferences}
+      showFootnotes={displaySettings.showFootnotes}
     />
   )
 }

@@ -3,6 +3,8 @@
 import { useState, useEffect, useRef } from 'react'
 import { X } from 'lucide-react'
 import type { JournalEntry, NoteType } from './types'
+import AnchorPicker from './AnchorPicker'
+import TagInput from './TagInput'
 
 const font = {
   display: "var(--selah-font-display, 'Cormorant Garamond', serif)",
@@ -18,9 +20,16 @@ const NOTE_TYPES: { value: NoteType; label: string }[] = [
   { value: 'prayer',      label: 'Prayer' },
 ]
 
+interface AnchorData {
+  type: string
+  label: string
+  entityId: string
+}
+
 interface SaveData {
   content: string
   noteType: string
+  anchors?: Array<{ type: string; bookId?: string; chapter?: number; verseStart?: number; refId?: string }>
   userTags?: string[]
 }
 
@@ -29,12 +38,17 @@ interface Props {
   onSave: (data: SaveData) => void
   onDelete?: () => void
   onClose: () => void
+  initialAnchors?: AnchorData[]
+  availableTags?: string[]
 }
 
-export default function NoteEditor({ entry, onSave, onDelete, onClose }: Props) {
+export default function NoteEditor({ entry, onSave, onDelete, onClose, initialAnchors, availableTags = [] }: Props) {
   const [content, setContent] = useState(entry?.content ?? '')
   const [noteType, setNoteType] = useState<NoteType>(entry?.noteType ?? 'reflection')
-  const [tagsInput, setTagsInput] = useState(entry?.userTags?.join(', ') ?? '')
+  const [anchors, setAnchors] = useState<AnchorData[]>(
+    initialAnchors ?? entry?.anchors ?? []
+  )
+  const [tags, setTags] = useState<string[]>(entry?.userTags ?? [])
   const [deleteConfirm, setDeleteConfirm] = useState(false)
   const backdropRef = useRef<HTMLDivElement>(null)
   const textareaRef = useRef<HTMLTextAreaElement>(null)
@@ -55,13 +69,36 @@ export default function NoteEditor({ entry, onSave, onDelete, onClose }: Props) 
     if (e.target === backdropRef.current) onClose()
   }
 
+  function serializeAnchor(a: AnchorData): { type: string; bookId?: string; chapter?: number; verseStart?: number; refId?: string } {
+    if (a.type === 'verse') {
+      // entityId format: bookId-chapter-verse or bookId-chapter
+      const parts = a.entityId.split('-')
+      if (parts.length >= 2) {
+        const hasVerse = parts.length >= 3
+        const verse = hasVerse ? parseInt(parts[parts.length - 1], 10) : undefined
+        const chapterIdx = hasVerse ? parts.length - 2 : parts.length - 1
+        const chapter = parseInt(parts[chapterIdx], 10)
+        const bookId = parts.slice(0, chapterIdx).join('-')
+        return {
+          type: 'verse',
+          bookId: bookId || undefined,
+          chapter: isNaN(chapter) ? undefined : chapter,
+          verseStart: verse !== undefined && !isNaN(verse) ? verse : undefined,
+        }
+      }
+    }
+    return { type: a.type, refId: a.entityId }
+  }
+
   function handleSave() {
     if (!content.trim()) return
-    const userTags = tagsInput
-      .split(',')
-      .map((t) => t.trim())
-      .filter(Boolean)
-    onSave({ content: content.trim(), noteType, userTags })
+    const serializedAnchors = anchors.map(serializeAnchor)
+    onSave({
+      content: content.trim(),
+      noteType,
+      anchors: serializedAnchors.length > 0 ? serializedAnchors : undefined,
+      userTags: tags.length > 0 ? tags : undefined,
+    })
   }
 
   function handleDelete() {
@@ -70,6 +107,14 @@ export default function NoteEditor({ entry, onSave, onDelete, onClose }: Props) 
       return
     }
     onDelete?.()
+  }
+
+  function handleAddAnchor(anchor: AnchorData) {
+    setAnchors((prev) => [...prev, anchor])
+  }
+
+  function handleRemoveAnchor(index: number) {
+    setAnchors((prev) => prev.filter((_, i) => i !== index))
   }
 
   const isEditing = Boolean(entry)
@@ -170,6 +215,13 @@ export default function NoteEditor({ entry, onSave, onDelete, onClose }: Props) 
             onBlur={(e) => { (e.currentTarget as HTMLTextAreaElement).style.borderColor = 'var(--selah-border-color, #3D3835)'; (e.currentTarget as HTMLTextAreaElement).style.borderLeftColor = 'rgba(198,162,60,0.4)' }}
           />
 
+          {/* Anchor picker */}
+          <AnchorPicker
+            anchors={anchors}
+            onAdd={handleAddAnchor}
+            onRemove={handleRemoveAnchor}
+          />
+
           {/* Note type selector */}
           <p
             style={{
@@ -228,25 +280,10 @@ export default function NoteEditor({ entry, onSave, onDelete, onClose }: Props) 
           >
             Tags
           </p>
-          <input
-            type="text"
-            value={tagsInput}
-            onChange={(e) => setTagsInput(e.target.value)}
-            placeholder="grace, covenant, exodus (comma-separated)"
-            style={{
-              width: '100%',
-              fontFamily: font.body,
-              fontSize: '13px',
-              color: 'var(--selah-text-1, #E8E2D9)',
-              backgroundColor: 'var(--selah-bg-surface, #1C1917)',
-              border: '1px solid var(--selah-border-color, #3D3835)',
-              borderRadius: '8px',
-              padding: '10px 14px',
-              outline: 'none',
-              boxSizing: 'border-box',
-            }}
-            onFocus={(e) => { (e.currentTarget as HTMLInputElement).style.borderColor = 'rgba(198,162,60,0.5)' }}
-            onBlur={(e) => { (e.currentTarget as HTMLInputElement).style.borderColor = 'var(--selah-border-color, #3D3835)' }}
+          <TagInput
+            tags={tags}
+            onChange={setTags}
+            availableTags={availableTags}
           />
         </div>
 

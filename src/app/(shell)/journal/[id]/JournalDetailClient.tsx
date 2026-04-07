@@ -9,9 +9,10 @@ import type { JournalDetail as JournalDetailType, JournalEntry, AnchorType } fro
 interface Props {
   journal: JournalDetailType
   entries: JournalEntry[]
+  availableTags?: string[]
 }
 
-export default function JournalDetailClient({ journal, entries }: Props) {
+export default function JournalDetailClient({ journal, entries, availableTags = [] }: Props) {
   const router = useRouter()
   const [editingEntry, setEditingEntry] = useState<JournalEntry | null | undefined>(undefined)
   // undefined = editor closed, null = new note, JournalEntry = editing existing
@@ -31,13 +32,13 @@ export default function JournalDetailClient({ journal, entries }: Props) {
     setEditingEntry(undefined)
   }
 
-  async function handleSaveNote(data: { content: string; noteType: string; userTags?: string[] }) {
+  async function handleSaveNote(data: { content: string; noteType: string; anchors?: Array<{ type: string; bookId?: string; chapter?: number; verseStart?: number; refId?: string }>; userTags?: string[] }) {
     if (editingEntry) {
       // Update existing
       await fetch(`/api/notes/${editingEntry.id}`, {
         method: 'PUT',
         headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ content: data.content, noteType: data.noteType, userTags: data.userTags }),
+        body: JSON.stringify({ content: data.content, noteType: data.noteType, anchors: data.anchors, userTags: data.userTags }),
       })
     } else {
       // Create new
@@ -133,6 +134,7 @@ export default function JournalDetailClient({ journal, entries }: Props) {
           onSave={handleSaveNote}
           onDelete={editingEntry ? handleDeleteNote : undefined}
           onClose={handleCloseEditor}
+          availableTags={availableTags}
         />
       )}
     </>

@@ -193,16 +193,69 @@ export async function createNote(data: {
   return note.id
 }
 
-export async function updateNote(id: number, data: { content?: string; noteType?: string }): Promise<void> {
+export async function updateNote(id: number, data: {
+  content?: string
+  noteType?: string
+  anchors?: Array<{ type: string; bookId?: string; chapter?: number; verseStart?: number; verseEnd?: number; refId?: string }>
+  themeIds?: string[]
+  userTags?: string[]
+}): Promise<void> {
   const now = new Date().toISOString()
+  const { anchors, themeIds, userTags, ...coreFields } = data
+
   const note = await prisma.userNote.update({
     where: { id },
     data: {
-      ...data,
+      ...coreFields,
       updatedAt: now,
     },
     select: { journalId: true },
   })
+
+  // Update anchors if provided
+  if (anchors !== undefined) {
+    await prisma.userNoteAnchor.deleteMany({ where: { noteId: id } })
+    for (const a of anchors) {
+      await prisma.userNoteAnchor.create({
+        data: {
+          noteId: id,
+          anchorType: a.type,
+          bookId: a.bookId ?? null,
+          chapter: a.chapter ?? null,
+          verseStart: a.verseStart ?? null,
+          verseEnd: a.verseEnd ?? null,
+          refId: a.refId ?? null,
+          isPrimary: false,
+        },
+      })
+    }
+  }
+
+  // Update theme tags if provided
+  if (themeIds !== undefined) {
+    await prisma.userNoteTheme.deleteMany({ where: { noteId: id } })
+    for (const themeId of themeIds) {
+      await prisma.userNoteTheme.create({
+        data: { noteId: id, themeId },
+      })
+    }
+  }
+
+  // Update user tags if provided
+  if (userTags !== undefined) {
+    await prisma.userNoteTag.deleteMany({ where: { noteId: id } })
+    for (const tagName of userTags) {
+      const tagId = tagName.toLowerCase().replace(/\s+/g, '-')
+      await prisma.userTag.upsert({
+        where: { id: tagId },
+        create: { id: tagId, name: tagName, createdAt: now },
+        update: {},
+      })
+      await prisma.userNoteTag.create({
+        data: { noteId: id, tagId },
+      })
+    }
+  }
 
   if (note.journalId) {
     await prisma.journal.update({

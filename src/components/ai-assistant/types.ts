@@ -42,7 +42,7 @@ export interface AIAssistantProps {
   onSaveToJournal?: (messageId: string, noteType: NoteType, content: string, anchors: Anchor[], tags: string[]) => void
   onOpenThread?: (threadId: string) => void
   onNewConversation?: () => void
-  onSaveConversation?: () => void
+  onSaveConversation?: () => void | Promise<void>
 
   contextToggles?: ContextToggles
   grounding?: GroundingRequest

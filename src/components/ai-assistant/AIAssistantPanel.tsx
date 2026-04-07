@@ -3,7 +3,7 @@
 import { useState, useRef, useEffect } from 'react'
 import ReactMarkdown from 'react-markdown'
 import remarkGfm from 'remark-gfm'
-import { X, Clock, Send, Bookmark, ChevronLeft, Save, Plus } from 'lucide-react'
+import { X, Clock, Send, Bookmark, BookmarkCheck, ChevronLeft, Save, Check, Plus } from 'lucide-react'
 import { ContextControls } from './ContextControls'
 import type { AIAssistantProps, Message, GroundingContext, ConversationThread } from './types'
 
@@ -67,7 +67,7 @@ function StreamingDots() {
   )
 }
 
-function MessageBubble({ message, onSave, isStreaming }: { message: Message; onSave?: () => void; isStreaming?: boolean }) {
+function MessageBubble({ message, onSave, isStreaming, isSaved }: { message: Message; onSave?: () => void; isStreaming?: boolean; isSaved?: boolean }) {
   const isUser = message.role === 'user'
   const showDots = !isUser && isStreaming && message.content === ''
   return (
@@ -84,7 +84,11 @@ function MessageBubble({ message, onSave, isStreaming }: { message: Message; onS
         {!isUser && !showDots && (
           <div className="flex items-center justify-between mt-2">
             {message.sourceTier && <AITierPill tier={message.sourceTier} />}
-            {onSave && (<button onClick={onSave} title="Save to journal" className="opacity-0 group-hover:opacity-100 transition-opacity duration-150" style={{ color: 'var(--selah-sky-400, #6B91B5)', background: 'none', border: 'none', cursor: 'pointer', padding: '2px' }}><Bookmark size={14} strokeWidth={1.5} /></button>)}
+            {isSaved ? (
+              <span title="Saved to journal" style={{ color: 'var(--selah-gold-500, #C6A23C)', padding: '2px' }}><BookmarkCheck size={14} strokeWidth={1.5} /></span>
+            ) : onSave ? (
+              <button onClick={onSave} title="Save to journal" className="opacity-0 group-hover:opacity-100 transition-opacity duration-150" style={{ color: 'var(--selah-sky-400, #6B91B5)', background: 'none', border: 'none', cursor: 'pointer', padding: '2px' }}><Bookmark size={14} strokeWidth={1.5} /></button>
+            ) : null}
           </div>
         )}
         <p style={{ fontFamily: font.body, fontSize: '10px', color: isUser ? 'var(--selah-gold-500, #C6A23C)' : 'var(--selah-text-3, #6E695F)', marginTop: '4px', textAlign: isUser ? 'right' : 'left' }}>{message.timestamp}</p>
@@ -154,6 +158,8 @@ const mdStyles = `
 export function AIAssistantPanel({ groundingContext, messages, conversationHistory, isConfigured, isPanelOpen, isStreaming, onSendMessage, onClose, onSaveToJournal, onOpenThread, onNewConversation, onSaveConversation, grounding, contextToggles, onContextToggle }: AIAssistantProps) {
   const [input, setInput] = useState('')
   const [showHistory, setShowHistory] = useState(false)
+  const [saveStatus, setSaveStatus] = useState<'idle' | 'saving' | 'saved'>('idle')
+  const [savedMessageIds, setSavedMessageIds] = useState<Set<string>>(new Set())
   const messagesEndRef = useRef<HTMLDivElement>(null)
 
   useEffect(() => { messagesEndRef.current?.scrollIntoView({ behavior: 'smooth' }) }, [messages.length, messages[messages.length - 1]?.content])
@@ -177,7 +183,20 @@ export function AIAssistantPanel({ groundingContext, messages, conversationHisto
         <span style={{ fontFamily: font.body, fontSize: '14px', fontWeight: 600, color: 'var(--selah-sky-400, #6B91B5)' }}>AI assistant</span>
         <div className="flex items-center gap-2">
           {messages.length > 0 && onSaveConversation && (
-            <button onClick={onSaveConversation} title="Save conversation" disabled={isStreaming} style={{ color: 'var(--selah-text-3, #6E695F)', background: 'none', border: 'none', cursor: isStreaming ? 'default' : 'pointer', padding: '4px', opacity: isStreaming ? 0.4 : 1 }}><Save size={16} strokeWidth={1.5} /></button>
+            <button
+              onClick={async () => {
+                if (saveStatus !== 'idle') return
+                setSaveStatus('saving')
+                await onSaveConversation()
+                setSaveStatus('saved')
+                setTimeout(() => setSaveStatus('idle'), 2000)
+              }}
+              title={saveStatus === 'saved' ? 'Saved!' : 'Save conversation'}
+              disabled={isStreaming || saveStatus !== 'idle'}
+              style={{ color: saveStatus === 'saved' ? 'var(--selah-gold-500, #C6A23C)' : 'var(--selah-text-3, #6E695F)', background: 'none', border: 'none', cursor: isStreaming || saveStatus !== 'idle' ? 'default' : 'pointer', padding: '4px', opacity: isStreaming ? 0.4 : 1 }}
+            >
+              {saveStatus === 'saved' ? <Check size={16} strokeWidth={2} /> : <Save size={16} strokeWidth={1.5} />}
+            </button>
           )}
           {onNewConversation && (
             <button onClick={onNewConversation} title="New conversation" style={{ color: 'var(--selah-text-3, #6E695F)', background: 'none', border: 'none', cursor: 'pointer', padding: '4px' }}><Plus size={16} strokeWidth={1.5} /></button>
@@ -204,7 +223,11 @@ export function AIAssistantPanel({ groundingContext, messages, conversationHisto
             key={msg.id}
             message={msg}
             isStreaming={isStreaming && msg.id === 'streaming'}
-            onSave={msg.role === 'assistant' && msg.id !== 'streaming' ? () => onSaveToJournal?.(msg.id, 'insight', msg.content, [], []) : undefined}
+            onSave={msg.role === 'assistant' && msg.id !== 'streaming' && !savedMessageIds.has(msg.id) ? () => {
+              onSaveToJournal?.(msg.id, 'insight', msg.content, [], [])
+              setSavedMessageIds((prev) => new Set(prev).add(msg.id))
+            } : undefined}
+            isSaved={savedMessageIds.has(msg.id)}
           />
         ))}
         <div ref={messagesEndRef} />

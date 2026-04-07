@@ -64,6 +64,18 @@ export interface Citation {
   endIndex: number
 }
 
+/** A named section of grounding context */
+export interface ContextSection {
+  id: string                // e.g. 'chapter-text', 'narrative', 'strongs', 'collections'
+  label: string             // Human-readable: "Chapter Text", "Strong's Hebrew/Greek"
+  content: string           // The actual grounding text
+  estimatedTokens: number   // Math.ceil(content.length / 4)
+  defaultEnabled: boolean   // Whether this section is on by default
+}
+
+/** Map of section IDs to enabled/disabled state */
+export type ContextToggles = Record<string, boolean>
+
 /** Grounding request sent from client to /api/ai/send */
 export interface GroundingRequest {
   page: 'reader' | 'character' | 'theme' | 'word-study' | 'study-builder'
@@ -99,4 +111,5 @@ export interface AiSendRequest {
   messages: ChatMessage[]
   grounding: GroundingRequest
   conversationId?: string
+  contextToggles?: ContextToggles  // <-- add this
 }

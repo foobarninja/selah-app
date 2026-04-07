@@ -18,6 +18,7 @@ export function ConnectedAIPanel() {
     closePanel,
     newConversation,
     openThread,
+    deleteThread,
     saveConversation,
   } = useChatContext()
 
@@ -48,6 +49,7 @@ export function ConnectedAIPanel() {
           })
         }}
         onOpenThread={openThread}
+        onDeleteThread={deleteThread}
         onNewConversation={newConversation}
         onSaveConversation={saveConversation}
         contextToggles={contextToggles}

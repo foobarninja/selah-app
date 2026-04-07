@@ -22,6 +22,7 @@ interface ChatContextValue {
   closePanel: () => void
   newConversation: () => void
   openThread: (threadId: string) => void
+  deleteThread: (threadId: string) => Promise<void>
   saveConversation: () => Promise<void>
 }
 
@@ -156,6 +157,18 @@ export function ChatProvider({ children, grounding, groundingDisplay, isConfigur
     }
   }, [])
 
+  const deleteThread = useCallback(async (threadId: string) => {
+    try {
+      await fetch(`/api/ai/conversations/${threadId}`, { method: 'DELETE' })
+      setConversationHistory((prev) => prev.filter((t) => t.id !== threadId))
+      if (conversationId === threadId) {
+        setConversationId(null)
+        setMessages([])
+        setCitations([])
+      }
+    } catch { /* ignore */ }
+  }, [conversationId])
+
   const saveConversation = useCallback(async () => {
     if (messages.length === 0) return
     const res = await fetch('/api/ai/conversations/new/save', {
@@ -219,6 +232,7 @@ export function ChatProvider({ children, grounding, groundingDisplay, isConfigur
         closePanel,
         newConversation,
         openThread,
+        deleteThread,
         saveConversation,
       }}
     >

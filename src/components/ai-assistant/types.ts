@@ -41,6 +41,7 @@ export interface AIAssistantProps {
   onTogglePanel?: () => void
   onSaveToJournal?: (messageId: string, noteType: NoteType, content: string, anchors: Anchor[], tags: string[]) => void
   onOpenThread?: (threadId: string) => void
+  onDeleteThread?: (threadId: string) => void
   onNewConversation?: () => void
   onSaveConversation?: () => void | Promise<void>
 

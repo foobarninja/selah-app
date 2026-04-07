@@ -97,7 +97,7 @@ function MessageBubble({ message, onSave, isStreaming, isSaved }: { message: Mes
   )
 }
 
-function HistoryList({ threads, onOpen, onBack }: { threads: ConversationThread[]; onOpen?: (id: string) => void; onBack: () => void }) {
+function HistoryList({ threads, onOpen, onDelete, onBack }: { threads: ConversationThread[]; onOpen?: (id: string) => void; onDelete?: (id: string) => void; onBack: () => void }) {
   return (
     <div className="h-full flex flex-col">
       <div className="flex items-center gap-2 shrink-0" style={{ padding: '12px 16px', borderBottom: '1px solid var(--selah-border-color, #3D3835)' }}>
@@ -105,11 +105,19 @@ function HistoryList({ threads, onOpen, onBack }: { threads: ConversationThread[
         <span style={{ fontFamily: font.body, fontSize: '14px', fontWeight: 500, color: 'var(--selah-text-1, #E8E2D9)' }}>Past conversations</span>
       </div>
       <div className="flex-1 overflow-y-auto">
+        {threads.length === 0 && (
+          <p style={{ fontFamily: font.body, fontSize: '13px', color: 'var(--selah-text-3, #6E695F)', textAlign: 'center', padding: '24px 16px' }}>No saved conversations yet.</p>
+        )}
         {threads.map((thread) => (
-          <button key={thread.id} onClick={() => onOpen?.(thread.id)} className="block w-full text-left transition-colors duration-150" style={{ padding: '12px 16px', background: 'none', border: 'none', borderBottom: '1px solid var(--selah-border-color, #3D3835)', cursor: 'pointer' }} onMouseEnter={(e) => { (e.currentTarget as HTMLElement).style.backgroundColor = 'var(--selah-bg-elevated, #292524)' }} onMouseLeave={(e) => { (e.currentTarget as HTMLElement).style.backgroundColor = 'transparent' }}>
-            <p style={{ fontFamily: font.body, fontSize: '13px', fontWeight: 500, color: 'var(--selah-text-1, #E8E2D9)', marginBottom: '2px' }}>{thread.groundingLabel}</p>
-            <p style={{ fontFamily: font.body, fontSize: '11px', color: 'var(--selah-text-3, #6E695F)' }}>{thread.messageCount} messages &middot; {thread.date}</p>
-          </button>
+          <div key={thread.id} className="flex items-center group transition-colors duration-150" style={{ borderBottom: '1px solid var(--selah-border-color, #3D3835)' }} onMouseEnter={(e) => { (e.currentTarget as HTMLElement).style.backgroundColor = 'var(--selah-bg-elevated, #292524)' }} onMouseLeave={(e) => { (e.currentTarget as HTMLElement).style.backgroundColor = 'transparent' }}>
+            <button onClick={() => onOpen?.(thread.id)} className="flex-1 text-left" style={{ padding: '12px 16px', background: 'none', border: 'none', cursor: 'pointer' }}>
+              <p style={{ fontFamily: font.body, fontSize: '13px', fontWeight: 500, color: 'var(--selah-text-1, #E8E2D9)', marginBottom: '2px' }}>{thread.groundingLabel}</p>
+              <p style={{ fontFamily: font.body, fontSize: '11px', color: 'var(--selah-text-3, #6E695F)' }}>{thread.messageCount} messages &middot; {thread.date}</p>
+            </button>
+            {onDelete && (
+              <button onClick={() => onDelete(thread.id)} title="Delete conversation" className="opacity-0 group-hover:opacity-100 transition-opacity duration-150 shrink-0" style={{ padding: '8px 12px', background: 'none', border: 'none', cursor: 'pointer', color: 'var(--selah-text-3, #6E695F)' }}><X size={14} strokeWidth={1.5} /></button>
+            )}
+          </div>
         ))}
       </div>
     </div>
@@ -155,7 +163,7 @@ const mdStyles = `
 .selah-md a { color: var(--selah-sky-400, #6B91B5); text-decoration: underline; }
 `
 
-export function AIAssistantPanel({ groundingContext, messages, conversationHistory, isConfigured, isPanelOpen, isStreaming, onSendMessage, onClose, onSaveToJournal, onOpenThread, onNewConversation, onSaveConversation, grounding, contextToggles, onContextToggle }: AIAssistantProps) {
+export function AIAssistantPanel({ groundingContext, messages, conversationHistory, isConfigured, isPanelOpen, isStreaming, onSendMessage, onClose, onSaveToJournal, onOpenThread, onDeleteThread, onNewConversation, onSaveConversation, grounding, contextToggles, onContextToggle }: AIAssistantProps) {
   const [input, setInput] = useState('')
   const [showHistory, setShowHistory] = useState(false)
   const [saveStatus, setSaveStatus] = useState<'idle' | 'saving' | 'saved'>('idle')
@@ -171,7 +179,7 @@ export function AIAssistantPanel({ groundingContext, messages, conversationHisto
   if (showHistory) {
     return (
       <div className="flex flex-col h-full" style={{ backgroundColor: 'var(--selah-bg-page, #0F0D0B)', borderLeft: '1px solid var(--selah-border-color, #3D3835)' }}>
-        <HistoryList threads={conversationHistory} onOpen={(id) => { onOpenThread?.(id); setShowHistory(false) }} onBack={() => setShowHistory(false)} />
+        <HistoryList threads={conversationHistory} onOpen={(id) => { onOpenThread?.(id); setShowHistory(false) }} onDelete={onDeleteThread} onBack={() => setShowHistory(false)} />
       </div>
     )
   }

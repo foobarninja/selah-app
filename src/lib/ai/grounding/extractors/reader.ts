@@ -20,20 +20,18 @@ export async function extractReaderContext(ctx: ReaderContext): Promise<ContextS
       OR: [{ chapterEnd: { gte: chapter } }, { chapterEnd: null }],
     },
     orderBy: [{ chapterStart: 'desc' }, { verseStart: 'desc' }],
-  }).catch((err) => { console.error('[reader-extractor] narrative query failed:', err); return null })
+  }).catch(() => null)
 
   const strongsMappings = await prisma.strongsVerseMap.findMany({
     where: { bookId, chapter },
     include: { entry: true },
     orderBy: [{ verse: 'asc' }, { wordPosition: 'asc' }],
-  }).catch((err) => { console.error('[reader-extractor] strongs query failed:', err); return [] })
+  }).catch(() => [])
 
   const footnotes = await prisma.footnote.findMany({
     where: { bookId, chapter },
     orderBy: { verse: 'asc' },
-  }).catch((err) => { console.error('[reader-extractor] footnotes query failed:', err); return [] })
-
-  console.log(`[reader-extractor] ${bookId} ${chapter}: verses=${verses.length}, narrative=${!!narrativeUnit}, strongs=${strongsMappings.length}, footnotes=${footnotes.length}`)
+  }).catch(() => [])
 
   // ── Adjacent chapter text when narrative spans multiple chapters ─────────
   // If the narrative unit extends beyond this chapter, fetch surrounding chapters

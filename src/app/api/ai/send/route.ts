@@ -34,11 +34,8 @@ export async function POST(request: NextRequest) {
   let systemPrompt: string
   try {
     const { assembled: groundingContext } = await buildGroundingContext(grounding, body.contextToggles)
-    console.log(`[ai/send] grounding context: ${groundingContext.length} chars (~${Math.round(groundingContext.length / 3.5)} tokens)`)
     systemPrompt = await buildSystemPrompt(groundingContext)
-    console.log(`[ai/send] system prompt: ${systemPrompt.length} chars (~${Math.round(systemPrompt.length / 3.5)} tokens)`)
-  } catch (err) {
-    console.error('[ai/send] grounding failed, using empty fallback:', err)
+  } catch {
     // Fallback: general prompt without grounding
     systemPrompt = await buildSystemPrompt('')
   }
@@ -49,9 +46,6 @@ export async function POST(request: NextRequest) {
     { role: 'system', content: systemPrompt },
     ...truncatedHistory,
   ]
-  const totalChars = fullMessages.reduce((sum, m) => sum + m.content.length, 0)
-  console.log(`[ai/send] sending ${fullMessages.length} messages, ${totalChars} chars (~${Math.round(totalChars / 3.5)} tokens)`)
-
   const encoder = new TextEncoder()
   const stream = new ReadableStream({
     async start(controller) {

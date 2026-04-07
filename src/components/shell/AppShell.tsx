@@ -1,7 +1,7 @@
 'use client'
 
 import { useState, useEffect } from 'react'
-import { Menu, X, MessageCircle } from 'lucide-react'
+import { Menu, X } from 'lucide-react'
 import { MainNav } from './MainNav'
 import { UserMenu } from './UserMenu'
 import { navigationItems } from './navigation'
@@ -10,7 +10,6 @@ interface AppShellProps {
   children: React.ReactNode
   user?: { name: string; avatarUrl?: string }
   isAIConfigured?: boolean
-  onToggleAI?: () => void
   onLogout?: () => void
 }
 
@@ -22,7 +21,6 @@ export default function AppShell({
   children,
   user,
   isAIConfigured = false,
-  onToggleAI,
   onLogout,
 }: AppShellProps) {
   const [isCollapsed, setIsCollapsed] = useState(false)
@@ -169,23 +167,6 @@ export default function AppShell({
         <div className="h-14 md:hidden" />
 
         {children}
-
-        {/* AI assistant floating trigger */}
-        {isAIConfigured && (
-          <button
-            onClick={onToggleAI}
-            title="Ask the AI assistant"
-            className="fixed bottom-6 right-6 z-30 flex items-center justify-center rounded-full shadow-lg transition-all duration-150"
-            style={{
-              width: '48px',
-              height: '48px',
-              backgroundColor: 'var(--selah-sky-400, #6B91B5)',
-              color: '#fff',
-            }}
-          >
-            <MessageCircle size={20} strokeWidth={1.5} />
-          </button>
-        )}
       </main>
     </div>
   )

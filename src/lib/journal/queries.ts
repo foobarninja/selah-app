@@ -2,52 +2,17 @@ import { prisma } from '@/lib/db'
 import { BOOK_NAMES } from '@/lib/constants'
 import type {
   JournalEntry,
+  JournalSummary,
+  JournalDetail,
+  JournalPickerItem,
   Collection,
   Bookmark,
   Anchor,
   NoteType,
   StudyContext,
-  JournalTab,
 } from '@/components/journal/types'
 
-// ── Journal interfaces ─────────────────────────────────────────────────────────
-
-export interface JournalSummary {
-  id: string
-  name: string
-  description: string | null
-  coverColor: string | null
-  journalType: string
-  sortOrder: number
-  isDefault: boolean
-  noteCount: number
-  lastEntryAt: string | null
-  updatedAt: string
-}
-
-export interface JournalDetail {
-  id: string
-  name: string
-  description: string | null
-  coverColor: string | null
-  journalType: string
-  anchorBookId: string | null
-  anchorChapter: number | null
-  anchorVerse: number | null
-  anchorCharacterId: string | null
-  anchorThemeId: string | null
-  sortOrder: number
-  isDefault: boolean
-  createdAt: string
-  updatedAt: string
-}
-
-export interface JournalPickerItem {
-  id: string
-  name: string
-  noteCount: number
-  isDefault: boolean
-}
+export type { JournalSummary, JournalDetail, JournalPickerItem }
 
 function timeAgo(dateStr: string): string {
   if (!dateStr) return ''
@@ -405,18 +370,24 @@ export async function getJournals(): Promise<JournalSummary[]> {
     },
   })
 
-  return journals.map((j) => ({
-    id: j.id,
-    name: j.name,
-    description: j.description,
-    coverColor: j.coverColor,
-    journalType: j.journalType,
-    sortOrder: j.sortOrder,
-    isDefault: j.isDefault,
-    noteCount: j._count.notes,
-    lastEntryAt: j.notes[0]?.createdAt ?? null,
-    updatedAt: j.updatedAt,
-  }))
+  return journals.map((j) => {
+    const lastEntryAt = j.notes[0]?.createdAt ?? null
+    return {
+      id: j.id,
+      name: j.name,
+      description: j.description ?? '',
+      coverColor: (j.coverColor as JournalSummary['coverColor']) ?? null,
+      journalType: (j.journalType as JournalSummary['journalType']) ?? 'study',
+      isDefault: j.isDefault,
+      noteCount: j._count.notes,
+      lastEntry: lastEntryAt,
+      lastEntryAgo: lastEntryAt ? timeAgo(lastEntryAt) : null,
+      anchorBookId: j.anchorBookId ?? null,
+      anchorChapter: j.anchorChapter ?? null,
+      anchorCharacterId: j.anchorCharacterId ?? null,
+      anchorThemeId: j.anchorThemeId ?? null,
+    }
+  })
 }
 
 export async function getJournalDetail(id: string): Promise<JournalDetail | null> {
@@ -425,18 +396,14 @@ export async function getJournalDetail(id: string): Promise<JournalDetail | null
   return {
     id: j.id,
     name: j.name,
-    description: j.description,
-    coverColor: j.coverColor,
-    journalType: j.journalType,
-    anchorBookId: j.anchorBookId,
-    anchorChapter: j.anchorChapter,
-    anchorVerse: j.anchorVerse,
-    anchorCharacterId: j.anchorCharacterId,
-    anchorThemeId: j.anchorThemeId,
-    sortOrder: j.sortOrder,
+    description: j.description ?? '',
+    coverColor: (j.coverColor as JournalDetail['coverColor']) ?? null,
+    journalType: (j.journalType as JournalDetail['journalType']) ?? 'study',
     isDefault: j.isDefault,
-    createdAt: j.createdAt,
-    updatedAt: j.updatedAt,
+    anchorBookId: j.anchorBookId ?? null,
+    anchorChapter: j.anchorChapter ?? null,
+    anchorCharacterId: j.anchorCharacterId ?? null,
+    anchorThemeId: j.anchorThemeId ?? null,
   }
 }
 

@@ -120,6 +120,7 @@ export interface ResurfacedEntry {
   createdAt: string
   matchChannel: MatchChannel
   matchScore: number
+  journalName?: string
 }
 
 export interface LensTag {

@@ -25,9 +25,11 @@ export async function surfaceNotes(
     // Channel 1: Direct verse anchor match
     const directMatches = db.prepare(`
       SELECT n.id, n.content, n.note_type, n.created_at,
-             a.anchor_type, a.book_id, a.chapter, a.verse_start, a.ref_id
+             a.anchor_type, a.book_id, a.chapter, a.verse_start, a.ref_id,
+             j.name as journal_name
       FROM user_notes n
       JOIN user_note_anchors a ON a.note_id = n.id
+      LEFT JOIN journals j ON j.id = n.journal_id
       WHERE a.anchor_type = 'verse' AND a.book_id = ? AND a.chapter = ?
         AND a.verse_start >= ? AND a.verse_start <= ?
       LIMIT 10
@@ -39,10 +41,12 @@ export async function surfaceNotes(
 
     // Channel 2: Theme overlap
     const themeMatches = db.prepare(`
-      SELECT DISTINCT n.id, n.content, n.note_type, n.created_at
+      SELECT DISTINCT n.id, n.content, n.note_type, n.created_at,
+             j.name as journal_name
       FROM user_notes n
       JOIN user_note_themes nt ON nt.note_id = n.id
       JOIN passage_themes pt ON pt.theme_id = nt.theme_id
+      LEFT JOIN journals j ON j.id = n.journal_id
       WHERE pt.book_id = ? AND pt.chapter = ?
         AND pt.verse_start <= ? AND (pt.verse_end >= ? OR pt.verse_end IS NULL)
       LIMIT 10
@@ -56,10 +60,12 @@ export async function surfaceNotes(
 
     // Channel 3: Character overlap
     const charMatches = db.prepare(`
-      SELECT DISTINCT n.id, n.content, n.note_type, n.created_at
+      SELECT DISTINCT n.id, n.content, n.note_type, n.created_at,
+             j.name as journal_name
       FROM user_notes n
       JOIN user_note_anchors a ON a.note_id = n.id
       JOIN character_appearances ca ON ca.character_id = a.ref_id
+      LEFT JOIN journals j ON j.id = n.journal_id
       WHERE a.anchor_type = 'character'
         AND ca.book_id = ? AND ca.chapter = ?
         AND ca.verse_start <= ? AND (ca.verse_end >= ? OR ca.verse_end IS NULL)
@@ -74,11 +80,13 @@ export async function surfaceNotes(
 
     // Channel 4: Cross-reference chain
     const xrefMatches = db.prepare(`
-      SELECT DISTINCT n.id, n.content, n.note_type, n.created_at
+      SELECT DISTINCT n.id, n.content, n.note_type, n.created_at,
+             j.name as journal_name
       FROM user_notes n
       JOIN user_note_anchors a ON a.note_id = n.id
       JOIN cross_references cr ON cr.target_book = a.book_id
         AND cr.target_chapter = a.chapter AND cr.target_verse = a.verse_start
+      LEFT JOIN journals j ON j.id = n.journal_id
       WHERE a.anchor_type = 'verse'
         AND cr.source_book = ? AND cr.source_chapter = ?
         AND cr.source_verse >= ? AND cr.source_verse <= ?
@@ -103,9 +111,11 @@ export async function surfaceNotes(
         const keywords = extractKeywords(verseText.text)
         if (keywords) {
           const ftsMatches = db.prepare(`
-            SELECT n.id, n.content, n.note_type, n.created_at
+            SELECT n.id, n.content, n.note_type, n.created_at,
+                   j.name as journal_name
             FROM user_notes_fts f
             JOIN user_notes n ON n.id = f.rowid
+            LEFT JOIN journals j ON j.id = n.journal_id
             WHERE user_notes_fts MATCH ?
             LIMIT 5
           `).all(keywords) as NoteRow[]
@@ -140,6 +150,7 @@ interface NoteRow {
   chapter?: number
   verse_start?: number
   ref_id?: string
+  journal_name?: string
 }
 
 function addResult(
@@ -167,6 +178,7 @@ function addResult(
       createdAt: row.created_at,
       matchChannel: channel,
       matchScore: score,
+      journalName: row.journal_name ?? undefined,
     },
     score,
   })

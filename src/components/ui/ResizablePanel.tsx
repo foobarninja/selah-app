@@ -23,15 +23,7 @@ export function ResizablePanel({
   className = '',
   style,
 }: ResizablePanelProps) {
-  const [width, setWidth] = useState(() => {
-    if (typeof window === 'undefined' || !storageKey) return defaultWidth
-    const stored = localStorage.getItem(storageKey)
-    if (stored) {
-      const parsed = parseInt(stored, 10)
-      if (!isNaN(parsed) && parsed >= minWidth && parsed <= maxWidth) return parsed
-    }
-    return defaultWidth
-  })
+  const [width, setWidth] = useState(defaultWidth)
   const [hydrated, setHydrated] = useState(false)
   const dragging = useRef(false)
   const startX = useRef(0)

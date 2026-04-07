@@ -229,13 +229,22 @@ export async function createNote(data: {
 }
 
 export async function updateNote(id: number, data: { content?: string; noteType?: string }): Promise<void> {
-  await prisma.userNote.update({
+  const now = new Date().toISOString()
+  const note = await prisma.userNote.update({
     where: { id },
     data: {
       ...data,
-      updatedAt: new Date().toISOString(),
+      updatedAt: now,
     },
+    select: { journalId: true },
   })
+
+  if (note.journalId) {
+    await prisma.journal.update({
+      where: { id: note.journalId },
+      data: { updatedAt: now },
+    }).catch(() => {})
+  }
 }
 
 export async function deleteNote(id: number): Promise<void> {
@@ -488,6 +497,10 @@ export async function updateJournal(
 }
 
 export async function deleteJournal(id: string): Promise<void> {
+  const journal = await prisma.journal.findUnique({ where: { id }, select: { isDefault: true } })
+  if (!journal) return
+  if (journal.isDefault) throw new Error('Cannot delete the default journal')
+
   // Move all notes to the default journal before deleting
   await prisma.userNote.updateMany({
     where: { journalId: id },

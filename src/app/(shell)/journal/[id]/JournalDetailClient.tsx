@@ -37,7 +37,7 @@ export default function JournalDetailClient({ journal, entries }: Props) {
       await fetch(`/api/notes/${editingEntry.id}`, {
         method: 'PUT',
         headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ content: data.content, noteType: data.noteType }),
+        body: JSON.stringify({ content: data.content, noteType: data.noteType, userTags: data.userTags }),
       })
     } else {
       // Create new

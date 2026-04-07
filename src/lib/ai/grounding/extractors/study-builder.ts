@@ -1,7 +1,24 @@
 import { getProject, getProjectItems } from '@/lib/study-builder/queries'
+import { getChapterText } from '@/lib/reader/queries'
+import { BOOK_NAMES } from '@/lib/constants'
 import type { StudyBuilderContext } from '../../types'
 
 const MAX_ITEMS = 15
+
+/** Reverse lookup: display name → book ID */
+const BOOK_IDS_BY_NAME = Object.fromEntries(
+  Object.entries(BOOK_NAMES).map(([id, name]) => [name, id])
+)
+
+/** Parse a verse ref like "1 Kings 21:1" → { bookId: "1KI", chapter: 21, verse: 1 } */
+function parseVerseRef(ref: string): { bookId: string; chapter: number; verse: number } | null {
+  const match = ref.match(/^(.+?)\s+(\d+):(\d+)$/)
+  if (!match) return null
+  const bookName = match[1]
+  const bookId = BOOK_IDS_BY_NAME[bookName]
+  if (!bookId) return null
+  return { bookId, chapter: parseInt(match[2], 10), verse: parseInt(match[3], 10) }
+}
 
 export async function extractStudyBuilderContext(ctx: StudyBuilderContext): Promise<string> {
   const { projectId } = ctx
@@ -41,6 +58,38 @@ export async function extractStudyBuilderContext(ctx: StudyBuilderContext): Prom
 
   if (items.length > MAX_ITEMS) {
     parts.push(`\n*(${items.length - MAX_ITEMS} more items not shown)*`)
+  }
+
+  // ── Fetch actual verse text for verse items ───────────────────────────────
+  // Group verse items by book+chapter, fetch chapter text, include relevant verses
+  const verseItems = displayItems.filter((i) => i.entityType === 'verse' || i.entityType === 'passage')
+  if (verseItems.length > 0) {
+    // Collect unique chapters needed
+    const chaptersNeeded = new Map<string, { bookId: string; chapter: number; verses: number[] }>()
+    for (const item of verseItems) {
+      const parsed = parseVerseRef(item.entityId || item.title)
+      if (!parsed) continue
+      const key = `${parsed.bookId}:${parsed.chapter}`
+      const existing = chaptersNeeded.get(key)
+      if (existing) {
+        existing.verses.push(parsed.verse)
+      } else {
+        chaptersNeeded.set(key, { bookId: parsed.bookId, chapter: parsed.chapter, verses: [parsed.verse] })
+      }
+    }
+
+    // Fetch chapter text for each unique chapter
+    for (const [, { bookId, chapter, verses }] of chaptersNeeded) {
+      const bookName = BOOK_NAMES[bookId] ?? bookId
+      const chapterVerses = await getChapterText('BSB', bookId, chapter)
+      if (chapterVerses.length === 0) continue
+
+      parts.push(`\n### Full Text: ${bookName} ${chapter}`)
+      // Include the full chapter so the model has proper context
+      for (const v of chapterVerses) {
+        parts.push(`${v.number}. ${v.text}`)
+      }
+    }
   }
 
   return parts.join('\n')

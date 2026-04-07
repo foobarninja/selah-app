@@ -9,7 +9,7 @@ export type ProjectFormat = 'sermon' | 'teaching' | 'small-group' | 'personal'
 export type ProjectStatus = 'in-progress' | 'exported' | 'archived'
 
 /** Entity types that can be assembled */
-export type AssemblyEntityType = 'passage' | 'character' | 'theme' | 'climate' | 'question' | 'journal'
+export type AssemblyEntityType = 'passage' | 'verse' | 'character' | 'theme' | 'climate' | 'question' | 'journal'
 
 /** Export format */
 export type ExportFormat = 'docx' | 'markdown'

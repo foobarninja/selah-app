@@ -34,6 +34,15 @@ export interface OllamaModelInfo {
   modified: string
 }
 
+/** Model info returned by OpenRouter model list API */
+export interface OpenRouterModelInfo {
+  id: string
+  name: string
+  contextLength: number
+  promptCost: string    // cost per token as string, e.g. "0.00000015"
+  completionCost: string
+}
+
 /** SSE event types sent during streaming */
 export type StreamEventType = 'token' | 'done' | 'error'
 

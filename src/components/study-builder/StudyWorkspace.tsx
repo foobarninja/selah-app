@@ -1,7 +1,10 @@
 'use client'
 
 import { useState } from 'react'
-import { ArrowLeft, ChevronUp, ChevronDown, X, Plus, Search, Download, ExternalLink, BookOpen, Users, Sparkles, CloudSun, HelpCircle, PenLine, Check } from 'lucide-react'
+import { ArrowLeft, GripVertical, X, Plus, Search, Download, ExternalLink, BookOpen, Users, Sparkles, CloudSun, HelpCircle, PenLine, Check } from 'lucide-react'
+import { DndContext, closestCenter, PointerSensor, useSensor, useSensors, type DragEndEvent } from '@dnd-kit/core'
+import { SortableContext, verticalListSortingStrategy, useSortable } from '@dnd-kit/sortable'
+import { CSS } from '@dnd-kit/utilities'
 import { TierPill } from '@/components/reader/TierPill'
 import { ResizablePanel } from '@/components/ui/ResizablePanel'
 import { ChatProvider } from '@/lib/ai/chat-context'
@@ -18,42 +21,63 @@ const font = {
 const entityIcons: Record<string, typeof BookOpen> = { passage: BookOpen, character: Users, theme: Sparkles, climate: CloudSun, question: HelpCircle, journal: PenLine }
 const formatLabels: Record<string, string> = { sermon: 'Sermon', teaching: 'Teaching', 'small-group': 'Small group', personal: 'Personal' }
 
-function AssemblyCard({ item, onRemove, onUpdateAnnotation, onNavigate, onMoveUp, onMoveDown }: { item: AssemblyItem; onRemove?: () => void; onUpdateAnnotation?: (annotation: string) => void; onNavigate?: () => void; onMoveUp?: () => void; onMoveDown?: () => void }) {
+function SortableAssemblyCard({ item, onRemove, onUpdateAnnotation, onNavigate }: { item: AssemblyItem; onRemove?: () => void; onUpdateAnnotation?: (annotation: string) => void; onNavigate?: () => void }) {
   const [isEditing, setIsEditing] = useState(false)
   const [localAnnotation, setLocalAnnotation] = useState(item.annotation)
   const Icon = entityIcons[item.entityType] || BookOpen
 
+  const {
+    attributes,
+    listeners,
+    setNodeRef,
+    transform,
+    transition,
+    isDragging,
+  } = useSortable({ id: item.id })
+
+  const style = {
+    transform: CSS.Transform.toString(transform),
+    transition,
+    opacity: isDragging ? 0.5 : 1,
+    zIndex: isDragging ? 10 : undefined,
+  }
+
   return (
-    <div className="rounded-lg mb-2 group" style={{ backgroundColor: 'var(--selah-bg-surface, #1C1917)', border: '1px solid var(--selah-border-color, #3D3835)' }}>
-      <div className="flex items-start gap-2" style={{ padding: '12px 12px 0' }}>
-        <div className="flex flex-col items-center mt-0.5 opacity-30 group-hover:opacity-80 transition-opacity duration-150" style={{ color: 'var(--selah-text-3, #6E695F)' }}>
-          <button onClick={onMoveUp} disabled={!onMoveUp} title="Move up" style={{ background: 'none', border: 'none', cursor: onMoveUp ? 'pointer' : 'default', padding: '0', color: 'inherit', opacity: onMoveUp ? 1 : 0.3 }}><ChevronUp size={14} strokeWidth={1.5} /></button>
-          <button onClick={onMoveDown} disabled={!onMoveDown} title="Move down" style={{ background: 'none', border: 'none', cursor: onMoveDown ? 'pointer' : 'default', padding: '0', color: 'inherit', opacity: onMoveDown ? 1 : 0.3 }}><ChevronDown size={14} strokeWidth={1.5} /></button>
-        </div>
-        <div className="flex-1 min-w-0">
-          <div className="flex items-center gap-2 mb-1">
-            <Icon size={14} strokeWidth={1.5} style={{ color: 'var(--selah-gold-500, #C6A23C)', flexShrink: 0 }} />
-            <span style={{ fontFamily: font.body, fontSize: '13px', fontWeight: 600, color: 'var(--selah-text-1, #E8E2D9)' }}>{item.title}</span>
-            <TierPill tier={item.sourceTier as SourceTier} />
+    <div ref={setNodeRef} style={style} className="rounded-lg mb-2 group" {...attributes}>
+      <div style={{ backgroundColor: 'var(--selah-bg-surface, #1C1917)', border: '1px solid var(--selah-border-color, #3D3835)', borderRadius: '8px' }}>
+        <div className="flex items-start gap-2" style={{ padding: '12px 12px 0' }}>
+          <div
+            className="mt-1 cursor-grab opacity-30 group-hover:opacity-60 transition-opacity duration-150 touch-none"
+            style={{ color: 'var(--selah-text-3, #6E695F)' }}
+            {...listeners}
+          >
+            <GripVertical size={14} strokeWidth={1.5} />
           </div>
-          <p className="line-clamp-2" style={{ fontFamily: font.body, fontSize: '12px', lineHeight: 1.5, color: 'var(--selah-text-3, #6E695F)' }}>{item.preview}</p>
-        </div>
-        <div className="flex items-center gap-1 shrink-0 opacity-0 group-hover:opacity-100 transition-opacity duration-150">
-          {onNavigate && (<button onClick={onNavigate} title="View in Reader" style={{ color: 'var(--selah-text-3, #6E695F)', background: 'none', border: 'none', cursor: 'pointer', padding: '4px' }}><ExternalLink size={13} strokeWidth={1.5} /></button>)}
-          <button onClick={onRemove} title="Remove" style={{ color: 'var(--selah-text-3, #6E695F)', background: 'none', border: 'none', cursor: 'pointer', padding: '4px' }}><X size={13} strokeWidth={1.5} /></button>
-        </div>
-      </div>
-      <div style={{ padding: '8px 12px 12px 30px' }}>
-        {isEditing ? (
-          <div className="flex gap-2">
-            <textarea value={localAnnotation} onChange={(e) => setLocalAnnotation(e.target.value)} rows={2} className="flex-1 outline-none resize-none rounded" style={{ fontFamily: font.body, fontSize: '12px', lineHeight: 1.5, color: 'var(--selah-text-1, #E8E2D9)', backgroundColor: 'var(--selah-bg-elevated, #292524)', border: '1px solid var(--selah-border-color, #3D3835)', padding: '6px 8px' }} autoFocus />
-            <button onClick={() => { onUpdateAnnotation?.(localAnnotation); setIsEditing(false) }} style={{ color: 'var(--selah-gold-500, #C6A23C)', background: 'none', border: 'none', cursor: 'pointer', padding: '4px', alignSelf: 'flex-start' }}><Check size={14} strokeWidth={2} /></button>
+          <div className="flex-1 min-w-0">
+            <div className="flex items-center gap-2 mb-1">
+              <Icon size={14} strokeWidth={1.5} style={{ color: 'var(--selah-gold-500, #C6A23C)', flexShrink: 0 }} />
+              <span style={{ fontFamily: font.body, fontSize: '13px', fontWeight: 600, color: 'var(--selah-text-1, #E8E2D9)' }}>{item.title}</span>
+              <TierPill tier={item.sourceTier as SourceTier} />
+            </div>
+            <p className="line-clamp-2" style={{ fontFamily: font.body, fontSize: '12px', lineHeight: 1.5, color: 'var(--selah-text-3, #6E695F)' }}>{item.preview}</p>
           </div>
-        ) : (
-          <button onClick={() => setIsEditing(true)} className="block w-full text-left transition-colors duration-150" style={{ fontFamily: font.body, fontSize: '12px', lineHeight: 1.5, color: item.annotation ? 'var(--selah-text-2, #A39E93)' : 'var(--selah-text-3, #6E695F)', fontStyle: item.annotation ? 'italic' : 'normal', background: 'none', border: 'none', cursor: 'pointer', padding: 0 }}>
-            {item.annotation || 'Add a note \u2014 why is this here?'}
-          </button>
-        )}
+          <div className="flex items-center gap-1 shrink-0 opacity-0 group-hover:opacity-100 transition-opacity duration-150">
+            {onNavigate && (<button onClick={onNavigate} title="View in Reader" style={{ color: 'var(--selah-text-3, #6E695F)', background: 'none', border: 'none', cursor: 'pointer', padding: '4px' }}><ExternalLink size={13} strokeWidth={1.5} /></button>)}
+            <button onClick={onRemove} title="Remove" style={{ color: 'var(--selah-text-3, #6E695F)', background: 'none', border: 'none', cursor: 'pointer', padding: '4px' }}><X size={13} strokeWidth={1.5} /></button>
+          </div>
+        </div>
+        <div style={{ padding: '8px 12px 12px 30px' }}>
+          {isEditing ? (
+            <div className="flex gap-2">
+              <textarea value={localAnnotation} onChange={(e) => setLocalAnnotation(e.target.value)} rows={2} className="flex-1 outline-none resize-none rounded" style={{ fontFamily: font.body, fontSize: '12px', lineHeight: 1.5, color: 'var(--selah-text-1, #E8E2D9)', backgroundColor: 'var(--selah-bg-elevated, #292524)', border: '1px solid var(--selah-border-color, #3D3835)', padding: '6px 8px' }} autoFocus />
+              <button onClick={() => { onUpdateAnnotation?.(localAnnotation); setIsEditing(false) }} style={{ color: 'var(--selah-gold-500, #C6A23C)', background: 'none', border: 'none', cursor: 'pointer', padding: '4px', alignSelf: 'flex-start' }}><Check size={14} strokeWidth={2} /></button>
+            </div>
+          ) : (
+            <button onClick={() => setIsEditing(true)} className="block w-full text-left transition-colors duration-150" style={{ fontFamily: font.body, fontSize: '12px', lineHeight: 1.5, color: item.annotation ? 'var(--selah-text-2, #A39E93)' : 'var(--selah-text-3, #6E695F)', fontStyle: item.annotation ? 'italic' : 'normal', background: 'none', border: 'none', cursor: 'pointer', padding: 0 }}>
+              {item.annotation || 'Add a note \u2014 why is this here?'}
+            </button>
+          )}
+        </div>
       </div>
     </div>
   )
@@ -77,6 +101,24 @@ export function StudyWorkspace({ activeProject, assemblyItems, sourceSections, s
   const [localSearch, setLocalSearch] = useState(searchQuery || '')
   const [activeSourceSection, setActiveSourceSection] = useState(sourceSections[0]?.id || '')
   const [mobileSourceOpen, setMobileSourceOpen] = useState(false)
+
+  const sensors = useSensors(
+    useSensor(PointerSensor, { activationConstraint: { distance: 5 } })
+  )
+
+  function handleDragEnd(event: DragEndEvent) {
+    const { active, over } = event
+    if (!over || active.id === over.id) return
+
+    const oldIndex = assemblyItems.findIndex((i) => i.id === String(active.id))
+    const newIndex = assemblyItems.findIndex((i) => i.id === String(over.id))
+    if (oldIndex === -1 || newIndex === -1) return
+
+    const ids = assemblyItems.map((i) => i.id)
+    const [moved] = ids.splice(oldIndex, 1)
+    ids.splice(newIndex, 0, moved)
+    onReorderItems?.(ids)
+  }
 
   if (!activeProject) return null
   const currentSection = sourceSections.find((s) => s.id === activeSourceSection) || sourceSections[0]
@@ -108,25 +150,19 @@ export function StudyWorkspace({ activeProject, assemblyItems, sourceSections, s
               <p style={{ fontFamily: font.body, fontSize: '14px', color: 'var(--selah-text-3, #6E695F)' }}>Add material from the source panel to start building.</p>
             </div>
           ) : (
-            assemblyItems.map((item, index) => (
-              <AssemblyCard
-                key={item.id}
-                item={item}
-                onRemove={() => onRemoveItem?.(item.id)}
-                onUpdateAnnotation={(ann) => onUpdateAnnotation?.(item.id, ann)}
-                onNavigate={item.entityType === 'passage' || item.entityType === 'character' || item.entityType === 'theme' ? () => onNavigatePassage?.(item.title) : undefined}
-                onMoveUp={index > 0 ? () => {
-                  const ids = assemblyItems.map((i) => i.id)
-                  ;[ids[index - 1], ids[index]] = [ids[index], ids[index - 1]]
-                  onReorderItems?.(ids)
-                } : undefined}
-                onMoveDown={index < assemblyItems.length - 1 ? () => {
-                  const ids = assemblyItems.map((i) => i.id)
-                  ;[ids[index], ids[index + 1]] = [ids[index + 1], ids[index]]
-                  onReorderItems?.(ids)
-                } : undefined}
-              />
-            ))
+            <DndContext sensors={sensors} collisionDetection={closestCenter} onDragEnd={handleDragEnd}>
+              <SortableContext items={assemblyItems.map((i) => i.id)} strategy={verticalListSortingStrategy}>
+                {assemblyItems.map((item) => (
+                  <SortableAssemblyCard
+                    key={item.id}
+                    item={item}
+                    onRemove={() => onRemoveItem?.(item.id)}
+                    onUpdateAnnotation={(ann) => onUpdateAnnotation?.(item.id, ann)}
+                    onNavigate={item.entityType === 'passage' || item.entityType === 'character' || item.entityType === 'theme' ? () => onNavigatePassage?.(item.title) : undefined}
+                  />
+                ))}
+              </SortableContext>
+            </DndContext>
           )}
         </div>
 

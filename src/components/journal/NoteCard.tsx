@@ -66,7 +66,7 @@ interface Props {
 
 export default function NoteCard({ entry, onEdit, onNavigateAnchor, showJournalBadge = false }: Props) {
   const isLong = entry.content.length > 200
-  const [expanded, setExpanded] = useState(false)
+  const [expanded, setExpanded] = useState(!isLong) // short notes start expanded
 
   const hookLine = entry.content.slice(0, 60)
   const restOfContent = entry.content.slice(60)
@@ -126,24 +126,26 @@ export default function NoteCard({ entry, onEdit, onNavigateAnchor, showJournalB
             {firstVerseAnchor.label}
           </button>
         )}
-        {expanded && (
-          <button
-            onClick={onEdit}
-            title="Edit note"
-            style={{
-              marginLeft: 'auto',
-              color: 'var(--selah-text-3, #6E695F)',
-              background: 'none',
-              border: 'none',
-              cursor: 'pointer',
-              padding: '2px',
-              display: 'flex',
-              alignItems: 'center',
-            }}
-          >
-            <Pencil size={13} strokeWidth={1.5} />
-          </button>
-        )}
+        <button
+          onClick={onEdit}
+          title="Edit note"
+          style={{
+            marginLeft: 'auto',
+            color: 'var(--selah-text-3, #6E695F)',
+            background: 'none',
+            border: 'none',
+            cursor: 'pointer',
+            padding: '2px',
+            display: 'flex',
+            alignItems: 'center',
+            opacity: 0.6,
+            transition: 'opacity 150ms',
+          }}
+          onMouseEnter={(e) => { (e.currentTarget as HTMLButtonElement).style.opacity = '1' }}
+          onMouseLeave={(e) => { (e.currentTarget as HTMLButtonElement).style.opacity = '0.6' }}
+        >
+          <Pencil size={13} strokeWidth={1.5} />
+        </button>
       </div>
 
       {/* Body */}

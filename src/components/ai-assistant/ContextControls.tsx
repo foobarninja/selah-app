@@ -25,9 +25,23 @@ function formatTokens(n: number): string {
   return String(n)
 }
 
+function formatCost(
+  inputTokens: number,
+  pricing: { promptCostPerToken: number; completionCostPerToken: number },
+  estimatedOutputTokens = 1000,
+): string {
+  const inputCost = inputTokens * pricing.promptCostPerToken
+  const outputCost = estimatedOutputTokens * pricing.completionCostPerToken
+  const total = inputCost + outputCost
+  if (total < 0.0001) return total.toExponential(1)
+  if (total < 0.01) return total.toFixed(4)
+  return total.toFixed(3)
+}
+
 export function ContextControls({ grounding, toggles, onToggle }: ContextControlsProps) {
   const [sections, setSections] = useState<SectionEstimate[]>([])
   const [expanded, setExpanded] = useState(false)
+  const [costEstimate, setCostEstimate] = useState<{ promptCostPerToken: number; completionCostPerToken: number } | null>(null)
 
   useEffect(() => {
     let cancelled = false
@@ -39,7 +53,10 @@ export function ContextControls({ grounding, toggles, onToggle }: ContextControl
     })
       .then((r) => r.json())
       .then((data) => {
-        if (!cancelled) setSections(data.sections ?? [])
+        if (!cancelled) {
+          setSections(data.sections ?? [])
+          setCostEstimate(data.costEstimate ?? null)
+        }
       })
       .catch(() => {})
     return () => { cancelled = true }
@@ -81,6 +98,15 @@ export function ContextControls({ grounding, toggles, onToggle }: ContextControl
         }}>
           ~{formatTokens(enabledTokens)} tokens
         </span>
+        {costEstimate && (
+          <span style={{
+            fontVariantNumeric: 'tabular-nums',
+            color: 'var(--selah-gold-500, #C6A23C)',
+            marginLeft: '6px',
+          }}>
+            ~${formatCost(enabledTokens, costEstimate)}
+          </span>
+        )}
       </button>
 
       {expanded && (

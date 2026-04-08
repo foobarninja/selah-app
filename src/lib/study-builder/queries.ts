@@ -340,31 +340,65 @@ export async function assembleMaterial(topic: string): Promise<SourceSection[]> 
       if (sceneCastItems.length >= 12) break
     }
 
-    // 7. Commentary matching the topic's passages
+    // 7. Commentary — two-path search: passage-based + direct text search
     const commentaryItems: SourceItem[] = []
+    const seenCommentaryIds = new Set<number>()
+
+    // 7a. Commentary from matching narrative passages
     for (const n of narratives.slice(0, 4)) {
       const entries = db.prepare(`
-        SELECT ce.id, ce.source_id, ce.verse, ce.text, cs.english_name
+        SELECT ce.id, ce.source_id, ce.book_id, ce.chapter, ce.verse, ce.text, cs.english_name
         FROM commentary_entries ce
         JOIN commentary_sources cs ON cs.id = ce.source_id
-        WHERE ce.book_id = ? AND ce.chapter = ? AND ce.verse IS NOT NULL
+        WHERE ce.book_id = ? AND ce.chapter = ?
         ORDER BY ce.verse
-        LIMIT 4
+        LIMIT 6
       `).all(n.book_id, n.chapter_start) as Array<{
-        id: number; source_id: string; verse: number | null; text: string; english_name: string
+        id: number; source_id: string; book_id: string; chapter: number; verse: number | null; text: string; english_name: string
       }>
 
       const bookName = BOOK_NAMES[n.book_id] || n.book_id
       for (const ce of entries) {
+        if (seenCommentaryIds.has(ce.id)) continue
+        seenCommentaryIds.add(ce.id)
+        const verseRef = ce.verse ? `:${ce.verse}` : ''
         commentaryItems.push({
           id: `commentary:${ce.id}`,
           entityType: 'commentary' as const,
-          title: `${ce.english_name} on ${bookName} ${n.chapter_start}:${ce.verse}`,
-          preview: truncate(ce.text, 120),
+          title: `${ce.english_name} on ${bookName} ${ce.chapter}${verseRef}`,
+          preview: truncate(ce.text, 150),
         })
       }
-      if (commentaryItems.length >= 10) break
+      if (commentaryItems.length >= 12) break
     }
+
+    // 7b. Direct text search on commentary content (finds commentary mentioning the topic)
+    try {
+      const textMatches = db.prepare(`
+        SELECT ce.id, ce.book_id, ce.chapter, ce.verse, ce.text, cs.english_name
+        FROM commentary_entries ce
+        JOIN commentary_sources cs ON cs.id = ce.source_id
+        WHERE ce.text LIKE ?
+        ORDER BY ce.source_id, ce.book_id, ce.chapter
+        LIMIT 20
+      `).all(likeQuery) as Array<{
+        id: number; book_id: string; chapter: number; verse: number | null; text: string; english_name: string
+      }>
+
+      for (const ce of textMatches) {
+        if (seenCommentaryIds.has(ce.id)) continue
+        seenCommentaryIds.add(ce.id)
+        const bookName = BOOK_NAMES[ce.book_id] || ce.book_id
+        const verseRef = ce.verse ? `:${ce.verse}` : ''
+        commentaryItems.push({
+          id: `commentary:${ce.id}`,
+          entityType: 'commentary' as const,
+          title: `${ce.english_name} on ${bookName} ${ce.chapter}${verseRef}`,
+          preview: truncate(ce.text, 150),
+        })
+        if (commentaryItems.length >= 25) break
+      }
+    } catch { /* ignore search errors */ }
 
     // 8. Cross-references from matching narrative passages
     const crossRefItems: SourceItem[] = []
@@ -417,7 +451,7 @@ export async function assembleMaterial(topic: string): Promise<SourceSection[]> 
     if (characterItems.length > 0) sections.push({ id: 'characters', label: 'Characters', items: characterItems })
     if (themeItems.length > 0) sections.push({ id: 'themes', label: 'Themes', items: themeItems })
     if (climateItems.length > 0) sections.push({ id: 'climate', label: 'Climate contexts', items: climateItems })
-    if (commentaryItems.length > 0) sections.push({ id: 'commentary', label: 'Commentary', items: commentaryItems.slice(0, 10) })
+    if (commentaryItems.length > 0) sections.push({ id: 'commentary', label: 'Commentary', items: commentaryItems.slice(0, 25) })
     if (crossRefItems.length > 0) sections.push({ id: 'cross-references', label: 'Cross-references', items: crossRefItems.slice(0, 12) })
     if (questionItems.length > 0) sections.push({ id: 'questions', label: 'Preaching angles & questions', items: questionItems.slice(0, 10) })
     if (noteItems.length > 0) sections.push({ id: 'notes', label: 'Your notes', items: noteItems })

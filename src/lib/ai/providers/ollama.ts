@@ -15,6 +15,13 @@ export class OllamaAdapter implements AiProviderAdapter {
         messages: messages.map((m) => ({ role: m.role, content: m.content })),
         stream: true,
         ...(this.disableThinking ? { think: false } : {}),
+        options: {
+          ...(config.temperature !== undefined ? { temperature: config.temperature } : {}),
+          ...(config.topP !== undefined ? { top_p: config.topP } : {}),
+          ...(config.maxTokens !== undefined ? { num_predict: config.maxTokens } : {}),
+          ...(config.frequencyPenalty !== undefined ? { frequency_penalty: config.frequencyPenalty } : {}),
+          ...(config.presencePenalty !== undefined ? { presence_penalty: config.presencePenalty } : {}),
+        },
       }),
     })
 

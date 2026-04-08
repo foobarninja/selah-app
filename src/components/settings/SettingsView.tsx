@@ -46,6 +46,11 @@ export function SettingsView({ translations, aiConfig, aiProviders, studyPrefere
   const [ollamaLoading, setOllamaLoading] = useState(false)
   const [ollamaError, setOllamaError] = useState<string | null>(null)
   const [ollamaDisableThinking, setOllamaDisableThinking] = useState(false)
+  const [ollamaTemperature, setOllamaTemperature] = useState(0.3)
+  const [ollamaTopP, setOllamaTopP] = useState(0.85)
+  const [ollamaMaxTokens, setOllamaMaxTokens] = useState(2048)
+  const [ollamaFreqPenalty, setOllamaFreqPenalty] = useState(0)
+  const [ollamaPresencePenalty, setOllamaPresencePenalty] = useState(0)
   const [customApiUrl, setCustomApiUrl] = useState('')
   const [openrouterModels, setOpenrouterModels] = useState<Array<{ id: string; name: string; contextLength: number; promptCost: string; completionCost: string }>>([])
   const [openrouterLoading, setOpenrouterLoading] = useState(false)
@@ -172,7 +177,22 @@ export function SettingsView({ translations, aiConfig, aiProviders, studyPrefere
                         {ollamaModels.map((m) => (<option key={m.name} value={m.name}>{m.name}</option>))}
                       </select>
                       <Toggle label="Disable thinking (for models like Qwen 3)" checked={ollamaDisableThinking} onChange={(v) => setOllamaDisableThinking(v)} />
-                      <div style={{ marginBottom: '8px' }} />
+                      <div style={{ marginTop: '16px', marginBottom: '8px' }}>
+                        <p style={{ fontFamily: font.body, fontSize: '10px', fontWeight: 500, textTransform: 'uppercase', letterSpacing: '1.5px', color: 'var(--selah-text-3)', marginBottom: '12px' }}>Model Parameters</p>
+                        {([
+                          { label: 'Temperature', value: ollamaTemperature, set: setOllamaTemperature, min: 0, max: 1, step: 0.05 },
+                          { label: 'Top P', value: ollamaTopP, set: setOllamaTopP, min: 0, max: 1, step: 0.05 },
+                          { label: 'Max tokens', value: ollamaMaxTokens, set: setOllamaMaxTokens, min: 256, max: 8192, step: 256 },
+                          { label: 'Freq. penalty', value: ollamaFreqPenalty, set: setOllamaFreqPenalty, min: 0, max: 2, step: 0.1 },
+                          { label: 'Pres. penalty', value: ollamaPresencePenalty, set: setOllamaPresencePenalty, min: 0, max: 2, step: 0.1 },
+                        ] as const).map(({ label, value, set, min, max, step }) => (
+                          <div key={label} className="flex items-center gap-3 mb-2">
+                            <span style={{ fontFamily: font.body, fontSize: '13px', color: 'var(--selah-text-2, #A39E93)', width: '110px', flexShrink: 0 }}>{label}</span>
+                            <input type="range" min={min} max={max} step={step} value={value} onChange={(e) => set(parseFloat(e.target.value))} className="flex-1" style={{ accentColor: 'var(--selah-gold-500, #C6A23C)' }} />
+                            <span style={{ fontFamily: font.mono, fontSize: '13px', color: 'var(--selah-text-1, #E8E2D9)', width: '50px', textAlign: 'right', flexShrink: 0 }}>{value}</span>
+                          </div>
+                        ))}
+                      </div>
                     </>
                   ) : isOpenRouter ? (
                     <>
@@ -249,7 +269,14 @@ export function SettingsView({ translations, aiConfig, aiProviders, studyPrefere
                       if (!selectedProvider) return
                       onSaveAIConfig?.(selectedProvider, isOllama ? ollamaUrl : apiKey, selectedModel)
                       const extraSettings: Record<string, string> = {}
-                      if (isOllama) { extraSettings.ollama_disable_thinking = String(ollamaDisableThinking) }
+                      if (isOllama) {
+                        extraSettings.ollama_disable_thinking = String(ollamaDisableThinking)
+                        extraSettings.ollama_temperature = String(ollamaTemperature)
+                        extraSettings.ollama_top_p = String(ollamaTopP)
+                        extraSettings.ollama_max_tokens = String(ollamaMaxTokens)
+                        extraSettings.ollama_freq_penalty = String(ollamaFreqPenalty)
+                        extraSettings.ollama_pres_penalty = String(ollamaPresencePenalty)
+                      }
                       if (!isOllama && !isOpenRouter && customApiUrl) { extraSettings.custom_api_url = customApiUrl }
                       if (isOpenRouter) {
                         extraSettings.openrouter_temperature = String(orTemperature)

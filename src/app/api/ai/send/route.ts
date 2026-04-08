@@ -68,6 +68,15 @@ export async function POST(request: NextRequest) {
             frequencyPenalty: parseFloat(await getSetting('openrouter_freq_penalty') ?? '0'),
             presencePenalty: parseFloat(await getSetting('openrouter_pres_penalty') ?? '0'),
           }
+        } else if (providerSetting === 'ollama') {
+          config = {
+            model: '',
+            maxTokens: parseInt(await getSetting('ollama_max_tokens') ?? '2048', 10),
+            temperature: parseFloat(await getSetting('ollama_temperature') ?? '0.3'),
+            topP: parseFloat(await getSetting('ollama_top_p') ?? '0.85'),
+            frequencyPenalty: parseFloat(await getSetting('ollama_freq_penalty') ?? '0'),
+            presencePenalty: parseFloat(await getSetting('ollama_pres_penalty') ?? '0'),
+          }
         }
 
         for await (const chunk of provider.stream(fullMessages, config)) {

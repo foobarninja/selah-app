@@ -29,6 +29,9 @@ export class OpenRouterAdapter implements AiProviderAdapter {
       model: config.model || this.model,
       max_tokens: config.maxTokens || 1500,
       temperature: config.temperature ?? 0.3,
+      top_p: config.topP ?? 0.85,
+      frequency_penalty: config.frequencyPenalty ?? 0,
+      presence_penalty: config.presencePenalty ?? 0,
       messages: openaiMessages,
       stream: true,
     })

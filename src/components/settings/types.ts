@@ -1,7 +1,7 @@
 // Settings section — TypeScript interfaces
 
 /** AI provider identifier */
-export type AIProvider = 'anthropic' | 'google' | 'openai' | 'ollama' | 'custom'
+export type AIProvider = 'anthropic' | 'google' | 'openai' | 'ollama' | 'openrouter' | 'custom'
 
 /** Connection test status */
 export type ConnectionStatus = 'connected' | 'failed' | 'testing' | null

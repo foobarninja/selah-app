@@ -1,9 +1,10 @@
 import { NextRequest } from 'next/server'
 import { getProvider } from '@/lib/ai/provider-factory'
+import { getSetting } from '@/lib/settings/queries'
 import { buildGroundingContext } from '@/lib/ai/grounding/context-builder'
 import { buildSystemPrompt } from '@/lib/ai/grounding/system-prompt'
 import { extractCitations } from '@/lib/ai/post-processing/citation-extractor'
-import type { AiSendRequest, ChatMessage, StreamEvent } from '@/lib/ai/types'
+import type { AiSendRequest, ChatMessage, ModelConfig, StreamEvent } from '@/lib/ai/types'
 
 const MAX_HISTORY_MESSAGES = 20
 const STREAM_TIMEOUT_MS = 300000 // 5 minutes — local models can be slow
@@ -56,7 +57,18 @@ export async function POST(request: NextRequest) {
       }, STREAM_TIMEOUT_MS)
 
       try {
-        const config = { model: '', maxTokens: 2048 }
+        const providerSetting = await getSetting('ai_provider')
+        let config: ModelConfig = { model: '', maxTokens: 2048 }
+        if (providerSetting === 'openrouter') {
+          config = {
+            model: '',
+            maxTokens: parseInt(await getSetting('openrouter_max_tokens') ?? '1500', 10),
+            temperature: parseFloat(await getSetting('openrouter_temperature') ?? '0.3'),
+            topP: parseFloat(await getSetting('openrouter_top_p') ?? '0.85'),
+            frequencyPenalty: parseFloat(await getSetting('openrouter_freq_penalty') ?? '0'),
+            presencePenalty: parseFloat(await getSetting('openrouter_pres_penalty') ?? '0'),
+          }
+        }
 
         for await (const chunk of provider.stream(fullMessages, config)) {
           fullResponse += chunk

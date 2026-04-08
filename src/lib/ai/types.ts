@@ -11,6 +11,9 @@ export interface ModelConfig {
   model: string
   maxTokens?: number
   temperature?: number
+  topP?: number
+  frequencyPenalty?: number
+  presencePenalty?: number
 }
 
 /** Resolved provider credentials */

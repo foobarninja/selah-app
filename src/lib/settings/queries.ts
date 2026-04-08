@@ -114,11 +114,18 @@ export async function getAIProviders(): Promise<AIProviderOption[]> {
     select: { id: true, name: true, notes: true },
   })
 
-  return providers.map((p) => ({
+  const list = providers.map((p) => ({
     id: p.id as AIProviderOption['id'],
     name: p.name,
     note: p.notes || '',
   }))
+
+  // Ensure OpenRouter is always available
+  if (!list.some((p) => p.id === 'openrouter')) {
+    list.push({ id: 'openrouter', name: 'OpenRouter', note: 'Multi-model gateway — DeepSeek, Gemini, Llama, and more' })
+  }
+
+  return list
 }
 
 export async function getAIModels(providerId: string): Promise<Array<{ id: string; name: string; isDefault: boolean }>> {

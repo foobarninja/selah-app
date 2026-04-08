@@ -47,8 +47,17 @@ export function SettingsView({ translations, aiConfig, aiProviders, studyPrefere
   const [ollamaError, setOllamaError] = useState<string | null>(null)
   const [ollamaDisableThinking, setOllamaDisableThinking] = useState(false)
   const [customApiUrl, setCustomApiUrl] = useState('')
+  const [openrouterModels, setOpenrouterModels] = useState<Array<{ id: string; name: string; contextLength: number; promptCost: string; completionCost: string }>>([])
+  const [openrouterLoading, setOpenrouterLoading] = useState(false)
+  const [openrouterError, setOpenrouterError] = useState<string | null>(null)
+  const [orTemperature, setOrTemperature] = useState(0.3)
+  const [orTopP, setOrTopP] = useState(0.85)
+  const [orMaxTokens, setOrMaxTokens] = useState(1500)
+  const [orFreqPenalty, setOrFreqPenalty] = useState(0)
+  const [orPresencePenalty, setOrPresencePenalty] = useState(0)
 
   const isOllama = selectedProvider === 'ollama'
+  const isOpenRouter = selectedProvider === 'openrouter'
 
   const fetchOllamaModels = async () => {
     setOllamaLoading(true)
@@ -69,6 +78,28 @@ export function SettingsView({ translations, aiConfig, aiProviders, studyPrefere
       setOllamaLoading(false)
     }
   }
+
+  const fetchOpenRouterModels = async () => {
+    if (!apiKey) { setOpenrouterError('Enter your API key first'); return }
+    setOpenrouterLoading(true)
+    setOpenrouterError(null)
+    try {
+      const res = await fetch(`/api/ai/openrouter/models?key=${encodeURIComponent(apiKey)}`)
+      if (!res.ok) throw new Error(`Failed: ${res.status}`)
+      const models = await res.json()
+      setOpenrouterModels(models)
+      if (models.length === 0) setOpenrouterError('No models found')
+    } catch (e: unknown) {
+      setOpenrouterError(e instanceof Error ? e.message : 'Failed to fetch models')
+    } finally {
+      setOpenrouterLoading(false)
+    }
+  }
+
+  const selectedOrModel = openrouterModels.find((m) => m.id === selectedModel)
+  const orCostEstimate = selectedOrModel
+    ? (parseFloat(selectedOrModel.promptCost) * 4000 + parseFloat(selectedOrModel.completionCost) * orMaxTokens)
+    : null
 
   return (
     <div className="h-full overflow-y-auto" style={{ padding: '40px 32px' }}>
@@ -143,6 +174,54 @@ export function SettingsView({ translations, aiConfig, aiProviders, studyPrefere
                       <Toggle label="Disable thinking (for models like Qwen 3)" checked={ollamaDisableThinking} onChange={(v) => setOllamaDisableThinking(v)} />
                       <div style={{ marginBottom: '8px' }} />
                     </>
+                  ) : isOpenRouter ? (
+                    <>
+                      <p style={{ fontFamily: font.body, fontSize: '13px', color: 'var(--selah-text-2)', marginBottom: '6px' }}>API key</p>
+                      <div className="flex items-center gap-2 mb-4">
+                        <div className="flex-1 flex items-center rounded-lg" style={{ backgroundColor: 'var(--selah-bg-surface, #1C1917)', border: '1px solid var(--selah-border-color, #3D3835)', padding: '8px 12px' }}>
+                          <input type={showApiKey ? 'text' : 'password'} value={apiKey} onChange={(e) => setApiKey(e.target.value)} placeholder="sk-or-..." className="flex-1 outline-none" style={{ fontFamily: font.mono, fontSize: '13px', color: 'var(--selah-text-1)', backgroundColor: 'transparent', border: 'none' }} />
+                          <button onClick={() => setShowApiKey(!showApiKey)} style={{ color: 'var(--selah-text-3)', background: 'none', border: 'none', cursor: 'pointer' }}>{showApiKey ? <EyeOff size={14} strokeWidth={1.5} /> : <Eye size={14} strokeWidth={1.5} />}</button>
+                        </div>
+                      </div>
+                      <div className="mb-4">
+                        <button onClick={fetchOpenRouterModels} className="transition-colors duration-150" style={{ fontFamily: font.body, fontSize: '13px', fontWeight: 500, padding: '8px 16px', borderRadius: '8px', backgroundColor: 'var(--selah-bg-surface, #1C1917)', color: 'var(--selah-text-1)', border: '1px solid var(--selah-border-color, #3D3835)', cursor: 'pointer', whiteSpace: 'nowrap' }}>{openrouterLoading ? 'Fetching...' : 'Fetch models'}</button>
+                      </div>
+                      {openrouterError && (
+                        <p style={{ fontFamily: font.body, fontSize: '12px', color: 'var(--selah-terra-400, #D4836B)', marginBottom: '8px' }}>{openrouterError}</p>
+                      )}
+                      <p style={{ fontFamily: font.body, fontSize: '13px', color: 'var(--selah-text-2)', marginBottom: '6px' }}>Model</p>
+                      <select value={selectedModel} onChange={(e) => setSelectedModel(e.target.value)} className="w-full rounded-lg outline-none mb-4" style={{ fontFamily: font.body, fontSize: '13px', padding: '8px 12px', backgroundColor: 'var(--selah-bg-surface, #1C1917)', color: 'var(--selah-text-1)', border: '1px solid var(--selah-border-color, #3D3835)' }}>
+                        <option value="">{openrouterModels.length === 0 ? 'Click "Fetch models" first...' : 'Select a model...'}</option>
+                        {openrouterModels.map((m) => (<option key={m.id} value={m.id}>{m.name}</option>))}
+                      </select>
+                      {selectedOrModel && (
+                        <div style={{ marginBottom: '16px' }}>
+                          <p style={{ fontFamily: font.body, fontSize: '12px', color: 'var(--selah-text-2, #A39E93)' }}>
+                            Input: ${(parseFloat(selectedOrModel.promptCost) * 1_000_000).toFixed(2)}/M tokens &middot; Output: ${(parseFloat(selectedOrModel.completionCost) * 1_000_000).toFixed(2)}/M tokens
+                          </p>
+                          {orCostEstimate !== null && (
+                            <p style={{ fontFamily: font.mono, fontSize: '12px', color: 'var(--selah-text-3, #6E695F)', marginTop: '2px' }}>
+                              ~${orCostEstimate.toFixed(4)} estimated per interaction
+                            </p>
+                          )}
+                        </div>
+                      )}
+                      <p style={{ fontFamily: font.body, fontSize: '10px', fontWeight: 500, textTransform: 'uppercase', letterSpacing: '1.5px', color: 'var(--selah-text-3)', marginBottom: '12px' }}>Model Parameters</p>
+                      {([
+                        { label: 'Temperature', value: orTemperature, set: setOrTemperature, min: 0, max: 1, step: 0.05 },
+                        { label: 'Top P', value: orTopP, set: setOrTopP, min: 0, max: 1, step: 0.05 },
+                        { label: 'Max tokens', value: orMaxTokens, set: setOrMaxTokens, min: 100, max: 4000, step: 100 },
+                        { label: 'Freq. penalty', value: orFreqPenalty, set: setOrFreqPenalty, min: 0, max: 2, step: 0.1 },
+                        { label: 'Pres. penalty', value: orPresencePenalty, set: setOrPresencePenalty, min: 0, max: 2, step: 0.1 },
+                      ] as const).map(({ label, value, set, min, max, step }) => (
+                        <div key={label} className="flex items-center gap-3 mb-2">
+                          <span style={{ fontFamily: font.body, fontSize: '13px', color: 'var(--selah-text-2, #A39E93)', width: '110px', flexShrink: 0 }}>{label}</span>
+                          <input type="range" min={min} max={max} step={step} value={value} onChange={(e) => set(parseFloat(e.target.value))} className="flex-1" style={{ accentColor: 'var(--selah-gold-500, #C6A23C)' }} />
+                          <span style={{ fontFamily: font.mono, fontSize: '13px', color: 'var(--selah-text-1, #E8E2D9)', width: '50px', textAlign: 'right', flexShrink: 0 }}>{value}</span>
+                        </div>
+                      ))}
+                      <div style={{ marginBottom: '8px' }} />
+                    </>
                   ) : (
                     <>
                       <p style={{ fontFamily: font.body, fontSize: '13px', color: 'var(--selah-text-2)', marginBottom: '6px' }}>API key</p>
@@ -166,7 +245,28 @@ export function SettingsView({ translations, aiConfig, aiProviders, studyPrefere
                     <button onClick={onTestConnection} className="transition-colors duration-150" style={{ fontFamily: font.body, fontSize: '13px', fontWeight: 500, padding: '8px 16px', borderRadius: '8px', backgroundColor: 'var(--selah-bg-surface, #1C1917)', color: 'var(--selah-text-1)', border: '1px solid var(--selah-border-color, #3D3835)', cursor: 'pointer' }}>{aiConfig.connectionStatus === 'testing' ? 'Testing...' : 'Test connection'}</button>
                     {aiConfig.connectionStatus === 'connected' && (<span className="flex items-center gap-1" style={{ fontFamily: font.body, fontSize: '11px', color: 'var(--selah-teal-400, #4A9E88)' }}><Check size={12} strokeWidth={2} /> Connected</span>)}
                     {aiConfig.connectionStatus === 'failed' && (<span className="flex items-center gap-1" style={{ fontFamily: font.body, fontSize: '11px', color: 'var(--selah-terra-400, #D4836B)' }}><X size={12} strokeWidth={2} /> Failed</span>)}
-                    <button onClick={() => { if (!selectedProvider) return; onSaveAIConfig?.(selectedProvider, isOllama ? ollamaUrl : apiKey, selectedModel); const extraSettings: Record<string, string> = {}; if (isOllama) { extraSettings.ollama_disable_thinking = String(ollamaDisableThinking) } if (!isOllama && customApiUrl) { extraSettings.custom_api_url = customApiUrl } if (Object.keys(extraSettings).length > 0) { fetch('/api/settings', { method: 'PATCH', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify(extraSettings) }) } }} className="transition-colors duration-150" style={{ fontFamily: font.body, fontSize: '13px', fontWeight: 600, padding: '8px 16px', borderRadius: '8px', backgroundColor: 'var(--selah-gold-500, #C6A23C)', color: '#fff', border: 'none', cursor: 'pointer' }}>Save</button>
+                    <button onClick={() => {
+                      if (!selectedProvider) return
+                      onSaveAIConfig?.(selectedProvider, isOllama ? ollamaUrl : apiKey, selectedModel)
+                      const extraSettings: Record<string, string> = {}
+                      if (isOllama) { extraSettings.ollama_disable_thinking = String(ollamaDisableThinking) }
+                      if (!isOllama && !isOpenRouter && customApiUrl) { extraSettings.custom_api_url = customApiUrl }
+                      if (isOpenRouter) {
+                        extraSettings.openrouter_temperature = String(orTemperature)
+                        extraSettings.openrouter_top_p = String(orTopP)
+                        extraSettings.openrouter_max_tokens = String(orMaxTokens)
+                        extraSettings.openrouter_freq_penalty = String(orFreqPenalty)
+                        extraSettings.openrouter_pres_penalty = String(orPresencePenalty)
+                        const model = openrouterModels.find((m) => m.id === selectedModel)
+                        if (model) {
+                          extraSettings.openrouter_prompt_cost = model.promptCost
+                          extraSettings.openrouter_completion_cost = model.completionCost
+                        }
+                      }
+                      if (Object.keys(extraSettings).length > 0) {
+                        fetch('/api/settings', { method: 'PATCH', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify(extraSettings) })
+                      }
+                    }} className="transition-colors duration-150" style={{ fontFamily: font.body, fontSize: '13px', fontWeight: 600, padding: '8px 16px', borderRadius: '8px', backgroundColor: 'var(--selah-gold-500, #C6A23C)', color: '#fff', border: 'none', cursor: 'pointer' }}>Save</button>
                     {aiConfig.isConfigured && (<button onClick={() => setShowAIConfig(false)} style={{ fontFamily: font.body, fontSize: '13px', color: 'var(--selah-text-3)', background: 'none', border: 'none', cursor: 'pointer' }}>Cancel</button>)}
                   </div>
                 </>

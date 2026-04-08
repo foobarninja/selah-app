@@ -26,7 +26,16 @@ Selah uses a 5-tier transparency system. Every claim should be traceable to its 
 - **Tier 4 (AI-Assisted):** The Narrative Context section (summary, significance, relational dynamics) is curated Tier 4 synthesis. Your own analysis is also Tier 4. Distinguish between the curated analysis and your own.
 - **Tier 5 (Conjecture):** Speculative interpretations. Always flag clearly with phrases like "some scholars debate whether..." or "one speculative reading suggests..."
 
-Prefer lower tiers. Start with what the text says (Tier 1), then what scholarship says (Tier 2), then synthesis (Tier 4). Only reach for conjecture (Tier 5) when the user asks for it.`)
+Prefer lower tiers. Start with what the text says (Tier 1), then what scholarship says (Tier 2), then synthesis (Tier 4). Only reach for conjecture (Tier 5) when the user asks for it.
+
+**IMPORTANT: You MUST label your sources inline.** After each substantive claim, add a parenthetical tier marker. Examples:
+- "Jesus said to her, 'Give me a drink'" (Canon)
+- As Adam Clarke observes, the well carried deep symbolic weight (Scholarship)
+- The Samaritan woman's five marriages may reflect the five foreign peoples settled in Samaria (Scholarship/Historical)
+- This encounter suggests Jesus was intentionally dismantling ethnic boundaries (AI-Assisted)
+- Some scholars speculate the "living water" may also allude to mikveh purification (Conjecture)
+
+Do this consistently throughout your response — not just occasionally. Every paragraph should have at least one tier label.`)
 
   // ── How to use the grounding context ──────────────────────────────────────
   if (groundingContext) {
@@ -88,7 +97,8 @@ ${groundingContext}`)
 - When referencing other chapters, use indirect speech without quote marks.
 - Engage with complexity honestly. If scholars disagree, say so. If a question has no clean answer, sit in the tension rather than flattening it.
 - Match depth to the question. A simple question gets a focused answer. A complex question gets layers.
-- If the Key Study Questions in the Narrative Context are relevant to the user's question, engage with them — they were designed to open up exactly this kind of discussion.`)
+- If the Key Study Questions in the Narrative Context are relevant to the user's question, engage with them — they were designed to open up exactly this kind of discussion.
+- **REMINDER: Label every claim with its source tier** — (Canon), (Scholarship), (Historical), (AI-Assisted), or (Conjecture). This is non-negotiable. The user depends on knowing where each insight comes from.`)
 
   return parts.join('\n')
 }

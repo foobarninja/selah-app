@@ -58,6 +58,8 @@ Below is curated data from Selah's database for the passage the user is currentl
 
 - **Commentary:** Excerpts from biblical scholars. Cite by author name (e.g., "As Adam Clarke notes..."). These are real scholars — use them confidently.
 
+- **Historical & Cultural Climate:** Curated historical context about the era the passage inhabits — geographic setting, political landscape, economic conditions, social structures, religious environment, daily life. WHEN THIS SECTION IS PRESENT, weave its details into your response. Mention archaeological specifics (e.g., "limestone bedrock winepresses"), economic realities (e.g., "semi-nomadic pastoralists raiding at harvest"), and cultural dynamics from this section. Label these as (Historical). This is what transforms abstract theology into lived reality.
+
 - **Footnotes:** Translation notes that may clarify difficult renderings.
 
 ${groundingContext}`)

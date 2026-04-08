@@ -266,21 +266,87 @@ export async function assembleMaterial(topic: string): Promise<SourceSection[]> 
       preview: truncate(t.modern_framing || t.definition || '', 100),
     }))
 
-    // 4. Climate contexts matching the topic
-    const climates = db.prepare(`
-      SELECT id, name, era, geographic, source_tier FROM climate_contexts
-      WHERE name LIKE ? OR geographic LIKE ?
-      LIMIT 6
-    `).all(likeQuery, likeQuery) as Array<{
+    // 4. Climate contexts matching the topic — search all curated fields
+    type ClimateRow = {
       id: string; name: string; era: string | null;
-      geographic: string | null; source_tier: string
-    }>
+      geographic: string | null; political: string | null;
+      economic: string | null; social: string | null;
+      religious: string | null; daily_life: string | null;
+      modern_parallel: string | null; source_tier: string
+    }
+    const climateMatches = new Map<string, ClimateRow>()
 
+    // 4a. Direct keyword match across all curated fields
+    const directClimates = db.prepare(`
+      SELECT id, name, era, geographic, political, economic, social,
+             religious, daily_life, modern_parallel, source_tier
+      FROM climate_contexts
+      WHERE name LIKE ? OR era LIKE ? OR geographic LIKE ?
+         OR political LIKE ? OR economic LIKE ? OR social LIKE ?
+         OR religious LIKE ? OR daily_life LIKE ? OR modern_parallel LIKE ?
+      LIMIT 6
+    `).all(likeQuery, likeQuery, likeQuery, likeQuery, likeQuery, likeQuery, likeQuery, likeQuery, likeQuery) as ClimateRow[]
+
+    for (const c of directClimates) climateMatches.set(c.id, c)
+
+    // 4b. Era-based match from matching narrative passages
+    // If we found narratives in a specific book/era, include that era's climate
+    if (narratives.length > 0) {
+      const narrativeBooks = new Set(narratives.map((n) => n.book_id))
+      // Map book IDs to eras — uses the book's typical period
+      const bookEraMap: Record<string, string> = {
+        GEN: 'patriarchal',
+        EXO: 'exodus', LEV: 'exodus', NUM: 'exodus', DEU: 'exodus',
+        JOS: 'judges', JDG: 'judges', RUT: 'judges',
+        '1SA': 'united-monarchy', '2SA': 'united-monarchy', '1KI': 'united-monarchy', '1CH': 'united-monarchy',
+        '2KI': 'divided-monarchy', '2CH': 'divided-monarchy',
+        ISA: 'divided-monarchy', JER: 'divided-monarchy', LAM: 'exile',
+        EZK: 'exile', DAN: 'exile',
+        HOS: 'divided-monarchy', JOL: 'divided-monarchy', AMO: 'divided-monarchy',
+        OBA: 'exile', JON: 'divided-monarchy', MIC: 'divided-monarchy',
+        NAM: 'divided-monarchy', HAB: 'divided-monarchy', ZEP: 'divided-monarchy',
+        EZR: 'post-exile', NEH: 'post-exile', EST: 'post-exile',
+        HAG: 'post-exile', ZEC: 'post-exile', MAL: 'post-exile',
+        JOB: 'patriarchal', PSA: 'united-monarchy', PRO: 'united-monarchy',
+        ECC: 'united-monarchy', SNG: 'united-monarchy',
+        MAT: 'life-of-christ', MRK: 'life-of-christ', LUK: 'life-of-christ', JHN: 'life-of-christ',
+        ACT: 'early-church',
+        ROM: 'early-church', '1CO': 'early-church', '2CO': 'early-church',
+        GAL: 'early-church', EPH: 'early-church', PHP: 'early-church',
+        COL: 'early-church', '1TH': 'early-church', '2TH': 'early-church',
+        '1TI': 'early-church', '2TI': 'early-church', TIT: 'early-church',
+        PHM: 'early-church', HEB: 'early-church', JAS: 'early-church',
+        '1PE': 'early-church', '2PE': 'early-church',
+        '1JN': 'early-church', '2JN': 'early-church', '3JN': 'early-church',
+        JUD: 'early-church', REV: 'early-church',
+      }
+      const erasNeeded = new Set<string>()
+      for (const book of narrativeBooks) {
+        const era = bookEraMap[book]
+        if (era) erasNeeded.add(era)
+      }
+
+      if (erasNeeded.size > 0) {
+        const placeholders = Array.from(erasNeeded).map(() => '?').join(',')
+        const eraClimates = db.prepare(`
+          SELECT id, name, era, geographic, political, economic, social,
+                 religious, daily_life, modern_parallel, source_tier
+          FROM climate_contexts
+          WHERE era IN (${placeholders})
+        `).all(...Array.from(erasNeeded)) as ClimateRow[]
+
+        for (const c of eraClimates) {
+          if (!climateMatches.has(c.id)) climateMatches.set(c.id, c)
+        }
+      }
+    }
+
+    const climates = Array.from(climateMatches.values()).slice(0, 6)
     const climateItems: SourceItem[] = climates.map((c) => ({
       id: `climate:${c.id}`,
       entityType: 'climate' as const,
       title: `${c.name}${c.era ? ` (${c.era})` : ''}`,
-      preview: truncate(c.geographic || '', 100),
+      preview: truncate(c.geographic || c.political || c.social || '', 120),
     }))
 
     // 5. Preaching angles / key questions extracted from matching narratives

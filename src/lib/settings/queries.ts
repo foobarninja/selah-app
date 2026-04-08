@@ -1,4 +1,5 @@
 import { prisma } from '@/lib/db'
+import { encryptValue } from '@/lib/crypto'
 import Database from 'better-sqlite3'
 import type {
   TranslationConfig,
@@ -130,7 +131,9 @@ export async function getAIModels(providerId: string): Promise<Array<{ id: strin
 
 export async function saveAIConfig(provider: string, apiKey: string, model: string): Promise<void> {
   await setSetting('ai_provider', provider)
-  await setSetting('ai_api_key', apiKey)
+  // Encrypt API key before storing (skip for empty keys or local providers)
+  const keyToStore = apiKey && provider !== 'ollama' ? encryptValue(apiKey) : apiKey
+  await setSetting('ai_api_key', keyToStore)
   await setSetting('ai_model', model)
 }
 

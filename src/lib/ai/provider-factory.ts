@@ -1,4 +1,5 @@
 import { getAIConfig, getSetting } from '@/lib/settings/queries'
+import { decryptValue, isEncrypted } from '@/lib/crypto'
 import type { AiProviderAdapter } from './providers/base'
 import type { ProviderCredentials } from './types'
 
@@ -6,7 +7,8 @@ async function getCredentials(): Promise<ProviderCredentials | null> {
   const config = await getAIConfig()
   if (!config.isConfigured || !config.provider || !config.model) return null
 
-  const apiKey = (await getSetting('ai_api_key')) || ''
+  const rawKey = (await getSetting('ai_api_key')) || ''
+  const apiKey = isEncrypted(rawKey) ? decryptValue(rawKey) : rawKey
   const ollamaUrl = (await getSetting('ollama_url')) || ''
   const customApiUrl = (await getSetting('custom_api_url')) || ''
 

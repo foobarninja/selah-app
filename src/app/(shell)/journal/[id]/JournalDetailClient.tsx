@@ -103,9 +103,9 @@ export default function JournalDetailClient({ journal, entries, availableTags = 
         const verse = parts[parts.length - 1]
         const chapter = parts[parts.length - 2]
         const bookId = parts.slice(0, parts.length - 2).join('-')
-        router.push(`/read/${bookId}/${chapter}?v=${verse}`)
+        router.push(`/reader/${bookId}/${chapter}`)
       } else {
-        router.push(`/read`)
+        router.push(`/reader`)
       }
     } else if (type === 'character') {
       router.push(`/characters/${entityId}`)

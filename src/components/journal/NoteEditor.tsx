@@ -129,18 +129,18 @@ export default function NoteEditor({ entry, onSave, onDelete, onClose, initialAn
         zIndex: 50,
         backgroundColor: 'rgba(0,0,0,0.4)',
         display: 'flex',
-        alignItems: 'stretch',
-        justifyContent: 'flex-end',
+        alignItems: 'center',
+        justifyContent: 'center',
       }}
     >
-      {/* Panel */}
+      {/* Full-screen editor panel */}
       <div
         style={{
-          width: '480px',
-          maxWidth: '100vw',
+          width: '100%',
+          maxWidth: '640px',
           height: '100%',
+          maxHeight: '100vh',
           backgroundColor: 'var(--selah-bg-page, #141210)',
-          borderLeft: '1px solid var(--selah-border-color, #3D3835)',
           display: 'flex',
           flexDirection: 'column',
           overflow: 'hidden',

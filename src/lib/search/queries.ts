@@ -36,15 +36,18 @@ export async function universalSearch(query: string, limit = 10): Promise<Search
       LIMIT ?
     `).all(ftsQuery, limit) as Array<{ id: number; book_id: string; chapter: number; verse: number; text: string }>
 
-    // Character FTS search
-    const characters = db.prepare(`
-      SELECT c.id, c.name, c.bio_brief
-      FROM characters_fts f
-      JOIN characters c ON c.rowid = f.rowid
-      WHERE characters_fts MATCH ?
-      ORDER BY rank
-      LIMIT ?
-    `).all(ftsQuery, limit) as Array<{ id: string; name: string; bio_brief: string }>
+    // Character search — LIKE with name-priority (FTS table may not exist)
+    let characters: Array<{ id: string; name: string; bio_brief: string }> = []
+    try {
+      // Try name LIKE first for exact-name priority
+      const nameMatches = db.prepare(`
+        SELECT id, name, bio_brief FROM characters
+        WHERE name LIKE ?
+        ORDER BY CASE WHEN LOWER(name) = LOWER(?) THEN 0 ELSE 1 END, name
+        LIMIT ?
+      `).all(likeQuery, query, limit) as Array<{ id: string; name: string; bio_brief: string }>
+      characters = nameMatches
+    } catch { /* ignore */ }
 
     // Theme LIKE search (no FTS table for themes)
     const themes = db.prepare(`

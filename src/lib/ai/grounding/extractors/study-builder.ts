@@ -228,6 +228,30 @@ export async function extractStudyBuilderContext(ctx: StudyBuilderContext): Prom
     }
   }
 
+  // ── Climate contexts ────────────────────────────────────────────────
+  const climateItems = displayItems.filter((i) => i.entityType === 'climate')
+  if (climateItems.length > 0) {
+    const climateIds = climateItems.map((i) => i.entityId).filter(Boolean)
+    if (climateIds.length > 0) {
+      const climates = await prisma.climateContext.findMany({
+        where: { id: { in: climateIds } },
+      })
+      if (climates.length > 0) {
+        parts.push('\n### Historical & Cultural Climate')
+        for (const c of climates) {
+          parts.push(`\n**${c.name}** (${c.era}${c.dateRange ? `, ${c.dateRange}` : ''})`)
+          if (c.geographic) parts.push(`\n*Geographic setting:* ${c.geographic}`)
+          if (c.political) parts.push(`\n*Political landscape:* ${c.political}`)
+          if (c.economic) parts.push(`\n*Economic conditions:* ${c.economic}`)
+          if (c.social) parts.push(`\n*Social structures:* ${c.social}`)
+          if (c.religious) parts.push(`\n*Religious environment:* ${c.religious}`)
+          if (c.dailyLife) parts.push(`\n*Daily life:* ${c.dailyLife}`)
+          if (c.modernParallel) parts.push(`\n*Modern parallel:* ${c.modernParallel}`)
+        }
+      }
+    }
+  }
+
   // ── Cross-reference target text ─────────────────────────────────────
   const crossRefItems = displayItems.filter((i) => i.entityType === 'cross-reference')
   if (crossRefItems.length > 0) {

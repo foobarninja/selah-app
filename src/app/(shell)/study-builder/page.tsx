@@ -205,6 +205,15 @@ export default function StudyBuilderPage() {
         onBackToList={handleBackToList}
         onAddItem={handleAddItem}
         onRemoveItem={handleRemoveItem}
+        onReorderItems={async (itemIds) => {
+          if (!activeProject) return
+          await fetch(`/api/study-builder/projects/${activeProject.id}/reorder`, {
+            method: 'PUT',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({ itemIds }),
+          })
+          await openProject(activeProject.id)
+        }}
         onUpdateAnnotation={handleUpdateAnnotation}
         onSearchSource={handleSearchSource}
         onExport={handleExport}

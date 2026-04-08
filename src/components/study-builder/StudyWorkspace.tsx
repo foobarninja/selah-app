@@ -1,7 +1,7 @@
 'use client'
 
 import { useState } from 'react'
-import { ArrowLeft, GripVertical, X, Plus, Search, Download, ExternalLink, BookOpen, Users, Sparkles, CloudSun, HelpCircle, PenLine, Check } from 'lucide-react'
+import { ArrowLeft, ChevronUp, ChevronDown, X, Plus, Search, Download, ExternalLink, BookOpen, Users, Sparkles, CloudSun, HelpCircle, PenLine, Check } from 'lucide-react'
 import { TierPill } from '@/components/reader/TierPill'
 import { ResizablePanel } from '@/components/ui/ResizablePanel'
 import { ChatProvider } from '@/lib/ai/chat-context'
@@ -18,7 +18,7 @@ const font = {
 const entityIcons: Record<string, typeof BookOpen> = { passage: BookOpen, character: Users, theme: Sparkles, climate: CloudSun, question: HelpCircle, journal: PenLine }
 const formatLabels: Record<string, string> = { sermon: 'Sermon', teaching: 'Teaching', 'small-group': 'Small group', personal: 'Personal' }
 
-function AssemblyCard({ item, onRemove, onUpdateAnnotation, onNavigate }: { item: AssemblyItem; onRemove?: () => void; onUpdateAnnotation?: (annotation: string) => void; onNavigate?: () => void }) {
+function AssemblyCard({ item, onRemove, onUpdateAnnotation, onNavigate, onMoveUp, onMoveDown }: { item: AssemblyItem; onRemove?: () => void; onUpdateAnnotation?: (annotation: string) => void; onNavigate?: () => void; onMoveUp?: () => void; onMoveDown?: () => void }) {
   const [isEditing, setIsEditing] = useState(false)
   const [localAnnotation, setLocalAnnotation] = useState(item.annotation)
   const Icon = entityIcons[item.entityType] || BookOpen
@@ -26,7 +26,10 @@ function AssemblyCard({ item, onRemove, onUpdateAnnotation, onNavigate }: { item
   return (
     <div className="rounded-lg mb-2 group" style={{ backgroundColor: 'var(--selah-bg-surface, #1C1917)', border: '1px solid var(--selah-border-color, #3D3835)' }}>
       <div className="flex items-start gap-2" style={{ padding: '12px 12px 0' }}>
-        <div className="mt-1 cursor-grab opacity-30 group-hover:opacity-60 transition-opacity duration-150" style={{ color: 'var(--selah-text-3, #6E695F)' }}><GripVertical size={14} strokeWidth={1.5} /></div>
+        <div className="flex flex-col items-center mt-0.5 opacity-30 group-hover:opacity-80 transition-opacity duration-150" style={{ color: 'var(--selah-text-3, #6E695F)' }}>
+          <button onClick={onMoveUp} disabled={!onMoveUp} title="Move up" style={{ background: 'none', border: 'none', cursor: onMoveUp ? 'pointer' : 'default', padding: '0', color: 'inherit', opacity: onMoveUp ? 1 : 0.3 }}><ChevronUp size={14} strokeWidth={1.5} /></button>
+          <button onClick={onMoveDown} disabled={!onMoveDown} title="Move down" style={{ background: 'none', border: 'none', cursor: onMoveDown ? 'pointer' : 'default', padding: '0', color: 'inherit', opacity: onMoveDown ? 1 : 0.3 }}><ChevronDown size={14} strokeWidth={1.5} /></button>
+        </div>
         <div className="flex-1 min-w-0">
           <div className="flex items-center gap-2 mb-1">
             <Icon size={14} strokeWidth={1.5} style={{ color: 'var(--selah-gold-500, #C6A23C)', flexShrink: 0 }} />
@@ -70,7 +73,7 @@ function SourceRow({ item, onAdd }: { item: SourceItem; onAdd?: () => void }) {
   )
 }
 
-export function StudyWorkspace({ activeProject, assemblyItems, sourceSections, searchQuery, onAddItem, onRemoveItem, onUpdateAnnotation, onSearchSource, onExport, onNavigatePassage, onBackToList }: StudyBuilderProps) {
+export function StudyWorkspace({ activeProject, assemblyItems, sourceSections, searchQuery, onAddItem, onRemoveItem, onReorderItems, onUpdateAnnotation, onSearchSource, onExport, onNavigatePassage, onBackToList }: StudyBuilderProps) {
   const [localSearch, setLocalSearch] = useState(searchQuery || '')
   const [activeSourceSection, setActiveSourceSection] = useState(sourceSections[0]?.id || '')
   const [mobileSourceOpen, setMobileSourceOpen] = useState(false)
@@ -105,8 +108,24 @@ export function StudyWorkspace({ activeProject, assemblyItems, sourceSections, s
               <p style={{ fontFamily: font.body, fontSize: '14px', color: 'var(--selah-text-3, #6E695F)' }}>Add material from the source panel to start building.</p>
             </div>
           ) : (
-            assemblyItems.map((item) => (
-              <AssemblyCard key={item.id} item={item} onRemove={() => onRemoveItem?.(item.id)} onUpdateAnnotation={(ann) => onUpdateAnnotation?.(item.id, ann)} onNavigate={item.entityType === 'passage' || item.entityType === 'character' || item.entityType === 'theme' ? () => onNavigatePassage?.(item.title) : undefined} />
+            assemblyItems.map((item, index) => (
+              <AssemblyCard
+                key={item.id}
+                item={item}
+                onRemove={() => onRemoveItem?.(item.id)}
+                onUpdateAnnotation={(ann) => onUpdateAnnotation?.(item.id, ann)}
+                onNavigate={item.entityType === 'passage' || item.entityType === 'character' || item.entityType === 'theme' ? () => onNavigatePassage?.(item.title) : undefined}
+                onMoveUp={index > 0 ? () => {
+                  const ids = assemblyItems.map((i) => i.id)
+                  ;[ids[index - 1], ids[index]] = [ids[index], ids[index - 1]]
+                  onReorderItems?.(ids)
+                } : undefined}
+                onMoveDown={index < assemblyItems.length - 1 ? () => {
+                  const ids = assemblyItems.map((i) => i.id)
+                  ;[ids[index], ids[index + 1]] = [ids[index + 1], ids[index]]
+                  onReorderItems?.(ids)
+                } : undefined}
+              />
             ))
           )}
         </div>

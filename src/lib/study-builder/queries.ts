@@ -166,22 +166,35 @@ export async function assembleMaterial(topic: string): Promise<SourceSection[]> 
   const likeQuery = `%${topic}%`
 
   try {
-    // 1. Narrative units matching the topic (via FTS or LIKE on title/summary/preachingAngles/keyQuestions)
-    const narratives = db.prepare(`
-      SELECT n.id, n.title, n.summary, n.book_id, n.chapter_start, n.verse_start,
-             n.chapter_end, n.verse_end, n.preaching_angles, n.key_questions,
-             n.significance, n.source_tier
-      FROM narrative_fts f
-      JOIN narrative_units n ON n.rowid = f.rowid
-      WHERE narrative_fts MATCH ?
-      ORDER BY rank
-      LIMIT 12
-    `).all(ftsQuery) as Array<{
+    // 1. Narrative units matching the topic — try FTS, fall back to LIKE
+    type NarrativeRow = {
       id: string; title: string; summary: string; book_id: string;
       chapter_start: number; verse_start: number; chapter_end: number | null; verse_end: number | null;
       preaching_angles: string | null; key_questions: string | null;
       significance: string | null; source_tier: string;
-    }>
+    }
+    let narratives: NarrativeRow[] = []
+    try {
+      narratives = db.prepare(`
+        SELECT n.id, n.title, n.summary, n.book_id, n.chapter_start, n.verse_start,
+               n.chapter_end, n.verse_end, n.preaching_angles, n.key_questions,
+               n.significance, n.source_tier
+        FROM narrative_fts f
+        JOIN narrative_units n ON n.rowid = f.rowid
+        WHERE narrative_fts MATCH ?
+        ORDER BY rank
+        LIMIT 12
+      `).all(ftsQuery) as NarrativeRow[]
+    } catch {
+      narratives = db.prepare(`
+        SELECT id, title, summary, book_id, chapter_start, verse_start,
+               chapter_end, verse_end, preaching_angles, key_questions,
+               significance, source_tier
+        FROM narrative_units
+        WHERE title LIKE ? OR summary LIKE ?
+        LIMIT 12
+      `).all(likeQuery, likeQuery) as NarrativeRow[]
+    }
 
     const passageItems: SourceItem[] = narratives.map((n) => {
       const bookName = BOOK_NAMES[n.book_id] || n.book_id
@@ -205,16 +218,26 @@ export async function assembleMaterial(topic: string): Promise<SourceSection[]> 
 
     const nameMatchIds = new Set(nameMatches.map((c) => c.id))
 
-    const ftsMatches = db.prepare(`
-      SELECT c.id, c.name, c.bio_brief, c.source_tier
-      FROM characters_fts f
-      JOIN characters c ON c.rowid = f.rowid
-      WHERE characters_fts MATCH ?
-      ORDER BY rank
-      LIMIT 8
-    `).all(ftsQuery) as Array<{ id: string; name: string; bio_brief: string | null; source_tier: string }>
+    let ftsMatches: Array<{ id: string; name: string; bio_brief: string | null; source_tier: string }> = []
+    try {
+      ftsMatches = db.prepare(`
+        SELECT c.id, c.name, c.bio_brief, c.source_tier
+        FROM characters_fts f
+        JOIN characters c ON c.rowid = f.rowid
+        WHERE characters_fts MATCH ?
+        ORDER BY rank
+        LIMIT 8
+      `).all(ftsQuery) as typeof ftsMatches
+    } catch {
+      // FTS table may not exist — use LIKE on bio_brief as fallback
+      ftsMatches = db.prepare(`
+        SELECT id, name, bio_brief, source_tier FROM characters
+        WHERE bio_brief LIKE ?
+        LIMIT 8
+      `).all(likeQuery) as typeof ftsMatches
+    }
 
-    // Deduplicate: name matches first, then FTS results
+    // Deduplicate: name matches first, then FTS/LIKE results
     const characters = [
       ...nameMatches,
       ...ftsMatches.filter((c) => !nameMatchIds.has(c.id)),

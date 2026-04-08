@@ -137,5 +137,127 @@ export async function extractStudyBuilderContext(ctx: StudyBuilderContext): Prom
     }
   }
 
+  // ── Narrative context for passage items ─────────────────────────────
+  const passageItems = displayItems.filter((i) => i.entityType === 'passage')
+  if (passageItems.length > 0) {
+    const narrativeIds = passageItems.map((i) => i.entityId).filter(Boolean)
+    if (narrativeIds.length > 0) {
+      const narratives = await prisma.narrativeUnit.findMany({
+        where: { id: { in: narrativeIds } },
+      })
+      if (narratives.length > 0) {
+        parts.push('\n### Narrative Context')
+        for (const nu of narratives) {
+          parts.push(`\n**"${nu.title}"**`)
+          if (nu.summary) parts.push(nu.summary)
+          if (nu.significance) parts.push(`\n**Theological Significance:** ${nu.significance}`)
+          if (nu.relationalNote) parts.push(`\n**Relational Dynamics:** ${nu.relationalNote}`)
+          if (nu.conceptualNote) parts.push(`\n**Conceptual Background:** ${nu.conceptualNote}`)
+          if (nu.climateNote) parts.push(`\n**Climate/Cultural Context:** ${nu.climateNote}`)
+          if (nu.keyQuestions) {
+            try {
+              const questions = JSON.parse(nu.keyQuestions) as string[]
+              parts.push(`\n**Key Questions:**`)
+              for (const q of questions) parts.push(`- ${q}`)
+            } catch { /* skip malformed JSON */ }
+          }
+          if (nu.preachingAngles) {
+            try {
+              const angles = JSON.parse(nu.preachingAngles) as string[]
+              parts.push(`\n**Preaching Angles:**`)
+              for (const a of angles) parts.push(`- ${a}`)
+            } catch { /* skip */ }
+          }
+        }
+      }
+    }
+  }
+
+  // ── Theme definitions ───────────────────────────────────────────────
+  const themeItems = displayItems.filter((i) => i.entityType === 'theme')
+  if (themeItems.length > 0) {
+    const themeIds = themeItems.map((i) => i.entityId).filter(Boolean)
+    if (themeIds.length > 0) {
+      const themes = await prisma.theme.findMany({
+        where: { id: { in: themeIds } },
+        select: { id: true, name: true, definition: true, category: true, modernFraming: true },
+      })
+      if (themes.length > 0) {
+        parts.push('\n### Theme Definitions')
+        for (const t of themes) {
+          parts.push(`\n**${t.name}** (${t.category ?? 'general'})`)
+          if (t.definition) parts.push(`Definition: ${t.definition}`)
+          if (t.modernFraming) parts.push(`Modern framing: ${t.modernFraming}`)
+        }
+      }
+    }
+  }
+
+  // ── Character profiles ──────────────────────────────────────────────
+  const characterItems = displayItems.filter((i) => i.entityType === 'character')
+  if (characterItems.length > 0) {
+    const charIds = characterItems.map((i) => i.entityId).filter(Boolean)
+    if (charIds.length > 0) {
+      const characters = await prisma.character.findMany({
+        where: { id: { in: charIds } },
+        select: {
+          id: true, name: true, era: true, occupation: true,
+          bioBrief: true, faithJourney: true, modernParallel: true,
+          relationshipsA: {
+            select: { relationship: true, charB: { select: { name: true } } },
+            take: 8,
+          },
+        },
+      })
+      if (characters.length > 0) {
+        parts.push('\n### Character Profiles')
+        for (const c of characters) {
+          const lines: string[] = [`\n**${c.name}**`]
+          if (c.era) lines.push(`Era: ${c.era}`)
+          if (c.occupation) lines.push(`Role: ${c.occupation}`)
+          if (c.bioBrief) lines.push(`Bio: ${c.bioBrief}`)
+          if (c.faithJourney) lines.push(`Faith journey: ${c.faithJourney.slice(0, 400)}`)
+          if (c.modernParallel) lines.push(`Modern parallel: ${c.modernParallel}`)
+          if (c.relationshipsA.length > 0) {
+            const rels = c.relationshipsA.map((r: { relationship: string; charB: { name: string } }) => `${r.relationship}: ${r.charB.name}`).join(', ')
+            lines.push(`Key relationships: ${rels}`)
+          }
+          parts.push(lines.join('\n  '))
+        }
+      }
+    }
+  }
+
+  // ── Cross-reference target text ─────────────────────────────────────
+  const crossRefItems = displayItems.filter((i) => i.entityType === 'cross-reference')
+  if (crossRefItems.length > 0) {
+    parts.push('\n### Cross-Reference Texts')
+    for (const item of crossRefItems) {
+      const crId = parseInt(item.entityId || item.id.replace('cross-reference:', ''), 10)
+      if (isNaN(crId)) continue
+      const cr = await prisma.crossReference.findUnique({
+        where: { id: crId },
+      }).catch(() => null)
+      if (!cr) continue
+
+      const targetBookName = BOOK_NAMES[cr.targetBook] ?? cr.targetBook
+      const endVerse = cr.targetEndVerse ? `-${cr.targetEndVerse}` : ''
+      const ref = `${targetBookName} ${cr.targetChapter}:${cr.targetVerse}${endVerse}`
+
+      // Fetch the target verse text
+      const targetVerses = await getChapterText('BSB', cr.targetBook, cr.targetChapter)
+      const start = cr.targetVerse
+      const end = cr.targetEndVerse ?? cr.targetVerse
+      const relevantVerses = targetVerses.filter((v) => v.number >= start && v.number <= end)
+
+      if (relevantVerses.length > 0) {
+        parts.push(`\n**${ref}:**`)
+        for (const v of relevantVerses) {
+          parts.push(`${v.number}. ${v.text}`)
+        }
+      }
+    }
+  }
+
   return parts.join('\n')
 }

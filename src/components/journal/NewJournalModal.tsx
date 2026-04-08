@@ -3,14 +3,18 @@
 import { useState } from 'react'
 import type { CoverColor, JournalType } from './types'
 
+interface JournalFormData {
+  name: string
+  description?: string
+  coverColor?: string
+  journalType?: string
+}
+
 interface Props {
   onClose: () => void
-  onCreate: (data: {
-    name: string
-    description?: string
-    coverColor?: string
-    journalType?: string
-  }) => Promise<void>
+  onCreate: (data: JournalFormData) => Promise<void>
+  /** Pre-fill for editing an existing journal */
+  initial?: { name: string; description?: string; coverColor?: string; journalType?: string }
 }
 
 const COVER_COLORS: { value: CoverColor; label: string; cssVar: string }[] = [
@@ -27,11 +31,12 @@ const JOURNAL_TYPES: { value: JournalType; label: string; description: string }[
   { value: 'devotional', label: 'Devotional', description: 'Personal reflection and prayer' },
 ]
 
-export default function NewJournalModal({ onClose, onCreate }: Props) {
-  const [name, setName] = useState('')
-  const [description, setDescription] = useState('')
-  const [coverColor, setCoverColor] = useState<CoverColor>('gold')
-  const [journalType, setJournalType] = useState<JournalType>('study')
+export default function NewJournalModal({ onClose, onCreate, initial }: Props) {
+  const isEdit = Boolean(initial)
+  const [name, setName] = useState(initial?.name ?? '')
+  const [description, setDescription] = useState(initial?.description ?? '')
+  const [coverColor, setCoverColor] = useState<CoverColor>((initial?.coverColor as CoverColor) ?? 'gold')
+  const [journalType, setJournalType] = useState<JournalType>((initial?.journalType as JournalType) ?? 'study')
   const [saving, setSaving] = useState(false)
 
   async function handleCreate() {
@@ -81,7 +86,7 @@ export default function NewJournalModal({ onClose, onCreate }: Props) {
             marginBottom: '24px',
           }}
         >
-          New Journal
+          {isEdit ? 'Edit Journal' : 'New Journal'}
         </h2>
 
         {/* Name */}
@@ -304,7 +309,7 @@ export default function NewJournalModal({ onClose, onCreate }: Props) {
               opacity: !name.trim() ? 0.5 : 1,
             }}
           >
-            {saving ? 'Creating...' : 'Create'}
+            {saving ? 'Saving...' : isEdit ? 'Save' : 'Create'}
           </button>
         </div>
       </div>

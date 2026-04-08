@@ -4,6 +4,7 @@ import { useState } from 'react'
 import { useRouter } from 'next/navigation'
 import JournalDetail from '@/components/journal/JournalDetail'
 import NoteEditor from '@/components/journal/NoteEditor'
+import NewJournalModal from '@/components/journal/NewJournalModal'
 import type { JournalDetail as JournalDetailType, JournalEntry, AnchorType } from '@/components/journal/types'
 
 interface Props {
@@ -16,6 +17,7 @@ export default function JournalDetailClient({ journal, entries, availableTags = 
   const router = useRouter()
   const [editingEntry, setEditingEntry] = useState<JournalEntry | null | undefined>(undefined)
   // undefined = editor closed, null = new note, JournalEntry = editing existing
+  const [showJournalEdit, setShowJournalEdit] = useState(false)
 
   const editorOpen = editingEntry !== undefined
 
@@ -120,7 +122,7 @@ export default function JournalDetailClient({ journal, entries, availableTags = 
         journal={journal}
         entries={entries}
         onBack={() => router.push('/journal')}
-        onEdit={() => {/* Journal edit modal — Task 4+ */}}
+        onEdit={() => setShowJournalEdit(true)}
         onDelete={handleDeleteJournal}
         onExport={handleExport}
         onEditNote={handleEditNote}
@@ -128,6 +130,27 @@ export default function JournalDetailClient({ journal, entries, availableTags = 
         onNavigateAnchor={handleNavigateAnchor}
         showJournalBadge={journal.id === 'all'}
       />
+
+      {showJournalEdit && (
+        <NewJournalModal
+          initial={{
+            name: journal.name,
+            description: journal.description,
+            coverColor: journal.coverColor ?? undefined,
+            journalType: journal.journalType,
+          }}
+          onClose={() => setShowJournalEdit(false)}
+          onCreate={async (data) => {
+            await fetch(`/api/journals/${journal.id}`, {
+              method: 'PUT',
+              headers: { 'Content-Type': 'application/json' },
+              body: JSON.stringify(data),
+            })
+            setShowJournalEdit(false)
+            router.refresh()
+          }}
+        />
+      )}
 
       {editorOpen && (
         <NoteEditor

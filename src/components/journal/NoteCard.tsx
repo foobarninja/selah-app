@@ -61,9 +61,10 @@ interface Props {
   entry: JournalEntry
   onEdit: () => void
   onNavigateAnchor: (type: AnchorType, entityId: string) => void
+  showJournalBadge?: boolean
 }
 
-export default function NoteCard({ entry, onEdit, onNavigateAnchor }: Props) {
+export default function NoteCard({ entry, onEdit, onNavigateAnchor, showJournalBadge = false }: Props) {
   const isLong = entry.content.length > 200
   const [expanded, setExpanded] = useState(false)
 
@@ -85,9 +86,26 @@ export default function NoteCard({ entry, onEdit, onNavigateAnchor }: Props) {
         borderLeftColor: 'rgba(198, 162, 60, 0.4)',
       }}
     >
-      {/* Top row: type pill + passage reference */}
+      {/* Top row: type pill + journal badge (all-notes view) + passage reference */}
       <div style={{ display: 'flex', alignItems: 'center', gap: '8px', marginBottom: '8px', flexWrap: 'wrap' }}>
         <TypePill noteType={entry.noteType} />
+        {showJournalBadge && entry.journalName && (
+          <span
+            style={{
+              fontFamily: font.body,
+              fontSize: '10px',
+              fontWeight: 500,
+              padding: '2px 7px',
+              borderRadius: '6px',
+              backgroundColor: 'var(--selah-bg-elevated, #292524)',
+              color: 'var(--selah-text-3, #6E695F)',
+              border: '1px solid var(--selah-border-color, #3D3835)',
+              flexShrink: 0,
+            }}
+          >
+            {entry.journalName}
+          </span>
+        )}
         {firstVerseAnchor && (
           <button
             onClick={() => onNavigateAnchor(firstVerseAnchor.type as AnchorType, firstVerseAnchor.entityId)}

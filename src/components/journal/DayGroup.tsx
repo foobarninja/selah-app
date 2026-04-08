@@ -30,9 +30,10 @@ interface Props {
   entries: JournalEntry[]
   onEditNote: (id: string) => void
   onNavigateAnchor: (type: AnchorType, entityId: string) => void
+  showJournalBadge?: boolean
 }
 
-export default function DayGroup({ date, entries, onEditNote, onNavigateAnchor }: Props) {
+export default function DayGroup({ date, entries, onEditNote, onNavigateAnchor, showJournalBadge = false }: Props) {
   const label = formatDayHeader(date)
 
   return (
@@ -69,6 +70,7 @@ export default function DayGroup({ date, entries, onEditNote, onNavigateAnchor }
             entry={entry}
             onEdit={() => onEditNote(entry.id)}
             onNavigateAnchor={onNavigateAnchor}
+            showJournalBadge={showJournalBadge}
           />
         ))}
       </div>

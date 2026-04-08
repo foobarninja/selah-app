@@ -20,6 +20,7 @@ interface Props {
   onEditNote: (id: string) => void
   onNewNote: () => void
   onNavigateAnchor: (type: AnchorType, entityId: string) => void
+  showJournalBadge?: boolean
 }
 
 function groupEntriesByDay(entries: JournalEntry[]): Array<{ date: string; entries: JournalEntry[] }> {
@@ -46,6 +47,7 @@ export default function JournalDetail({
   onEditNote,
   onNewNote,
   onNavigateAnchor,
+  showJournalBadge = false,
 }: Props) {
   const [menuOpen, setMenuOpen] = useState(false)
   const menuRef = useRef<HTMLDivElement>(null)
@@ -289,6 +291,7 @@ export default function JournalDetail({
               entries={group.entries}
               onEditNote={onEditNote}
               onNavigateAnchor={onNavigateAnchor}
+              showJournalBadge={showJournalBadge}
             />
           ))}
         </div>

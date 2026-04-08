@@ -60,29 +60,3 @@ export interface JournalPickerItem {
   noteCount: number
   isDefault: boolean
 }
-
-// Legacy types kept for JournalView.tsx compatibility (removed in Task 9)
-export type JournalTab = 'notes' | 'collections' | 'bookmarks'
-
-export interface JournalProps {
-  entries: JournalEntry[]
-  collections: Collection[]
-  bookmarks: Bookmark[]
-  availableUserTags: string[]
-  activeTab: JournalTab
-  activeFilters: string[]
-  searchQuery: string
-
-  onChangeTab?: (tab: JournalTab) => void
-  onSearch?: (query: string) => void
-  onToggleFilter?: (filter: string) => void
-  onClearFilters?: () => void
-  onOpenEntry?: (entryId: string) => void
-  onCreateNote?: () => void
-  onNavigateAnchor?: (anchorType: AnchorType, entityId: string) => void
-  onOpenCollection?: (collectionId: string) => void
-  onNavigateBookmark?: (verseRef: string) => void
-  onRemoveBookmark?: (bookmarkId: string) => void
-  onAddAnchor?: (entryId: string, anchor: Anchor) => void
-  onAddTag?: (entryId: string, tag: string) => void
-}

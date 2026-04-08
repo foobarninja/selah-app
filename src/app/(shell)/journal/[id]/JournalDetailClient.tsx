@@ -126,6 +126,7 @@ export default function JournalDetailClient({ journal, entries, availableTags = 
         onEditNote={handleEditNote}
         onNewNote={handleNewNote}
         onNavigateAnchor={handleNavigateAnchor}
+        showJournalBadge={journal.id === 'all'}
       />
 
       {editorOpen && (

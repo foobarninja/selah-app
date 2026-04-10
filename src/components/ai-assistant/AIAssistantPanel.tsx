@@ -3,7 +3,7 @@
 import { useState, useRef, useEffect } from 'react'
 import ReactMarkdown from 'react-markdown'
 import remarkGfm from 'remark-gfm'
-import { X, Clock, Send, Bookmark, BookmarkCheck, ChevronLeft, Save, Check, Plus, Copy, Library } from 'lucide-react'
+import { X, Clock, Send, Bookmark, BookmarkCheck, ChevronLeft, Save, Check, Plus, Copy, Library, Download } from 'lucide-react'
 import { ContextControls } from './ContextControls'
 import type { AIAssistantProps, Message, GroundingContext, ConversationThread } from './types'
 
@@ -204,7 +204,7 @@ const mdStyles = `
 .selah-md a { color: var(--selah-sky-400, #6B91B5); text-decoration: underline; }
 `
 
-export function AIAssistantPanel({ groundingContext, messages, conversationHistory, isConfigured, isPanelOpen, isStreaming, onSendMessage, onClose, onSaveToJournal, onSaveToCollection, onOpenThread, onDeleteThread, onNewConversation, onSaveConversation, grounding, contextToggles, onContextToggle }: AIAssistantProps) {
+export function AIAssistantPanel({ groundingContext, messages, conversationHistory, isConfigured, isPanelOpen, isStreaming, onSendMessage, onClose, onSaveToJournal, onSaveToCollection, onOpenThread, onDeleteThread, onNewConversation, onSaveConversation, onExportConversation, grounding, contextToggles, onContextToggle }: AIAssistantProps) {
   const [input, setInput] = useState('')
   const [showHistory, setShowHistory] = useState(false)
   const [saveStatus, setSaveStatus] = useState<'idle' | 'saving' | 'saved'>('idle')
@@ -245,6 +245,16 @@ export function AIAssistantPanel({ groundingContext, messages, conversationHisto
               style={{ color: saveStatus === 'saved' ? 'var(--selah-gold-500, #C6A23C)' : 'var(--selah-text-3, #6E695F)', background: 'none', border: 'none', cursor: isStreaming || saveStatus !== 'idle' ? 'default' : 'pointer', padding: '4px', opacity: isStreaming ? 0.4 : 1 }}
             >
               {saveStatus === 'saved' ? <Check size={16} strokeWidth={2} /> : <Save size={16} strokeWidth={1.5} />}
+            </button>
+          )}
+          {messages.length > 0 && onExportConversation && (
+            <button
+              onClick={onExportConversation}
+              title="Export conversation"
+              aria-label="Export conversation"
+              style={{ color: 'var(--selah-text-3, #6E695F)', background: 'none', border: 'none', cursor: 'pointer', padding: '4px' }}
+            >
+              <Download size={16} strokeWidth={1.5} />
             </button>
           )}
           {onNewConversation && (

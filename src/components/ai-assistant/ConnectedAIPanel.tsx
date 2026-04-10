@@ -14,6 +14,7 @@ export function ConnectedAIPanel() {
     contextToggles,
     setContextToggle,
     grounding,
+    activeConversationId,
     sendMessage,
     closePanel,
     newConversation,
@@ -67,6 +68,13 @@ export function ConnectedAIPanel() {
         onDeleteThread={deleteThread}
         onNewConversation={newConversation}
         onSaveConversation={saveConversation}
+        onExportConversation={
+          activeConversationId
+            ? () => {
+                window.location.href = `/api/ai/conversations/${activeConversationId}/export?format=docx`
+              }
+            : undefined
+        }
         contextToggles={contextToggles}
         grounding={grounding}
         onContextToggle={setContextToggle}

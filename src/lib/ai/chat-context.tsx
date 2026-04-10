@@ -17,6 +17,8 @@ interface ChatContextValue {
   setContextToggle: (sectionId: string, enabled: boolean) => void
   grounding: GroundingRequest
 
+  activeConversationId: string | null
+
   sendMessage: (content: string) => void
   togglePanel: () => void
   closePanel: () => void
@@ -227,6 +229,7 @@ export function ChatProvider({ children, grounding, groundingDisplay, isConfigur
         contextToggles,
         setContextToggle,
         grounding,
+        activeConversationId: conversationId,
         sendMessage,
         togglePanel: togglePanelWithHistory,
         closePanel,

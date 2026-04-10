@@ -46,6 +46,7 @@ export interface AIAssistantProps {
   onDeleteThread?: (threadId: string) => void
   onNewConversation?: () => void
   onSaveConversation?: () => void | Promise<void>
+  onExportConversation?: () => void
 
   contextToggles?: ContextToggles
   grounding?: GroundingRequest

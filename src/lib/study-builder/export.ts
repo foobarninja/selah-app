@@ -1,17 +1,12 @@
-import {
-  Document,
-  Paragraph,
-  TextRun,
-  HeadingLevel,
-  AlignmentType,
-  Packer,
-  BorderStyle,
-  TabStopPosition,
-  TabStopType,
-} from 'docx'
+import { Paragraph, TextRun, BorderStyle } from 'docx'
 import { prisma } from '@/lib/db'
 import Database from 'better-sqlite3'
 import { BOOK_NAMES } from '@/lib/constants'
+import {
+  buildCoverPage,
+  buildFooter,
+  packDocument,
+} from '@/lib/export/docx/primitives'
 
 function getDb() {
   const dbUrl = process.env.DATABASE_URL ?? 'file:./data/selah.db'
@@ -49,29 +44,15 @@ export async function generateDocx(projectId: number): Promise<Buffer> {
   const db = getDb()
   const sections: Paragraph[] = []
 
-  // Title page
+  // Cover page via shared primitive
   sections.push(
-    new Paragraph({
-      text: project.topic,
-      heading: HeadingLevel.TITLE,
-      alignment: AlignmentType.CENTER,
-      spacing: { after: 200 },
-    }),
-    new Paragraph({
-      alignment: AlignmentType.CENTER,
-      spacing: { after: 600 },
-      children: [
-        new TextRun({
-          text: `${formatLabels[project.format] || project.format} — Assembled with Selah`,
-          italics: true,
-          size: 22,
-          color: '666666',
-        }),
-      ],
+    ...buildCoverPage({
+      title: project.topic,
+      subtitle: `${formatLabels[project.format] || project.format} — Assembled with Selah`,
     }),
   )
 
-  // Assembly items
+  // Assembly items (buildItemSection is unchanged and remains in this file)
   for (let i = 0; i < items.length; i++) {
     const item = items[i]
     sections.push(...buildItemSection(db, item, i + 1))
@@ -79,11 +60,13 @@ export async function generateDocx(projectId: number): Promise<Buffer> {
 
   db.close()
 
-  const doc = new Document({
-    sections: [{ children: sections }],
+  const exportDate = new Date().toLocaleDateString('en-US', {
+    year: 'numeric',
+    month: 'long',
+    day: 'numeric',
   })
 
-  return Buffer.from(await Packer.toBuffer(doc))
+  return packDocument(sections, buildFooter(`Exported from Selah · ${exportDate}`))
 }
 
 function buildItemSection(db: Database.Database, item: ExportItem, index: number): Paragraph[] {

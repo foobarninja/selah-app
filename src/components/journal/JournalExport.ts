@@ -1,14 +1,8 @@
-import {
-  Document,
-  Packer,
-  Paragraph,
-  TextRun,
-  HeadingLevel,
-  AlignmentType,
-  PageBreak,
-  Footer,
-} from 'docx'
+import { Paragraph, TextRun, HeadingLevel, PageBreak } from 'docx'
 import type { JournalEntry } from '@/components/journal/types'
+import { formatDate, formatTime, formatDateRange, formatExportDate } from '@/lib/export/formatters'
+import { buildCoverPage, buildFooter, packDocument } from '@/lib/export/docx/primitives'
+import { DOCX_SIZES, DOCX_COLORS } from '@/lib/export/constants'
 
 const NOTE_TYPE_LABELS: Record<string, string> = {
   annotation: 'ANNOTATION',
@@ -17,38 +11,6 @@ const NOTE_TYPE_LABELS: Record<string, string> = {
   sermon_idea: 'SERMON IDEA',
   insight: 'INSIGHT',
   prayer: 'PRAYER',
-}
-
-function formatDate(dateStr: string): string {
-  try {
-    return new Date(dateStr).toLocaleDateString('en-US', {
-      weekday: 'long',
-      year: 'numeric',
-      month: 'long',
-      day: 'numeric',
-    })
-  } catch {
-    return dateStr
-  }
-}
-
-function formatTime(dateStr: string): string {
-  try {
-    return new Date(dateStr).toLocaleTimeString('en-US', {
-      hour: 'numeric',
-      minute: '2-digit',
-    })
-  } catch {
-    return ''
-  }
-}
-
-function formatDateRange(entries: JournalEntry[]): string {
-  if (entries.length === 0) return 'No entries'
-  const sorted = [...entries].sort((a, b) => a.createdAt.localeCompare(b.createdAt))
-  const first = new Date(sorted[0].createdAt).toLocaleDateString('en-US', { month: 'short', day: 'numeric', year: 'numeric' })
-  const last = new Date(sorted[sorted.length - 1].createdAt).toLocaleDateString('en-US', { month: 'short', day: 'numeric', year: 'numeric' })
-  return first === last ? first : `${first} – ${last}`
 }
 
 export async function generateJournalDocx(
@@ -68,62 +30,16 @@ export async function generateJournalDocx(
   }
   const days = Array.from(dayMap.entries())
 
-  const exportDate = new Date().toLocaleDateString('en-US', {
-    year: 'numeric',
-    month: 'long',
-    day: 'numeric',
-  })
-
   // ── Cover page ──────────────────────────────────────────────────────────────
-  const coverParagraphs: Paragraph[] = [
-    new Paragraph({
-      heading: HeadingLevel.TITLE,
-      children: [
-        new TextRun({
-          text: journalName,
-          bold: true,
-          size: 48, // 24pt
-        }),
-      ],
-    }),
-  ]
+  const dateRangeStr = formatDateRange(sorted.map((e) => e.createdAt))
+  const countStr = `${sorted.length} note${sorted.length === 1 ? '' : 's'}`
+  const metadata = `${dateRangeStr}   ·   ${countStr}`
 
-  if (description) {
-    coverParagraphs.push(
-      new Paragraph({
-        spacing: { before: 200 },
-        children: [
-          new TextRun({
-            text: description,
-            italics: true,
-            color: '888888',
-            size: 24, // 12pt
-          }),
-        ],
-      }),
-    )
-  }
-
-  coverParagraphs.push(
-    new Paragraph({
-      spacing: { before: 400 },
-      children: [
-        new TextRun({
-          text: formatDateRange(sorted),
-          color: '666666',
-          size: 22,
-        }),
-        new TextRun({
-          text: `   ·   ${sorted.length} note${sorted.length === 1 ? '' : 's'}`,
-          color: '888888',
-          size: 22,
-        }),
-      ],
-    }),
-    new Paragraph({
-      children: [new PageBreak()],
-    }),
-  )
+  const coverParagraphs = buildCoverPage({
+    title: journalName,
+    subtitle: description || undefined,
+    metadata,
+  })
 
   // ── Day groups ───────────────────────────────────────────────────────────────
   const bodyParagraphs: Paragraph[] = []
@@ -138,7 +54,7 @@ export async function generateJournalDocx(
           new TextRun({
             text: formatDate(dayKey),
             bold: true,
-            size: 28, // 14pt
+            size: DOCX_SIZES.h2,
           }),
         ],
       }),
@@ -155,37 +71,37 @@ export async function generateJournalDocx(
         new TextRun({
           text: `[${typeLabel}]`,
           bold: true,
-          size: 20,
+          size: DOCX_SIZES.meta,
         }),
       ]
       if (passageRef) {
         metaChildren.push(
           new TextRun({
             text: `  ${passageRef}`,
-            color: '996633',
-            size: 20,
+            color: DOCX_COLORS.refBrown,
+            size: DOCX_SIZES.meta,
           }),
         )
         metaChildren.push(
           new TextRun({
             text: `  —  `,
-            color: '888888',
-            size: 20,
+            color: DOCX_COLORS.muted,
+            size: DOCX_SIZES.meta,
           }),
         )
       } else {
         metaChildren.push(
           new TextRun({
             text: `  `,
-            size: 20,
+            size: DOCX_SIZES.meta,
           }),
         )
       }
       metaChildren.push(
         new TextRun({
           text: timeStr,
-          color: '888888',
-          size: 20,
+          color: DOCX_COLORS.muted,
+          size: DOCX_SIZES.meta,
         }),
       )
 
@@ -205,7 +121,7 @@ export async function generateJournalDocx(
             children: [
               new TextRun({
                 text: line || ' ',
-                size: 22, // 11pt
+                size: DOCX_SIZES.body,
               }),
             ],
           }),
@@ -222,8 +138,8 @@ export async function generateJournalDocx(
               new TextRun({
                 text: `Anchors: ${anchorText}`,
                 italics: true,
-                color: '888888',
-                size: 20,
+                color: DOCX_COLORS.muted,
+                size: DOCX_SIZES.meta,
               }),
             ],
           }),
@@ -239,8 +155,8 @@ export async function generateJournalDocx(
             children: [
               new TextRun({
                 text: `Tags: ${allTags.join(', ')}`,
-                color: '888888',
-                size: 20,
+                color: DOCX_COLORS.muted,
+                size: DOCX_SIZES.meta,
               }),
             ],
           }),
@@ -258,34 +174,9 @@ export async function generateJournalDocx(
     }
   })
 
-  // ── Footer ───────────────────────────────────────────────────────────────────
-  const footer = new Footer({
-    children: [
-      new Paragraph({
-        alignment: AlignmentType.CENTER,
-        children: [
-          new TextRun({
-            text: `Exported from Selah · ${exportDate}`,
-            color: '999999',
-            size: 18, // 9pt
-          }),
-        ],
-      }),
-    ],
-  })
-
   // ── Assemble document ────────────────────────────────────────────────────────
-  const doc = new Document({
-    sections: [
-      {
-        children: [...coverParagraphs, ...bodyParagraphs],
-        footers: {
-          default: footer,
-        },
-      },
-    ],
-  })
-
-  const result = await Packer.toBuffer(doc)
-  return Buffer.isBuffer(result) ? result : Buffer.from(result)
+  return packDocument(
+    [...coverParagraphs, ...bodyParagraphs],
+    buildFooter(`Exported from Selah · ${formatExportDate()}`),
+  )
 }

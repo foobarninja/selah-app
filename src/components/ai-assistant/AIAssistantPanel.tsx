@@ -252,7 +252,8 @@ export function AIAssistantPanel({ groundingContext, messages, conversationHisto
               onClick={onExportConversation}
               title="Export conversation"
               aria-label="Export conversation"
-              style={{ color: 'var(--selah-text-3, #6E695F)', background: 'none', border: 'none', cursor: 'pointer', padding: '4px' }}
+              disabled={isStreaming}
+              style={{ color: 'var(--selah-text-3, #6E695F)', background: 'none', border: 'none', cursor: isStreaming ? 'default' : 'pointer', padding: '4px', opacity: isStreaming ? 0.4 : 1 }}
             >
               <Download size={16} strokeWidth={1.5} />
             </button>

@@ -25,13 +25,7 @@ export async function GET(
       if (!conv) {
         return NextResponse.json({ error: 'Not found' }, { status: 404 })
       }
-      const md = renderConversationToMarkdown({
-        ...conv,
-        messages: conv.messages.map((m) => ({
-          ...m,
-          role: m.role as 'user' | 'assistant' | 'system',
-        })),
-      })
+      const md = renderConversationToMarkdown(conv)
       return new NextResponse(md, {
         headers: {
           'Content-Type': 'text/markdown; charset=utf-8',
@@ -40,6 +34,13 @@ export async function GET(
       })
     }
 
+    const exists = await prisma.aiConversation.findUnique({
+      where: { id: conversationId },
+      select: { id: true },
+    })
+    if (!exists) {
+      return NextResponse.json({ error: 'Not found' }, { status: 404 })
+    }
     const buffer = await generateConversationDocx(conversationId)
     return new NextResponse(new Uint8Array(buffer), {
       headers: {

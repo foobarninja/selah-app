@@ -2,6 +2,7 @@ import { describe, it, expect } from 'vitest'
 import {
   renderJournalToMarkdown,
   renderCollectionToMarkdown,
+  renderConversationToMarkdown,
 } from '@/lib/export/markdown/renderers'
 
 const fakeNote = {
@@ -62,5 +63,51 @@ describe('renderCollectionToMarkdown', () => {
     const md = renderCollectionToMarkdown([fakeCollection as any])
     expect(md).toContain('[passage]')
     expect(md).toContain('Matt 18:21')
+  })
+})
+
+describe('renderConversationToMarkdown', () => {
+  const fakeConversation = {
+    title: 'Exploring Gideon',
+    createdAt: '2026-04-09T12:00:00Z',
+    messages: [
+      {
+        role: 'user',
+        content: 'Why does God call Gideon a mighty warrior?',
+        createdAt: '2026-04-09T12:00:00Z',
+      },
+      {
+        role: 'assistant',
+        content: 'As Gill notes (Scholarship), the irony is pointed.',
+        createdAt: '2026-04-09T12:01:00Z',
+      },
+      {
+        role: 'system',
+        content: 'This is a system prompt that should NOT appear in the transcript.',
+        createdAt: '2026-04-09T11:59:00Z',
+      },
+    ],
+  }
+
+  it('includes title and start date in frontmatter', () => {
+    const md = renderConversationToMarkdown(fakeConversation as any)
+    expect(md).toContain('Exploring Gideon')
+    expect(md).toContain('Started:')
+  })
+
+  it('renders user and assistant messages with role labels', () => {
+    const md = renderConversationToMarkdown(fakeConversation as any)
+    expect(md).toContain('### You')
+    expect(md).toContain('### Assistant')
+  })
+
+  it('skips system messages', () => {
+    const md = renderConversationToMarkdown(fakeConversation as any)
+    expect(md).not.toContain('system prompt')
+  })
+
+  it('uses fallback title when none provided', () => {
+    const md = renderConversationToMarkdown({ ...fakeConversation, title: null } as any)
+    expect(md).toContain('AI Conversation')
   })
 })

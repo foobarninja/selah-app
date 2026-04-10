@@ -27,7 +27,7 @@ type CollectionLike = {
 }
 
 type ConversationMessage = {
-  role: 'user' | 'assistant' | 'system'
+  role: string
   content: string
   createdAt: string | Date
 }

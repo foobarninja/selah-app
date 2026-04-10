@@ -1,5 +1,5 @@
 import { Paragraph, TextRun, HeadingLevel } from 'docx'
-import { DOCX_SIZES, DOCX_COLORS, TIER_COLORS, FONT_NAMES, type SourceTier } from '../constants'
+import { DOCX_SIZES, TIER_COLORS, FONT_NAMES, type SourceTier } from '../constants'
 import { TIER_REGEX } from './tier-pills'
 
 /**

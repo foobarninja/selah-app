@@ -89,10 +89,30 @@ export default function SettingsPage() {
       onSaveAIConfig={async (provider, apiKey, model) => {
         const isOllama = provider === 'ollama'
         await patchSetting('ai_config', JSON.stringify({ provider, apiKey: isOllama ? '' : apiKey, model, ollamaUrl: isOllama ? apiKey : undefined }))
-        setData((d) => d ? {
-          ...d,
-          aiConfig: { isConfigured: true, provider, model, connectionStatus: 'connected', ollamaUrl: isOllama ? apiKey : d.aiConfig.ollamaUrl },
-        } : d)
+        setData((d) => {
+          if (!d) return d
+          const prev = d.aiConfig
+          // After save, this provider has a key if either the user just typed one
+          // or it already had one stored (empty input means "keep existing").
+          const providerHadKey = prev.savedProviders?.includes(provider) ?? false
+          const providerHasKeyNow = isOllama ? false : (!!apiKey || providerHadKey)
+          const savedProviders = providerHasKeyNow && !providerHadKey
+            ? [...(prev.savedProviders ?? []), provider]
+            : (prev.savedProviders ?? [])
+          return {
+            ...d,
+            aiConfig: {
+              ...prev,
+              isConfigured: true,
+              provider,
+              model,
+              connectionStatus: 'connected',
+              ollamaUrl: isOllama ? apiKey : prev.ollamaUrl,
+              hasApiKey: providerHasKeyNow,
+              savedProviders,
+            },
+          }
+        })
       }}
 
       onTestConnection={async () => {

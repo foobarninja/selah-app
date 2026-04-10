@@ -1,6 +1,6 @@
 'use client'
 
-import { useState } from 'react'
+import { useEffect, useState } from 'react'
 import { Eye, EyeOff, Check, X, Download, Upload, Minus, Plus, Sun, Moon, Monitor } from 'lucide-react'
 import type { SettingsProps, AIProvider, ThemeMode, AudienceLevel, RetentionDays } from './types'
 
@@ -45,24 +45,54 @@ export function SettingsView({ translations, aiConfig, aiProviders, studyPrefere
   const [ollamaModels, setOllamaModels] = useState<Array<{ name: string }>>([])
   const [ollamaLoading, setOllamaLoading] = useState(false)
   const [ollamaError, setOllamaError] = useState<string | null>(null)
-  const [ollamaDisableThinking, setOllamaDisableThinking] = useState(false)
-  const [ollamaTemperature, setOllamaTemperature] = useState(0.3)
-  const [ollamaTopP, setOllamaTopP] = useState(0.85)
-  const [ollamaMaxTokens, setOllamaMaxTokens] = useState(2048)
-  const [ollamaFreqPenalty, setOllamaFreqPenalty] = useState(0)
-  const [ollamaPresencePenalty, setOllamaPresencePenalty] = useState(0)
-  const [customApiUrl, setCustomApiUrl] = useState('')
+  // Initialize model parameters from saved config so the UI reflects what's actually in the DB.
+  const [ollamaDisableThinking, setOllamaDisableThinking] = useState(aiConfig.ollamaParams.disableThinking)
+  const [ollamaTemperature, setOllamaTemperature] = useState(aiConfig.ollamaParams.temperature)
+  const [ollamaTopP, setOllamaTopP] = useState(aiConfig.ollamaParams.topP)
+  const [ollamaMaxTokens, setOllamaMaxTokens] = useState(aiConfig.ollamaParams.maxTokens)
+  const [ollamaFreqPenalty, setOllamaFreqPenalty] = useState(aiConfig.ollamaParams.freqPenalty)
+  const [ollamaPresencePenalty, setOllamaPresencePenalty] = useState(aiConfig.ollamaParams.presPenalty)
+  const [customApiUrl, setCustomApiUrl] = useState(aiConfig.customApiUrl || '')
   const [openrouterModels, setOpenrouterModels] = useState<Array<{ id: string; name: string; contextLength: number; promptCost: string; completionCost: string }>>([])
   const [openrouterLoading, setOpenrouterLoading] = useState(false)
   const [openrouterError, setOpenrouterError] = useState<string | null>(null)
-  const [orTemperature, setOrTemperature] = useState(0.3)
-  const [orTopP, setOrTopP] = useState(0.85)
-  const [orMaxTokens, setOrMaxTokens] = useState(1500)
-  const [orFreqPenalty, setOrFreqPenalty] = useState(0)
-  const [orPresencePenalty, setOrPresencePenalty] = useState(0)
+  const [orTemperature, setOrTemperature] = useState(aiConfig.openrouterParams.temperature)
+  const [orTopP, setOrTopP] = useState(aiConfig.openrouterParams.topP)
+  const [orMaxTokens, setOrMaxTokens] = useState(aiConfig.openrouterParams.maxTokens)
+  const [orFreqPenalty, setOrFreqPenalty] = useState(aiConfig.openrouterParams.freqPenalty)
+  const [orPresencePenalty, setOrPresencePenalty] = useState(aiConfig.openrouterParams.presPenalty)
+  const [orDisableThinking, setOrDisableThinking] = useState(aiConfig.openrouterParams.disableThinking)
 
   const isOllama = selectedProvider === 'ollama'
   const isOpenRouter = selectedProvider === 'openrouter'
+
+  /** True if a key is already saved on the server for the currently-selected provider. */
+  const hasSavedKey = !!(selectedProvider && aiConfig.savedProviders?.includes(selectedProvider))
+
+  /** Clear typed-but-unsaved key/model when the user switches providers, so state doesn't bleed across tabs. */
+  const handleProviderClick = (id: AIProvider) => {
+    if (id === selectedProvider) return
+    setSelectedProvider(id)
+    setApiKey('')
+    setSelectedModel('')
+    setOpenrouterModels([])
+    setOpenrouterError(null)
+    onSelectProvider?.(id)
+  }
+
+  // When OpenRouter has a saved key, auto-fetch the models list on mount so the
+  // user sees their saved model rather than an empty dropdown.
+  useEffect(() => {
+    if (
+      selectedProvider === 'openrouter' &&
+      aiConfig.savedProviders?.includes('openrouter') &&
+      openrouterModels.length === 0 &&
+      !openrouterLoading
+    ) {
+      fetchOpenRouterModels()
+    }
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [selectedProvider, aiConfig.savedProviders])
 
   const fetchOllamaModels = async () => {
     setOllamaLoading(true)
@@ -85,12 +115,22 @@ export function SettingsView({ translations, aiConfig, aiProviders, studyPrefere
   }
 
   const fetchOpenRouterModels = async () => {
-    if (!apiKey) { setOpenrouterError('Enter your API key first'); return }
+    // Allow fetching with no typed key — server will fall back to the stored key.
+    if (!apiKey && !hasSavedKey) {
+      setOpenrouterError('Enter your API key first')
+      return
+    }
     setOpenrouterLoading(true)
     setOpenrouterError(null)
     try {
-      const res = await fetch(`/api/ai/openrouter/models?key=${encodeURIComponent(apiKey)}`)
-      if (!res.ok) throw new Error(`Failed: ${res.status}`)
+      const url = apiKey
+        ? `/api/ai/openrouter/models?key=${encodeURIComponent(apiKey)}`
+        : '/api/ai/openrouter/models'
+      const res = await fetch(url)
+      if (!res.ok) {
+        const data = await res.json().catch(() => ({}))
+        throw new Error(data.error || `Failed: ${res.status}`)
+      }
       const models = await res.json()
       setOpenrouterModels(models)
       if (models.length === 0) setOpenrouterError('No models found')
@@ -150,12 +190,20 @@ export function SettingsView({ translations, aiConfig, aiProviders, studyPrefere
             <>
               <p style={{ fontFamily: font.body, fontSize: '13px', color: 'var(--selah-text-2, #A39E93)', marginBottom: '8px' }}>Provider</p>
               <div className="grid grid-cols-2 sm:grid-cols-3 gap-2 mb-5">
-                {aiProviders.map((p) => (
-                  <button key={p.id} onClick={() => { setSelectedProvider(p.id); onSelectProvider?.(p.id) }} className="text-left rounded-lg transition-all duration-150" style={{ padding: '12px 14px', backgroundColor: 'var(--selah-bg-surface, #1C1917)', border: selectedProvider === p.id ? '2px solid var(--selah-gold-500, #C6A23C)' : '1px solid var(--selah-border-color, #3D3835)', cursor: 'pointer' }}>
-                    <p style={{ fontFamily: font.body, fontSize: '14px', fontWeight: 600, color: 'var(--selah-text-1, #E8E2D9)', marginBottom: '2px' }}>{p.name}</p>
-                    <p style={{ fontFamily: font.body, fontSize: '11px', color: 'var(--selah-text-3, #6E695F)', lineHeight: 1.4 }}>{p.note}</p>
-                  </button>
-                ))}
+                {aiProviders.map((p) => {
+                  const providerHasKey = aiConfig.savedProviders?.includes(p.id)
+                  return (
+                    <button key={p.id} onClick={() => handleProviderClick(p.id)} className="text-left rounded-lg transition-all duration-150 relative" style={{ padding: '12px 14px', backgroundColor: 'var(--selah-bg-surface, #1C1917)', border: selectedProvider === p.id ? '2px solid var(--selah-gold-500, #C6A23C)' : '1px solid var(--selah-border-color, #3D3835)', cursor: 'pointer' }}>
+                      {providerHasKey && (
+                        <span title="API key saved" style={{ position: 'absolute', top: '8px', right: '8px', display: 'inline-flex', alignItems: 'center', justifyContent: 'center', width: '14px', height: '14px', borderRadius: '50%', backgroundColor: 'var(--selah-teal-400, #4A9E88)' }}>
+                          <Check size={9} strokeWidth={3} color="#fff" />
+                        </span>
+                      )}
+                      <p style={{ fontFamily: font.body, fontSize: '14px', fontWeight: 600, color: 'var(--selah-text-1, #E8E2D9)', marginBottom: '2px' }}>{p.name}</p>
+                      <p style={{ fontFamily: font.body, fontSize: '11px', color: 'var(--selah-text-3, #6E695F)', lineHeight: 1.4 }}>{p.note}</p>
+                    </button>
+                  )
+                })}
               </div>
               {selectedProvider && (
                 <>
@@ -196,10 +244,17 @@ export function SettingsView({ translations, aiConfig, aiProviders, studyPrefere
                     </>
                   ) : isOpenRouter ? (
                     <>
-                      <p style={{ fontFamily: font.body, fontSize: '13px', color: 'var(--selah-text-2)', marginBottom: '6px' }}>API key</p>
+                      <p style={{ fontFamily: font.body, fontSize: '13px', color: 'var(--selah-text-2)', marginBottom: '6px' }}>
+                        API key
+                        {hasSavedKey && (
+                          <span style={{ marginLeft: '8px', fontSize: '11px', color: 'var(--selah-teal-400, #4A9E88)' }}>
+                            ✓ saved — leave blank to keep
+                          </span>
+                        )}
+                      </p>
                       <div className="flex items-center gap-2 mb-4">
                         <div className="flex-1 flex items-center rounded-lg" style={{ backgroundColor: 'var(--selah-bg-surface, #1C1917)', border: '1px solid var(--selah-border-color, #3D3835)', padding: '8px 12px' }}>
-                          <input type={showApiKey ? 'text' : 'password'} value={apiKey} onChange={(e) => setApiKey(e.target.value)} placeholder="sk-or-..." className="flex-1 outline-none" style={{ fontFamily: font.mono, fontSize: '13px', color: 'var(--selah-text-1)', backgroundColor: 'transparent', border: 'none' }} />
+                          <input type={showApiKey ? 'text' : 'password'} value={apiKey} onChange={(e) => setApiKey(e.target.value)} placeholder={hasSavedKey ? '•••••••• (saved)' : 'sk-or-...'} className="flex-1 outline-none" style={{ fontFamily: font.mono, fontSize: '13px', color: 'var(--selah-text-1)', backgroundColor: 'transparent', border: 'none' }} />
                           <button onClick={() => setShowApiKey(!showApiKey)} style={{ color: 'var(--selah-text-3)', background: 'none', border: 'none', cursor: 'pointer' }}>{showApiKey ? <EyeOff size={14} strokeWidth={1.5} /> : <Eye size={14} strokeWidth={1.5} />}</button>
                         </div>
                       </div>
@@ -240,14 +295,24 @@ export function SettingsView({ translations, aiConfig, aiProviders, studyPrefere
                           <span style={{ fontFamily: font.mono, fontSize: '13px', color: 'var(--selah-text-1, #E8E2D9)', width: '50px', textAlign: 'right', flexShrink: 0 }}>{value}</span>
                         </div>
                       ))}
+                      <div style={{ marginTop: '12px' }}>
+                        <Toggle label="Disable thinking (for reasoning models like DeepSeek R1, Qwen3, Claude, GPT-5)" checked={orDisableThinking} onChange={(v) => setOrDisableThinking(v)} />
+                      </div>
                       <div style={{ marginBottom: '8px' }} />
                     </>
                   ) : (
                     <>
-                      <p style={{ fontFamily: font.body, fontSize: '13px', color: 'var(--selah-text-2)', marginBottom: '6px' }}>API key</p>
+                      <p style={{ fontFamily: font.body, fontSize: '13px', color: 'var(--selah-text-2)', marginBottom: '6px' }}>
+                        API key
+                        {hasSavedKey && (
+                          <span style={{ marginLeft: '8px', fontSize: '11px', color: 'var(--selah-teal-400, #4A9E88)' }}>
+                            ✓ saved — leave blank to keep
+                          </span>
+                        )}
+                      </p>
                       <div className="flex items-center gap-2 mb-4">
                         <div className="flex-1 flex items-center rounded-lg" style={{ backgroundColor: 'var(--selah-bg-surface, #1C1917)', border: '1px solid var(--selah-border-color, #3D3835)', padding: '8px 12px' }}>
-                          <input type={showApiKey ? 'text' : 'password'} value={apiKey} onChange={(e) => setApiKey(e.target.value)} placeholder="sk-..." className="flex-1 outline-none" style={{ fontFamily: font.mono, fontSize: '13px', color: 'var(--selah-text-1)', backgroundColor: 'transparent', border: 'none' }} />
+                          <input type={showApiKey ? 'text' : 'password'} value={apiKey} onChange={(e) => setApiKey(e.target.value)} placeholder={hasSavedKey ? '•••••••• (saved)' : 'sk-...'} className="flex-1 outline-none" style={{ fontFamily: font.mono, fontSize: '13px', color: 'var(--selah-text-1)', backgroundColor: 'transparent', border: 'none' }} />
                           <button onClick={() => setShowApiKey(!showApiKey)} style={{ color: 'var(--selah-text-3)', background: 'none', border: 'none', cursor: 'pointer' }}>{showApiKey ? <EyeOff size={14} strokeWidth={1.5} /> : <Eye size={14} strokeWidth={1.5} />}</button>
                         </div>
                       </div>
@@ -284,6 +349,7 @@ export function SettingsView({ translations, aiConfig, aiProviders, studyPrefere
                         extraSettings.openrouter_max_tokens = String(orMaxTokens)
                         extraSettings.openrouter_freq_penalty = String(orFreqPenalty)
                         extraSettings.openrouter_pres_penalty = String(orPresencePenalty)
+                        extraSettings.openrouter_disable_thinking = String(orDisableThinking)
                         const model = openrouterModels.find((m) => m.id === selectedModel)
                         if (model) {
                           extraSettings.openrouter_prompt_cost = model.promptCost

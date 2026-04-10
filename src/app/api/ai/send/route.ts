@@ -57,25 +57,35 @@ export async function POST(request: NextRequest) {
       }, STREAM_TIMEOUT_MS)
 
       try {
+        // Read per-provider model parameters from user settings
         const providerSetting = await getSetting('ai_provider')
-        let config: ModelConfig = { model: '', maxTokens: 2048 }
+        let config: ModelConfig = { model: '', maxTokens: 2400 }
         if (providerSetting === 'openrouter') {
           config = {
             model: '',
-            maxTokens: parseInt(await getSetting('openrouter_max_tokens') ?? '1500', 10),
-            temperature: parseFloat(await getSetting('openrouter_temperature') ?? '0.3'),
+            maxTokens: parseInt(await getSetting('openrouter_max_tokens') ?? '2400', 10),
+            temperature: parseFloat(await getSetting('openrouter_temperature') ?? '0.5'),
             topP: parseFloat(await getSetting('openrouter_top_p') ?? '0.85'),
-            frequencyPenalty: parseFloat(await getSetting('openrouter_freq_penalty') ?? '0'),
-            presencePenalty: parseFloat(await getSetting('openrouter_pres_penalty') ?? '0'),
+            frequencyPenalty: parseFloat(await getSetting('openrouter_freq_penalty') ?? '0.6'),
+            presencePenalty: parseFloat(await getSetting('openrouter_pres_penalty') ?? '0.5'),
           }
         } else if (providerSetting === 'ollama') {
           config = {
             model: '',
-            maxTokens: parseInt(await getSetting('ollama_max_tokens') ?? '2048', 10),
-            temperature: parseFloat(await getSetting('ollama_temperature') ?? '0.3'),
+            maxTokens: parseInt(await getSetting('ollama_max_tokens') ?? '2400', 10),
+            temperature: parseFloat(await getSetting('ollama_temperature') ?? '0.5'),
             topP: parseFloat(await getSetting('ollama_top_p') ?? '0.85'),
-            frequencyPenalty: parseFloat(await getSetting('ollama_freq_penalty') ?? '0'),
-            presencePenalty: parseFloat(await getSetting('ollama_pres_penalty') ?? '0'),
+            frequencyPenalty: parseFloat(await getSetting('ollama_freq_penalty') ?? '0.6'),
+            presencePenalty: parseFloat(await getSetting('ollama_pres_penalty') ?? '0.5'),
+          }
+        } else if (providerSetting === 'custom') {
+          config = {
+            model: '',
+            maxTokens: 2400,
+            temperature: 0.5,
+            topP: 0.85,
+            frequencyPenalty: 0.6,
+            presencePenalty: 0.5,
           }
         }
 

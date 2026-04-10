@@ -7,16 +7,29 @@ async function getCredentials(): Promise<ProviderCredentials | null> {
   const config = await getAIConfig()
   if (!config.isConfigured || !config.provider || !config.model) return null
 
-  const rawKey = (await getSetting('ai_api_key')) || ''
+  // Per-provider key (preferred), fall back to legacy generic key
+  const rawKey =
+    (await getSetting(`ai_api_key_${config.provider}`)) ||
+    (await getSetting('ai_api_key')) ||
+    ''
   const apiKey = isEncrypted(rawKey) ? decryptValue(rawKey) : rawKey
-  const ollamaUrl = (await getSetting('ollama_url')) || ''
-  const customApiUrl = (await getSetting('custom_api_url')) || ''
+
+  // Select the base URL based on the active provider. Do NOT fall back across
+  // providers — ollama_url must never be used for a custom/openai request, and
+  // vice versa, because each stores a URL for a different server with different
+  // path conventions (Ollama: /api/chat, OpenAI-compatible: /v1/chat/completions).
+  let apiBaseUrl: string | undefined
+  if (config.provider === 'ollama') {
+    apiBaseUrl = (await getSetting('ollama_url')) || undefined
+  } else if (config.provider === 'custom' || config.provider === 'openai') {
+    apiBaseUrl = (await getSetting('custom_api_url')) || undefined
+  }
 
   return {
     providerId: config.provider,
     apiKey,
     model: config.model,
-    apiBaseUrl: ollamaUrl || customApiUrl || undefined,
+    apiBaseUrl,
   }
 }
 
@@ -45,7 +58,8 @@ export async function getProvider(): Promise<AiProviderAdapter | null> {
     }
     case 'openrouter': {
       const { OpenRouterAdapter } = await import('./providers/openrouter')
-      return new OpenRouterAdapter(creds.apiKey, creds.model)
+      const disableThinking = (await getSetting('openrouter_disable_thinking')) === 'true'
+      return new OpenRouterAdapter(creds.apiKey, creds.model, disableThinking)
     }
     default:
       return null

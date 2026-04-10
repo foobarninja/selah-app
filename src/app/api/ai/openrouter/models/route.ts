@@ -1,9 +1,21 @@
 import { NextRequest, NextResponse } from 'next/server'
+import { getSetting } from '@/lib/settings/queries'
+import { decryptValue, isEncrypted } from '@/lib/crypto'
 
 export const dynamic = 'force-dynamic'
 
 export async function GET(request: NextRequest) {
-  const apiKey = request.nextUrl.searchParams.get('key')
+  let apiKey = request.nextUrl.searchParams.get('key')
+
+  // Fall back to the stored key so the user doesn't have to retype it every visit.
+  if (!apiKey) {
+    const stored =
+      (await getSetting('ai_api_key_openrouter')) ||
+      (await getSetting('ai_api_key')) ||
+      ''
+    apiKey = stored ? (isEncrypted(stored) ? decryptValue(stored) : stored) : null
+  }
+
   if (!apiKey) {
     return NextResponse.json({ error: 'API key required' }, { status: 400 })
   }

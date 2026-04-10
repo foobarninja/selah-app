@@ -21,7 +21,11 @@ export class OpenAIAdapter implements AiProviderAdapter {
 
     const stream = await this.client.chat.completions.create({
       model: config.model || this.model,
-      max_tokens: config.maxTokens || 2048,
+      max_tokens: config.maxTokens || 2400,
+      ...(config.temperature !== undefined ? { temperature: config.temperature } : {}),
+      ...(config.topP !== undefined ? { top_p: config.topP } : {}),
+      ...(config.frequencyPenalty !== undefined ? { frequency_penalty: config.frequencyPenalty } : {}),
+      ...(config.presencePenalty !== undefined ? { presence_penalty: config.presencePenalty } : {}),
       messages: openaiMessages,
       stream: true,
     })

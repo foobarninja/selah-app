@@ -1,7 +1,7 @@
 'use client'
 
 import { useState } from 'react'
-import { ArrowLeft, GripVertical, X, Plus, Search, Download, ExternalLink, BookOpen, Users, Sparkles, CloudSun, HelpCircle, PenLine, Check } from 'lucide-react'
+import { ArrowLeft, GripVertical, X, Plus, Search, Download, ExternalLink, BookOpen, Users, Sparkles, CloudSun, HelpCircle, PenLine, Check, MessageCircle } from 'lucide-react'
 import { DndContext, closestCenter, PointerSensor, useSensor, useSensors, type DragEndEvent } from '@dnd-kit/core'
 import { SortableContext, verticalListSortingStrategy, useSortable } from '@dnd-kit/sortable'
 import { CSS } from '@dnd-kit/utilities'
@@ -18,7 +18,7 @@ const font = {
   body: "var(--selah-font-body, 'Source Sans 3', sans-serif)",
 }
 
-const entityIcons: Record<string, typeof BookOpen> = { passage: BookOpen, character: Users, theme: Sparkles, climate: CloudSun, question: HelpCircle, journal: PenLine }
+const entityIcons: Record<string, typeof BookOpen> = { passage: BookOpen, character: Users, theme: Sparkles, climate: CloudSun, question: HelpCircle, journal: PenLine, 'ai-chat': MessageCircle }
 const formatLabels: Record<string, string> = { sermon: 'Sermon', teaching: 'Teaching', 'small-group': 'Small group', personal: 'Personal' }
 
 function SortableAssemblyCard({ item, onRemove, onUpdateAnnotation, onNavigate }: { item: AssemblyItem; onRemove?: () => void; onUpdateAnnotation?: (annotation: string) => void; onNavigate?: () => void }) {

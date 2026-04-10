@@ -28,7 +28,46 @@ export interface TranslationConfig {
 }
 
 export interface AIProviderOption { id: AIProvider; name: string; note: string }
-export interface AIConfig { isConfigured: boolean; provider: AIProvider | null; model: string | null; connectionStatus: ConnectionStatus; ollamaUrl: string | null }
+
+/** Sampling parameters shared across keyed providers. */
+export interface ModelParameters {
+  temperature: number
+  topP: number
+  maxTokens: number
+  freqPenalty: number
+  presPenalty: number
+}
+
+export interface OllamaParameters extends ModelParameters {
+  disableThinking: boolean
+}
+
+export interface OpenRouterParameters extends ModelParameters {
+  /** Per-token prompt cost in USD, as returned by OpenRouter for the selected model. */
+  promptCost: string
+  /** Per-token completion cost in USD, as returned by OpenRouter for the selected model. */
+  completionCost: string
+  /** When true, sends `reasoning: { effort: "none" }` to disable thinking/reasoning for models that support it. */
+  disableThinking: boolean
+}
+
+export interface AIConfig {
+  isConfigured: boolean
+  provider: AIProvider | null
+  model: string | null
+  connectionStatus: ConnectionStatus
+  ollamaUrl: string | null
+  /** Saved base URL for custom/OpenAI-compatible providers (e.g. llama-server, vLLM). */
+  customApiUrl: string | null
+  /** True if a key is saved for the currently-configured provider. */
+  hasApiKey: boolean
+  /** All providers that currently have a saved key (for UI indicators when switching). */
+  savedProviders: AIProvider[]
+  /** Saved Ollama sampling parameters (or defaults if not yet saved). */
+  ollamaParams: OllamaParameters
+  /** Saved OpenRouter sampling parameters (or defaults if not yet saved). */
+  openrouterParams: OpenRouterParameters
+}
 
 export interface SourceTierVisibility { canon: boolean; scholarship: boolean; historical: boolean; aiAssisted: boolean; conjecture: boolean }
 

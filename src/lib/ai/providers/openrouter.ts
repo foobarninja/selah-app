@@ -8,7 +8,11 @@ export class OpenRouterAdapter implements AiProviderAdapter {
   readonly id = 'openrouter'
   private client: OpenAI
 
-  constructor(private apiKey: string, private model: string) {
+  constructor(
+    private apiKey: string,
+    private model: string,
+    private disableThinking = false,
+  ) {
     this.client = new OpenAI({
       apiKey,
       baseURL: OPENROUTER_BASE_URL,
@@ -25,7 +29,11 @@ export class OpenRouterAdapter implements AiProviderAdapter {
       content: m.content,
     }))
 
-    const stream = await this.client.chat.completions.create({
+    // OpenRouter accepts a `reasoning` object that isn't in the OpenAI SDK's
+    // typed params. Cast through `unknown` to pass it as an extra body field.
+    // `effort: "none"` fully disables reasoning for supported models (DeepSeek
+    // V3.1/R1, Qwen3 thinking variants, Claude 3.7+, GPT-5, etc.).
+    const params = {
       model: config.model || this.model,
       max_tokens: config.maxTokens || 1500,
       temperature: config.temperature ?? 0.3,
@@ -33,12 +41,29 @@ export class OpenRouterAdapter implements AiProviderAdapter {
       frequency_penalty: config.frequencyPenalty ?? 0,
       presence_penalty: config.presencePenalty ?? 0,
       messages: openaiMessages,
-      stream: true,
-    })
+      stream: true as const,
+      ...(this.disableThinking ? { reasoning: { effort: 'none' } } : {}),
+    }
+
+    const stream = await this.client.chat.completions.create(
+      params as unknown as Parameters<typeof this.client.chat.completions.create>[0] & { stream: true }
+    )
 
     for await (const chunk of stream) {
-      const text = chunk.choices[0]?.delta?.content
-      if (text) yield text
+      const delta = chunk.choices[0]?.delta as
+        | { content?: string | null; reasoning_content?: string | null; reasoning?: string | null }
+        | undefined
+      if (!delta) continue
+
+      // DeepSeek V3.1/R1 on OpenRouter emits answer tokens in `delta.content` but
+      // can also route partial content through `delta.reasoning_content` (or `delta.reasoning`).
+      // The OpenAI SDK's types don't know about those fields, so reading only `content`
+      // silently drops whatever landed in the reasoning channel. We concatenate all
+      // three fields in the order they would be emitted to preserve the full response.
+      const reasoning = delta.reasoning_content ?? delta.reasoning ?? ''
+      const content = delta.content ?? ''
+      const combined = reasoning + content
+      if (combined) yield combined
     }
   }
 

@@ -24,12 +24,20 @@ function parseVerseRef(ref: string): { bookId: string; chapter: number; verse: n
 export async function extractStudyBuilderContext(ctx: StudyBuilderContext): Promise<string> {
   const { projectId } = ctx
 
-  const [project, items] = await Promise.all([
+  const [project, rawItems] = await Promise.all([
     getProject(projectId),
     getProjectItems(projectId),
   ])
 
   if (!project) return ''
+
+  // CRITICAL: Filter out 'ai-chat' items BEFORE any further processing.
+  // These items are saved AI conversation snippets that users attach to a project
+  // for reference/export, but they must NEVER be fed back into the AI as grounding
+  // context — that would create circular self-quoting and noise. The filter must
+  // happen here, at the top of the extractor, so no downstream code accidentally
+  // references them.
+  const items = rawItems.filter((i) => i.entityType !== 'ai-chat')
 
   const parts: string[] = []
 

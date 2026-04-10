@@ -44,6 +44,13 @@ async function getSettingNum(key: string, defaultVal = 0): Promise<number> {
   return v ? parseInt(v, 10) : defaultVal
 }
 
+async function getSettingFloat(key: string, defaultVal = 0): Promise<number> {
+  const v = await getSetting(key)
+  if (v === null) return defaultVal
+  const parsed = parseFloat(v)
+  return Number.isFinite(parsed) ? parsed : defaultVal
+}
+
 // ── Translation config ───────────────────────────────────────────────────────
 
 export async function getTranslationConfig(): Promise<TranslationConfig> {
@@ -86,13 +93,37 @@ export async function updateTranslationSetting(key: string, value: string): Prom
 
 // ── AI config ────────────────────────────────────────────────────────────────
 
+/** Providers that authenticate via an API key (not URL like Ollama) */
+const KEYED_PROVIDERS = ['anthropic', 'google', 'openai', 'openrouter', 'custom'] as const
+
+/** Storage key for a per-provider API key */
+function apiKeySettingKey(provider: string): string {
+  return `ai_api_key_${provider}`
+}
+
+/** Read the stored API key for a provider, falling back to the legacy generic key. */
+async function getStoredApiKey(provider: string): Promise<string | null> {
+  return (await getSetting(apiKeySettingKey(provider))) || (await getSetting('ai_api_key'))
+}
+
 export async function getAIConfig(): Promise<AIConfig> {
   const provider = await getSetting('ai_provider')
   const model = await getSetting('ai_model')
-  const apiKey = await getSetting('ai_api_key')
   const ollamaUrl = await getSetting('ollama_url')
-
   const customApiUrl = await getSetting('custom_api_url')
+
+  // Per-provider key with legacy fallback
+  const apiKey = provider ? await getStoredApiKey(provider) : null
+
+  // Detect which providers have stored keys (for UI indicators)
+  const savedProviders: string[] = []
+  for (const p of KEYED_PROVIDERS) {
+    if (await getSetting(apiKeySettingKey(p))) savedProviders.push(p)
+  }
+  // Legacy generic key applies to whatever the current provider is
+  if (provider && !savedProviders.includes(provider) && (await getSetting('ai_api_key'))) {
+    savedProviders.push(provider)
+  }
 
   // Ollama, custom, and local OpenAI-compatible servers don't need an API key
   const needsApiKey = provider !== 'ollama' && provider !== 'custom' && !customApiUrl
@@ -100,12 +131,37 @@ export async function getAIConfig(): Promise<AIConfig> {
     ? !!(provider && model && apiKey)
     : !!(provider && model)
 
+  const ollamaParams = {
+    disableThinking: await getSettingBool('ollama_disable_thinking', false),
+    temperature: await getSettingFloat('ollama_temperature', 0.5),
+    topP: await getSettingFloat('ollama_top_p', 0.85),
+    maxTokens: await getSettingNum('ollama_max_tokens', 2400),
+    freqPenalty: await getSettingFloat('ollama_freq_penalty', 0.6),
+    presPenalty: await getSettingFloat('ollama_pres_penalty', 0.5),
+  }
+
+  const openrouterParams = {
+    temperature: await getSettingFloat('openrouter_temperature', 0.5),
+    topP: await getSettingFloat('openrouter_top_p', 0.85),
+    maxTokens: await getSettingNum('openrouter_max_tokens', 2400),
+    freqPenalty: await getSettingFloat('openrouter_freq_penalty', 0.6),
+    presPenalty: await getSettingFloat('openrouter_pres_penalty', 0.5),
+    promptCost: (await getSetting('openrouter_prompt_cost')) ?? '',
+    completionCost: (await getSetting('openrouter_completion_cost')) ?? '',
+    disableThinking: await getSettingBool('openrouter_disable_thinking', false),
+  }
+
   return {
     isConfigured,
     provider: (provider as AIConfig['provider']) || null,
     model: model || null,
     connectionStatus: isConfigured ? 'connected' : null,
     ollamaUrl: ollamaUrl || null,
+    customApiUrl: customApiUrl || null,
+    hasApiKey: !!apiKey,
+    savedProviders: savedProviders as AIConfig['savedProviders'],
+    ollamaParams,
+    openrouterParams,
   }
 }
 
@@ -138,10 +194,15 @@ export async function getAIModels(providerId: string): Promise<Array<{ id: strin
 
 export async function saveAIConfig(provider: string, apiKey: string, model: string): Promise<void> {
   await setSetting('ai_provider', provider)
-  // Encrypt API key before storing (skip for empty keys or local providers)
-  const keyToStore = apiKey && provider !== 'ollama' ? encryptValue(apiKey) : apiKey
-  await setSetting('ai_api_key', keyToStore)
   await setSetting('ai_model', model)
+
+  // API key handling:
+  // - Empty apiKey means "keep existing" — never overwrite a saved key with nothing.
+  // - Non-empty apiKey replaces the per-provider stored key (encrypted at rest).
+  // - Ollama uses a URL, not a key, so it never stores anything here.
+  if (apiKey && provider !== 'ollama') {
+    await setSetting(apiKeySettingKey(provider), encryptValue(apiKey))
+  }
 }
 
 export async function saveOllamaUrl(url: string): Promise<void> {

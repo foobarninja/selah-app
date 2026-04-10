@@ -3,7 +3,7 @@
 import { useState, useRef, useEffect } from 'react'
 import ReactMarkdown from 'react-markdown'
 import remarkGfm from 'remark-gfm'
-import { X, Clock, Send, Bookmark, BookmarkCheck, ChevronLeft, Save, Check, Plus } from 'lucide-react'
+import { X, Clock, Send, Bookmark, BookmarkCheck, ChevronLeft, Save, Check, Plus, Copy, Library } from 'lucide-react'
 import { ContextControls } from './ContextControls'
 import type { AIAssistantProps, Message, GroundingContext, ConversationThread } from './types'
 
@@ -67,9 +67,30 @@ function StreamingDots() {
   )
 }
 
-function MessageBubble({ message, onSave, isStreaming, isSaved }: { message: Message; onSave?: () => void; isStreaming?: boolean; isSaved?: boolean }) {
+function MessageBubble({ message, onSave, onCopy, onSaveToCollection, isStreaming, isSaved }: { message: Message; onSave?: () => void; onCopy?: () => void; onSaveToCollection?: () => void; isStreaming?: boolean; isSaved?: boolean }) {
   const isUser = message.role === 'user'
   const showDots = !isUser && isStreaming && message.content === ''
+  const [copied, setCopied] = useState(false)
+  const [collected, setCollected] = useState(false)
+
+  const handleCopy = () => {
+    if (!message.content) return
+    navigator.clipboard.writeText(message.content).then(() => {
+      setCopied(true)
+      setTimeout(() => setCopied(false), 1500)
+    }).catch(() => {
+      // Clipboard permission denied or unavailable — fail silently.
+    })
+    onCopy?.()
+  }
+
+  const handleSaveToCollection = () => {
+    if (!onSaveToCollection) return
+    setCollected(true)
+    onSaveToCollection()
+    setTimeout(() => setCollected(false), 1800)
+  }
+
   return (
     <div className={`flex ${isUser ? 'justify-end' : 'justify-start'} mb-4 group`}>
       <div className="relative rounded-xl" style={{ maxWidth: '85%', padding: '12px 16px', backgroundColor: isUser ? 'var(--selah-gold-900, #4A3711)' : 'var(--selah-bg-surface, #1C1917)', border: isUser ? 'none' : '1px solid var(--selah-border-color, #3D3835)' }}>
@@ -84,11 +105,31 @@ function MessageBubble({ message, onSave, isStreaming, isSaved }: { message: Mes
         {!isUser && !showDots && (
           <div className="flex items-center justify-between mt-2">
             {message.sourceTier && <AITierPill tier={message.sourceTier} />}
-            {isSaved ? (
-              <span title="Saved to journal" style={{ color: 'var(--selah-gold-500, #C6A23C)', padding: '2px' }}><BookmarkCheck size={14} strokeWidth={1.5} /></span>
-            ) : onSave ? (
-              <button onClick={onSave} title="Save to journal" className="opacity-0 group-hover:opacity-100 transition-opacity duration-150" style={{ color: 'var(--selah-sky-400, #6B91B5)', background: 'none', border: 'none', cursor: 'pointer', padding: '2px' }}><Bookmark size={14} strokeWidth={1.5} /></button>
-            ) : null}
+            <div className="flex items-center gap-2">
+              <button
+                onClick={handleCopy}
+                title={copied ? 'Copied!' : 'Copy message'}
+                className="opacity-0 group-hover:opacity-100 transition-opacity duration-150"
+                style={{ color: copied ? 'var(--selah-teal-400, #4A9E88)' : 'var(--selah-sky-400, #6B91B5)', background: 'none', border: 'none', cursor: 'pointer', padding: '2px' }}
+              >
+                {copied ? <Check size={14} strokeWidth={1.5} /> : <Copy size={14} strokeWidth={1.5} />}
+              </button>
+              {onSaveToCollection && (
+                <button
+                  onClick={handleSaveToCollection}
+                  title={collected ? 'Added to collection' : 'Save to study collection'}
+                  className="opacity-0 group-hover:opacity-100 transition-opacity duration-150"
+                  style={{ color: collected ? 'var(--selah-teal-400, #4A9E88)' : 'var(--selah-sky-400, #6B91B5)', background: 'none', border: 'none', cursor: 'pointer', padding: '2px' }}
+                >
+                  {collected ? <Check size={14} strokeWidth={1.5} /> : <Library size={14} strokeWidth={1.5} />}
+                </button>
+              )}
+              {isSaved ? (
+                <span title="Saved to journal" style={{ color: 'var(--selah-gold-500, #C6A23C)', padding: '2px' }}><BookmarkCheck size={14} strokeWidth={1.5} /></span>
+              ) : onSave ? (
+                <button onClick={onSave} title="Save to journal" className="opacity-0 group-hover:opacity-100 transition-opacity duration-150" style={{ color: 'var(--selah-sky-400, #6B91B5)', background: 'none', border: 'none', cursor: 'pointer', padding: '2px' }}><Bookmark size={14} strokeWidth={1.5} /></button>
+              ) : null}
+            </div>
           </div>
         )}
         <p style={{ fontFamily: font.body, fontSize: '10px', color: isUser ? 'var(--selah-gold-500, #C6A23C)' : 'var(--selah-text-3, #6E695F)', marginTop: '4px', textAlign: isUser ? 'right' : 'left' }}>{message.timestamp}</p>
@@ -163,7 +204,7 @@ const mdStyles = `
 .selah-md a { color: var(--selah-sky-400, #6B91B5); text-decoration: underline; }
 `
 
-export function AIAssistantPanel({ groundingContext, messages, conversationHistory, isConfigured, isPanelOpen, isStreaming, onSendMessage, onClose, onSaveToJournal, onOpenThread, onDeleteThread, onNewConversation, onSaveConversation, grounding, contextToggles, onContextToggle }: AIAssistantProps) {
+export function AIAssistantPanel({ groundingContext, messages, conversationHistory, isConfigured, isPanelOpen, isStreaming, onSendMessage, onClose, onSaveToJournal, onSaveToCollection, onOpenThread, onDeleteThread, onNewConversation, onSaveConversation, grounding, contextToggles, onContextToggle }: AIAssistantProps) {
   const [input, setInput] = useState('')
   const [showHistory, setShowHistory] = useState(false)
   const [saveStatus, setSaveStatus] = useState<'idle' | 'saving' | 'saved'>('idle')
@@ -226,18 +267,29 @@ export function AIAssistantPanel({ groundingContext, messages, conversationHisto
 
       <div className="flex-1 overflow-y-auto" style={{ padding: '16px' }}>
         {messages.length === 0 && (<div className="text-center py-12"><p style={{ fontFamily: font.body, fontSize: '14px', color: 'var(--selah-text-3, #6E695F)' }}>Ask anything about what you&rsquo;re reading.</p></div>)}
-        {messages.map((msg) => (
-          <MessageBubble
-            key={msg.id}
-            message={msg}
-            isStreaming={isStreaming && msg.id === 'streaming'}
-            onSave={msg.role === 'assistant' && msg.id !== 'streaming' && !savedMessageIds.has(msg.id) ? () => {
-              onSaveToJournal?.(msg.id, 'insight', msg.content, [], [])
-              setSavedMessageIds((prev) => new Set(prev).add(msg.id))
-            } : undefined}
-            isSaved={savedMessageIds.has(msg.id)}
-          />
-        ))}
+        {messages.map((msg, idx) => {
+          // For assistant messages, find the most recent preceding user message
+          // to pair as the "question" when saving to a collection.
+          const precedingUserMessage = msg.role === 'assistant'
+            ? [...messages.slice(0, idx)].reverse().find((m) => m.role === 'user')?.content ?? ''
+            : ''
+          const canSaveToCollection = msg.role === 'assistant' && msg.id !== 'streaming' && !!onSaveToCollection && !!msg.content
+          return (
+            <MessageBubble
+              key={msg.id}
+              message={msg}
+              isStreaming={isStreaming && msg.id === 'streaming'}
+              onSave={msg.role === 'assistant' && msg.id !== 'streaming' && !savedMessageIds.has(msg.id) ? () => {
+                onSaveToJournal?.(msg.id, 'insight', msg.content, [], [])
+                setSavedMessageIds((prev) => new Set(prev).add(msg.id))
+              } : undefined}
+              onSaveToCollection={canSaveToCollection ? () => {
+                onSaveToCollection?.(msg.id, precedingUserMessage, msg.content)
+              } : undefined}
+              isSaved={savedMessageIds.has(msg.id)}
+            />
+          )
+        })}
         <div ref={messagesEndRef} />
       </div>
 

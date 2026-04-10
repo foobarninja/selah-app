@@ -49,6 +49,20 @@ export function ConnectedAIPanel() {
             }),
           })
         }}
+        onSaveToCollection={async (messageId, question, answer) => {
+          try {
+            const res = await fetch('/api/ai/save-to-collection', {
+              method: 'POST',
+              headers: { 'Content-Type': 'application/json' },
+              body: JSON.stringify({ messageId, question, answer }),
+            })
+            if (!res.ok) return null
+            const data = await res.json() as { projectTopic: string }
+            return { projectTopic: data.projectTopic }
+          } catch {
+            return null
+          }
+        }}
         onOpenThread={openThread}
         onDeleteThread={deleteThread}
         onNewConversation={newConversation}

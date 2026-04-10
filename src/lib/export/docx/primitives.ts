@@ -8,7 +8,7 @@ import {
   Footer,
   Packer,
 } from 'docx'
-import { DOCX_SIZES, DOCX_COLORS } from '../constants'
+import { DOCX_SIZES, DOCX_COLORS, FONT_NAMES } from '../constants'
 
 export interface CoverPageOptions {
   title: string
@@ -29,6 +29,7 @@ export function buildCoverPage(options: CoverPageOptions): Paragraph[] {
           text: options.title,
           bold: true,
           size: DOCX_SIZES.title,
+          font: FONT_NAMES.heading,
         }),
       ],
     }),
@@ -44,6 +45,7 @@ export function buildCoverPage(options: CoverPageOptions): Paragraph[] {
             italics: true,
             color: DOCX_COLORS.muted,
             size: DOCX_SIZES.h3,
+            font: FONT_NAMES.heading,
           }),
         ],
       }),
@@ -59,6 +61,7 @@ export function buildCoverPage(options: CoverPageOptions): Paragraph[] {
             text: options.metadata,
             color: DOCX_COLORS.dim,
             size: DOCX_SIZES.body,
+            font: FONT_NAMES.body,
           }),
         ],
       }),
@@ -90,6 +93,7 @@ export function buildSectionHeader(text: string, level: 'h1' | 'h2' | 'h3' = 'h2
         text,
         bold: true,
         size: sizeMap[level],
+        font: FONT_NAMES.heading,
       }),
     ],
   })
@@ -106,6 +110,7 @@ export function buildFooter(text: string): Footer {
             text,
             color: DOCX_COLORS.footnote,
             size: DOCX_SIZES.footnote,
+            font: FONT_NAMES.body,
           }),
         ],
       }),
@@ -135,6 +140,7 @@ export function buildMetadataLine(items: MetadataLineItem[]): Paragraph {
           italics: item.italic ?? false,
           color: item.color ?? DOCX_COLORS.body,
           size: DOCX_SIZES.meta,
+          font: FONT_NAMES.body,
         }),
     ),
   })

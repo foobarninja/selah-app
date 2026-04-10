@@ -42,6 +42,8 @@ export const DOCX_COLORS = {
   body: '000000',
   muted: '888888',
   dim: '666666',
+  bodyDark: '444444',           // darker body text variant for emphasis
+  sectionLabel: '555555',       // commentary/section label gray
   refBrown: '996633',
   footnote: '999999',
   accentGreen: '336644',

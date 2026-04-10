@@ -7,7 +7,7 @@ import {
   buildFooter,
   packDocument,
 } from '@/lib/export/docx/primitives'
-import { DOCX_SIZES, DOCX_COLORS } from '@/lib/export/constants'
+import { DOCX_SIZES, DOCX_COLORS, FONT_NAMES } from '@/lib/export/constants'
 import { formatExportDate } from '@/lib/export/formatters'
 
 function getDb() {
@@ -75,9 +75,9 @@ function buildItemSection(db: Database.Database, item: ExportItem, index: number
       spacing: { before: 400, after: 100 },
       border: { bottom: { style: BorderStyle.SINGLE, size: 1, color: DOCX_COLORS.sectionBorder } },
       children: [
-        new TextRun({ text: `${index}. `, bold: true, size: DOCX_SIZES.h3 }),
-        new TextRun({ text: item.title, bold: true, size: DOCX_SIZES.h3 }),
-        new TextRun({ text: `  [${typeLabel}]`, italics: true, size: DOCX_SIZES.meta, color: DOCX_COLORS.muted }),
+        new TextRun({ text: `${index}. `, bold: true, size: DOCX_SIZES.h3, font: FONT_NAMES.heading }),
+        new TextRun({ text: item.title, bold: true, size: DOCX_SIZES.h3, font: FONT_NAMES.heading }),
+        new TextRun({ text: `  [${typeLabel}]`, italics: true, size: DOCX_SIZES.meta, color: DOCX_COLORS.muted, font: FONT_NAMES.body }),
       ],
     }),
   )
@@ -90,13 +90,13 @@ function buildItemSection(db: Database.Database, item: ExportItem, index: number
         new Paragraph({
           spacing: { before: 100, after: 50 },
           children: [
-            new TextRun({ text: verseText, italics: true, size: DOCX_SIZES.body }),
+            new TextRun({ text: verseText, italics: true, size: DOCX_SIZES.body, font: FONT_NAMES.body }),
           ],
         }),
         new Paragraph({
           spacing: { after: 100 },
           children: [
-            new TextRun({ text: '— Berean Standard Bible', size: DOCX_SIZES.footnote, color: DOCX_COLORS.footnote }),
+            new TextRun({ text: '— Berean Standard Bible', size: DOCX_SIZES.footnote, color: DOCX_COLORS.footnote, font: FONT_NAMES.body }),
           ],
         }),
       )
@@ -110,7 +110,7 @@ function buildItemSection(db: Database.Database, item: ExportItem, index: number
       paragraphs.push(
         new Paragraph({
           spacing: { before: 50, after: 100 },
-          children: [new TextRun({ text: bio, size: DOCX_SIZES.body, color: '444444' })],
+          children: [new TextRun({ text: bio, size: DOCX_SIZES.body, color: DOCX_COLORS.bodyDark, font: FONT_NAMES.body })],
         }),
       )
     }
@@ -123,7 +123,7 @@ function buildItemSection(db: Database.Database, item: ExportItem, index: number
       paragraphs.push(
         new Paragraph({
           spacing: { before: 50, after: 100 },
-          children: [new TextRun({ text: def, size: DOCX_SIZES.body, color: '444444' })],
+          children: [new TextRun({ text: def, size: DOCX_SIZES.body, color: DOCX_COLORS.bodyDark, font: FONT_NAMES.body })],
         }),
       )
     }
@@ -134,7 +134,7 @@ function buildItemSection(db: Database.Database, item: ExportItem, index: number
     paragraphs.push(
       new Paragraph({
         spacing: { before: 50, after: 100 },
-        children: [new TextRun({ text: item.preview, size: DOCX_SIZES.body, color: '444444' })],
+        children: [new TextRun({ text: item.preview, size: DOCX_SIZES.body, color: DOCX_COLORS.bodyDark, font: FONT_NAMES.body })],
       }),
     )
   }
@@ -145,8 +145,8 @@ function buildItemSection(db: Database.Database, item: ExportItem, index: number
       new Paragraph({
         spacing: { before: 100, after: 50 },
         children: [
-          new TextRun({ text: 'Notes: ', bold: true, size: DOCX_SIZES.meta, color: DOCX_COLORS.accentGreen }),
-          new TextRun({ text: item.annotation, size: DOCX_SIZES.meta, color: DOCX_COLORS.accentGreen }),
+          new TextRun({ text: 'Notes: ', bold: true, size: DOCX_SIZES.meta, color: DOCX_COLORS.accentGreen, font: FONT_NAMES.body }),
+          new TextRun({ text: item.annotation, size: DOCX_SIZES.meta, color: DOCX_COLORS.accentGreen, font: FONT_NAMES.body }),
         ],
       }),
     )
@@ -159,7 +159,7 @@ function buildItemSection(db: Database.Database, item: ExportItem, index: number
       paragraphs.push(
         new Paragraph({
           spacing: { before: 150, after: 50 },
-          children: [new TextRun({ text: 'Commentary:', bold: true, size: DOCX_SIZES.meta, color: '555555' })],
+          children: [new TextRun({ text: 'Commentary:', bold: true, size: DOCX_SIZES.meta, color: DOCX_COLORS.sectionLabel, font: FONT_NAMES.body })],
         }),
       )
       for (const comm of commentary) {
@@ -168,8 +168,8 @@ function buildItemSection(db: Database.Database, item: ExportItem, index: number
             spacing: { after: 80 },
             indent: { left: 360 },
             children: [
-              new TextRun({ text: `${comm.author}: `, bold: true, size: DOCX_SIZES.meta, color: DOCX_COLORS.dim }),
-              new TextRun({ text: comm.text, size: DOCX_SIZES.meta, color: DOCX_COLORS.dim }),
+              new TextRun({ text: `${comm.author}: `, bold: true, size: DOCX_SIZES.meta, color: DOCX_COLORS.dim, font: FONT_NAMES.body }),
+              new TextRun({ text: comm.text, size: DOCX_SIZES.meta, color: DOCX_COLORS.dim, font: FONT_NAMES.body }),
             ],
           }),
         )

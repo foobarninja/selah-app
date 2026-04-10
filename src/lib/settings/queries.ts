@@ -295,20 +295,8 @@ export async function exportJournal(): Promise<string> {
     },
     orderBy: { createdAt: 'desc' },
   })
-
-  const lines: string[] = ['# Journal Export', `Exported: ${new Date().toISOString()}`, '']
-  for (const note of notes) {
-    lines.push(`## ${note.title || 'Untitled'} (${note.noteType})`)
-    lines.push(`Created: ${note.createdAt}`)
-    if (note.anchors.length > 0) {
-      const anchorStrs = note.anchors.map((a) =>
-        a.bookId ? `${a.bookId} ${a.chapter}:${a.verseStart}` : a.refId || 'unknown'
-      )
-      lines.push(`Anchored to: ${anchorStrs.join(', ')}`)
-    }
-    lines.push('', note.content, '', '---', '')
-  }
-  return lines.join('\n')
+  const { renderJournalToMarkdown } = await import('@/lib/export/markdown/renderers')
+  return renderJournalToMarkdown(notes)
 }
 
 export async function exportCollections(): Promise<string> {
@@ -316,18 +304,8 @@ export async function exportCollections(): Promise<string> {
     include: { items: { orderBy: { sortOrder: 'asc' } } },
     orderBy: { createdAt: 'desc' },
   })
-
-  const lines: string[] = ['# Collections Export', `Exported: ${new Date().toISOString()}`, '']
-  for (const col of collections) {
-    lines.push(`## ${col.title}`)
-    if (col.description) lines.push(col.description)
-    lines.push('')
-    for (const item of col.items) {
-      lines.push(`- [${item.itemType}] ${item.itemRef}${item.note ? ` — ${item.note}` : ''}`)
-    }
-    lines.push('', '---', '')
-  }
-  return lines.join('\n')
+  const { renderCollectionToMarkdown } = await import('@/lib/export/markdown/renderers')
+  return renderCollectionToMarkdown(collections)
 }
 
 // ── First launch ─────────────────────────────────────────────────────────────

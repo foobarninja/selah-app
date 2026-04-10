@@ -1,5 +1,5 @@
 import { describe, it, expect } from 'vitest'
-import { Paragraph, Document } from 'docx'
+import { Paragraph } from 'docx'
 import {
   buildCoverPage,
   buildSectionHeader,

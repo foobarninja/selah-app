@@ -48,3 +48,29 @@ next-env.d.ts
 /data/selah.db-shm
 /data/selah.db-wal
 /data/bible.eng.db
+
+# Claude Code local settings
+.claude/
+
+# Local debug/query scripts
+/check_db.js
+/query-db*.js
+/llama-data.txt
+
+# Scratch notes and test files
+/new-prompt.md
+/new-subject.md
+/test.md
+
+# Screenshots
+/ss/
+
+# Separate test project (contains API keys)
+/open-router/
+
+# Draft source files
+*.new.ts
+
+# Planning and spec scratch
+/docs/superpowers/
+/selah-journal-spec.md

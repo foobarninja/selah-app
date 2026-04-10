@@ -87,6 +87,7 @@ export function buildSectionHeader(text: string, level: 'h1' | 'h2' | 'h3' = 'h2
   }
   return new Paragraph({
     heading: headingMap[level],
+    pageBreakBefore: false,
     spacing: { before: 400, after: 200 },
     children: [
       new TextRun({

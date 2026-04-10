@@ -9,21 +9,27 @@ export async function GET(
   const projectId = parseInt(id, 10)
   const format = request.nextUrl.searchParams.get('format') || 'docx'
 
-  if (format === 'markdown') {
-    const md = await generateMarkdown(projectId)
-    return new NextResponse(md, {
+  try {
+    if (format === 'markdown') {
+      const md = await generateMarkdown(projectId)
+      return new NextResponse(md, {
+        headers: {
+          'Content-Type': 'text/markdown; charset=utf-8',
+          'Content-Disposition': `attachment; filename="study-${id}.md"`,
+        },
+      })
+    }
+
+    const buffer = await generateDocx(projectId)
+    return new NextResponse(new Uint8Array(buffer), {
       headers: {
-        'Content-Type': 'text/markdown; charset=utf-8',
-        'Content-Disposition': `attachment; filename="study-${id}.md"`,
+        'Content-Type': 'application/vnd.openxmlformats-officedocument.wordprocessingml.document',
+        'Content-Disposition': `attachment; filename="study-${id}.docx"`,
       },
     })
+  } catch (e: unknown) {
+    const msg = e instanceof Error ? e.message : 'Export failed'
+    console.error('[study-builder/export]', msg)
+    return NextResponse.json({ error: msg }, { status: 500 })
   }
-
-  const buffer = await generateDocx(projectId)
-  return new NextResponse(new Uint8Array(buffer), {
-    headers: {
-      'Content-Type': 'application/vnd.openxmlformats-officedocument.wordprocessingml.document',
-      'Content-Disposition': `attachment; filename="study-${id}.docx"`,
-    },
-  })
 }

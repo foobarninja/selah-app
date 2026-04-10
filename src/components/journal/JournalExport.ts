@@ -2,7 +2,7 @@ import { Paragraph, TextRun, HeadingLevel, PageBreak } from 'docx'
 import type { JournalEntry } from '@/components/journal/types'
 import { formatDate, formatTime, formatDateRange, formatExportDate } from '@/lib/export/formatters'
 import { buildCoverPage, buildFooter, packDocument } from '@/lib/export/docx/primitives'
-import { DOCX_SIZES, DOCX_COLORS } from '@/lib/export/constants'
+import { DOCX_SIZES, DOCX_COLORS, FONT_NAMES } from '@/lib/export/constants'
 
 const NOTE_TYPE_LABELS: Record<string, string> = {
   annotation: 'ANNOTATION',
@@ -55,6 +55,7 @@ export async function generateJournalDocx(
             text: formatDate(dayKey),
             bold: true,
             size: DOCX_SIZES.h2,
+            font: FONT_NAMES.heading,
           }),
         ],
       }),
@@ -72,6 +73,7 @@ export async function generateJournalDocx(
           text: `[${typeLabel}]`,
           bold: true,
           size: DOCX_SIZES.meta,
+          font: FONT_NAMES.body,
         }),
       ]
       if (passageRef) {
@@ -80,6 +82,7 @@ export async function generateJournalDocx(
             text: `  ${passageRef}`,
             color: DOCX_COLORS.refBrown,
             size: DOCX_SIZES.meta,
+            font: FONT_NAMES.body,
           }),
         )
         metaChildren.push(
@@ -87,6 +90,7 @@ export async function generateJournalDocx(
             text: `  —  `,
             color: DOCX_COLORS.muted,
             size: DOCX_SIZES.meta,
+            font: FONT_NAMES.body,
           }),
         )
       } else {
@@ -94,6 +98,7 @@ export async function generateJournalDocx(
           new TextRun({
             text: `  `,
             size: DOCX_SIZES.meta,
+            font: FONT_NAMES.body,
           }),
         )
       }
@@ -102,6 +107,7 @@ export async function generateJournalDocx(
           text: timeStr,
           color: DOCX_COLORS.muted,
           size: DOCX_SIZES.meta,
+          font: FONT_NAMES.body,
         }),
       )
 
@@ -122,6 +128,7 @@ export async function generateJournalDocx(
               new TextRun({
                 text: line || ' ',
                 size: DOCX_SIZES.body,
+                font: FONT_NAMES.body,
               }),
             ],
           }),
@@ -140,6 +147,7 @@ export async function generateJournalDocx(
                 italics: true,
                 color: DOCX_COLORS.muted,
                 size: DOCX_SIZES.meta,
+                font: FONT_NAMES.body,
               }),
             ],
           }),
@@ -157,6 +165,7 @@ export async function generateJournalDocx(
                 text: `Tags: ${allTags.join(', ')}`,
                 color: DOCX_COLORS.muted,
                 size: DOCX_SIZES.meta,
+                font: FONT_NAMES.body,
               }),
             ],
           }),

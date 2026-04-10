@@ -54,7 +54,9 @@ describe('formatVerseRef', () => {
 describe('formatDateRange', () => {
   it('returns single date when all entries share same day', () => {
     const dates = ['2026-04-09T10:00:00Z', '2026-04-09T15:00:00Z']
-    expect(formatDateRange(dates)).toMatch(/Apr.*9.*2026/)
+    const result = formatDateRange(dates)
+    expect(result).not.toContain('–')
+    expect(result).toMatch(/Apr.*9.*2026/)
   })
 
   it('returns hyphenated range when dates differ', () => {

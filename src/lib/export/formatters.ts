@@ -45,7 +45,7 @@ export function formatVerseRef(
   endVerse?: number,
 ): string {
   const bookName = BOOK_NAMES[bookId] ?? bookId
-  if (endVerse && endVerse !== verse) {
+  if (endVerse !== undefined && endVerse !== verse) {
     return `${bookName} ${chapter}:${verse}-${endVerse}`
   }
   return `${bookName} ${chapter}:${verse}`
@@ -55,7 +55,10 @@ export function formatVerseRef(
 export function formatDateRange(isoDates: string[]): string {
   if (isoDates.length === 0) return 'No entries'
   const sorted = [...isoDates].sort((a, b) => a.localeCompare(b))
-  const first = formatDate(sorted[0], 'short')
-  const last = formatDate(sorted[sorted.length - 1], 'short')
-  return first === last ? first : `${first} – ${last}`
+  const firstDay = sorted[0].slice(0, 10)
+  const lastDay = sorted[sorted.length - 1].slice(0, 10)
+  if (firstDay === lastDay) {
+    return formatDate(sorted[0], 'short')
+  }
+  return `${formatDate(sorted[0], 'short')} – ${formatDate(sorted[sorted.length - 1], 'short')}`
 }

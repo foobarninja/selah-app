@@ -62,3 +62,15 @@ export function formatDateRange(isoDates: string[]): string {
   }
   return `${formatDate(sorted[0], 'short')} – ${formatDate(sorted[sorted.length - 1], 'short')}`
 }
+
+/**
+ * Format today's date as "April 9, 2026" — used in export footers.
+ * Distinct from `formatDate(iso, 'long')` which includes the weekday.
+ */
+export function formatExportDate(date: Date = new Date()): string {
+  return date.toLocaleDateString('en-US', {
+    year: 'numeric',
+    month: 'long',
+    day: 'numeric',
+  })
+}

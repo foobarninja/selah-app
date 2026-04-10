@@ -4,6 +4,7 @@ import {
   formatTime,
   formatVerseRef,
   formatDateRange,
+  formatExportDate,
 } from '@/lib/export/formatters'
 
 describe('formatDate', () => {
@@ -68,5 +69,22 @@ describe('formatDateRange', () => {
 
   it('returns "No entries" on empty array', () => {
     expect(formatDateRange([])).toBe('No entries')
+  })
+})
+
+describe('formatExportDate', () => {
+  it('formats a Date as month-name day, year without weekday', () => {
+    const date = new Date('2026-04-09T12:00:00Z')
+    const result = formatExportDate(date)
+    expect(result).toContain('April')
+    expect(result).toContain('9')
+    expect(result).toContain('2026')
+    expect(result).not.toContain('Thursday') // no weekday in this style
+  })
+
+  it('defaults to current date when no arg provided', () => {
+    const result = formatExportDate()
+    expect(typeof result).toBe('string')
+    expect(result.length).toBeGreaterThan(0)
   })
 })

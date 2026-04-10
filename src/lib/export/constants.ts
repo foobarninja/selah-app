@@ -20,13 +20,13 @@ export interface TierColor {
   dot: string
 }
 
-export const TIER_COLORS: Record<SourceTier, TierColor> = {
+export const TIER_COLORS = {
   Canon:          { bg: 'FBF3E0', text: '7A5C1F', dot: 'C6A23C' },
   Scholarship:    { bg: 'EFF8F6', text: '2B6B5A', dot: '4A9E88' },
   Historical:     { bg: 'F5F5ED', text: '5A5D3C', dot: '8A8E64' },
   'AI-Assisted':  { bg: 'EEF2F7', text: '4A6380', dot: '6B91B5' },
   Conjecture:     { bg: 'FAF0E6', text: '8B6B3E', dot: 'C9A96E' },
-}
+} as const satisfies Record<SourceTier, TierColor>
 
 export const DOCX_SIZES = {
   title: 48,      // 24pt

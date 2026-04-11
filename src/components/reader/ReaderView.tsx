@@ -376,7 +376,7 @@ function ResurfacingCard({
   return (
     <button
       onClick={onOpen}
-      className="block w-full text-left rounded-md"
+      className="block w-full text-left rounded-md animate-resurface"
       style={{
         backgroundColor: 'var(--selah-bg-surface, #1C1917)',
         borderRadius: '6px',

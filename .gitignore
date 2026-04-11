@@ -77,3 +77,24 @@ next-env.d.ts
 # Planning and spec scratch
 /docs/superpowers/
 /selah-journal-spec.md
+/bible-app-prd.md
+/selah-implementation-guide.md
+
+# Dev pipeline docs (not user-facing)
+/eval/
+/NT.md
+/OT.md
+/torah.md
+/prophets.md
+/wisdom-poetry.md
+/themes.md
+/enriched-characters.md
+/last-batch.md
+/product-overview.md
+/user-download.md
+/selah-prebake-prompts.md
+/selah-pipeline-execution.md
+/selah-commentary-eval-steps.md
+
+# Superpowers brainstorming mockups
+/.superpowers/

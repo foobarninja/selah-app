@@ -1,5 +1,6 @@
 import WordStudySearchClient from './WordStudySearchClient'
+import { PageTransition } from '@/components/ui/PageTransition'
 
 export default function WordStudyPage() {
-  return <WordStudySearchClient />
+  return <PageTransition><WordStudySearchClient /></PageTransition>
 }

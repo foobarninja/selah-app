@@ -2,6 +2,7 @@ import { Suspense } from 'react'
 import { getDailyBread, getRecentHistory, getRecentNotes } from '@/lib/home/queries'
 import { isFirstLaunch } from '@/lib/settings/queries'
 import HomeClient from './HomeClient'
+import { PageTransition } from '@/components/ui/PageTransition'
 
 export default async function HomePage() {
   const [dailyBread, history, recentNotes, firstLaunch] = await Promise.all([
@@ -12,13 +13,15 @@ export default async function HomePage() {
   ])
 
   return (
-    <Suspense>
-      <HomeClient
-        dailyBread={dailyBread}
-        history={history}
-        recentNotes={recentNotes}
-        isFirstLaunch={firstLaunch}
-      />
-    </Suspense>
+    <PageTransition>
+      <Suspense>
+        <HomeClient
+          dailyBread={dailyBread}
+          history={history}
+          recentNotes={recentNotes}
+          isFirstLaunch={firstLaunch}
+        />
+      </Suspense>
+    </PageTransition>
   )
 }

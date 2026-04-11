@@ -1,6 +1,7 @@
 import { getCharacters, getCharacterEras } from '@/lib/characters/queries'
 import type { Filters } from '@/components/characters/types'
 import CharactersClient from './CharactersClient'
+import { PageTransition } from '@/components/ui/PageTransition'
 
 export default async function CharactersPage() {
   const [characters, eras] = await Promise.all([
@@ -30,5 +31,5 @@ export default async function CharactersPage() {
     ],
   }
 
-  return <CharactersClient characters={characters} filters={filters} />
+  return <PageTransition><CharactersClient characters={characters} filters={filters} /></PageTransition>
 }

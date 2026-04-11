@@ -3,6 +3,7 @@
 import { useState, useEffect, useCallback } from 'react'
 import { SettingsView } from '@/components/settings'
 import { useToast } from '@/components/ui/ToastProvider'
+import { PageTransition } from '@/components/ui/PageTransition'
 import type {
   SettingsProps,
   AIProvider,
@@ -42,13 +43,16 @@ export default function SettingsPage() {
 
   if (!data) {
     return (
-      <div className="h-full flex items-center justify-center">
-        <p style={{ fontFamily: "var(--selah-font-body, 'Source Sans 3', sans-serif)", fontSize: '14px', color: 'var(--selah-text-3, #6E695F)' }}>Loading settings...</p>
-      </div>
+      <PageTransition>
+        <div className="h-full flex items-center justify-center">
+          <p style={{ fontFamily: "var(--selah-font-body, 'Source Sans 3', sans-serif)", fontSize: '14px', color: 'var(--selah-text-3, #6E695F)' }}>Loading settings...</p>
+        </div>
+      </PageTransition>
     )
   }
 
   return (
+    <PageTransition>
     <SettingsView
       translations={data.translations}
       aiConfig={data.aiConfig}
@@ -246,5 +250,6 @@ export default function SettingsPage() {
         // AI conversations export — available when Phase 7 is implemented
       }}
     />
+    </PageTransition>
   )
 }

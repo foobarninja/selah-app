@@ -1,7 +1,7 @@
 'use client'
 
 import { useEffect, useState } from 'react'
-import { Eye, EyeOff, Check, X, Download, Upload, Minus, Plus, Sun, Moon, Monitor } from 'lucide-react'
+import { Eye, EyeOff, Check, X, Download, Upload, Minus, Plus, Sun, Moon, Monitor, ChevronDown } from 'lucide-react'
 import type { SettingsProps, AIProvider, ThemeMode, AudienceLevel, RetentionDays } from './types'
 import { ConfirmDialog } from '@/components/ui/ConfirmDialog'
 
@@ -37,6 +37,53 @@ function LabelRow({ label, children }: { label: string; children: React.ReactNod
     <div className="flex flex-col gap-1 py-1 md:flex-row md:items-center md:justify-between">
       <span style={{ fontFamily: font.body, fontSize: '14px', color: 'var(--selah-text-1, #E8E2D9)' }}>{label}</span>
       <div className="w-full md:w-auto">{children}</div>
+    </div>
+  )
+}
+
+function HelpItem({ question, children }: { question: string; children: React.ReactNode }) {
+  const [open, setOpen] = useState(false)
+  return (
+    <div style={{ borderBottom: '1px solid var(--selah-border-color, #3D3835)' }}>
+      <button
+        onClick={() => setOpen(!open)}
+        className="w-full flex items-center justify-between py-3 transition-colors duration-150"
+        style={{
+          fontFamily: font.body,
+          fontSize: '14px',
+          color: 'var(--selah-text-1, #E8E2D9)',
+          background: 'none',
+          border: 'none',
+          cursor: 'pointer',
+          textAlign: 'left',
+        }}
+      >
+        <span>{question}</span>
+        <ChevronDown
+          size={14}
+          strokeWidth={1.5}
+          style={{
+            color: 'var(--selah-text-3, #6E695F)',
+            transform: open ? 'rotate(180deg)' : 'rotate(0deg)',
+            transition: 'transform 150ms ease',
+            flexShrink: 0,
+          }}
+        />
+      </button>
+      {open && (
+        <div
+          style={{
+            fontFamily: font.body,
+            fontSize: '13px',
+            color: 'var(--selah-text-2, #A39E93)',
+            lineHeight: 1.6,
+            paddingLeft: '12px',
+            paddingBottom: '14px',
+          }}
+        >
+          {children}
+        </div>
+      )}
     </div>
   )
 }
@@ -442,6 +489,68 @@ export function SettingsView({ translations, aiConfig, aiProviders, studyPrefere
                 <button key={label} onClick={action} className="block transition-colors duration-150" style={{ fontFamily: font.body, fontSize: '13px', fontWeight: 500, color: 'var(--selah-gold-500, #C6A23C)', background: 'none', border: 'none', cursor: 'pointer', padding: 0, textDecoration: 'underline', textUnderlineOffset: '2px' }}>{label}</button>
               ))}
             </div>
+          </div>
+        </SettingsSection>
+
+        <SettingsSection title="About Selah" description="Help, tips, and a little about this quiet place.">
+          {/* Version & tagline */}
+          <div style={{ marginBottom: '20px', textAlign: 'center' }}>
+            <div style={{ fontFamily: font.display, fontSize: '28px', fontWeight: 300, letterSpacing: '6px', textTransform: 'uppercase' as const, color: 'var(--selah-gold-500, #C6A23C)', marginBottom: '4px' }}>
+              Selah
+            </div>
+            <div style={{ fontFamily: font.body, fontSize: '13px', color: 'var(--selah-text-2, #A39E93)', marginBottom: '8px' }}>
+              A quiet place to study Scripture.
+            </div>
+            <div style={{ fontFamily: font.display, fontStyle: 'italic', fontSize: '13px', color: 'var(--selah-text-3, #6E695F)' }}>
+              &ldquo;Be still, and know that I am God.&rdquo; &mdash; Psalm 46:10
+            </div>
+          </div>
+
+          {/* Getting started */}
+          <div style={{ marginBottom: '8px' }}>
+            <span style={{ fontFamily: font.body, fontSize: '11px', fontWeight: 600, textTransform: 'uppercase' as const, letterSpacing: '1px', color: 'var(--selah-text-3, #6E695F)' }}>Getting Started</span>
+          </div>
+          <HelpItem question="How do I start reading?">
+            Head to the Reader from the sidebar. Choose a book and chapter — your primary translation loads by default. Tap any verse to see its context: who&apos;s there, what themes surface, and what scholars have said about it.
+          </HelpItem>
+          <HelpItem question="What are the five lenses?">
+            Every passage in Selah is enriched with five layers of context: <strong>Scene Cast</strong> (who&apos;s present and what they&apos;re feeling), <strong>Themes</strong> (theological threads), <strong>Climate</strong> (historical and cultural setting), <strong>Cross-references</strong> (connected passages), and <strong>Commentary</strong> (curated scholarly notes).
+          </HelpItem>
+          <HelpItem question="How do I set up an AI assistant?">
+            Scroll up to the AI Assistant section on this page. Selah works beautifully without it — the AI is simply an optional conversation partner for your study.
+          </HelpItem>
+          <HelpItem question="How do I build a study?">
+            Open the Study Builder from the sidebar. Create a project, then assemble passages, characters, themes, and notes. You can export the whole study as a Word document when you&apos;re ready.
+          </HelpItem>
+          <HelpItem question="What is Daily Bread?">
+            A devotional companion that meets you where you are. Choose what&apos;s on your mind, and Selah will offer a passage with context, conversation starters, and a moment to reflect.
+          </HelpItem>
+
+          {/* Troubleshooting */}
+          <div style={{ marginTop: '20px', marginBottom: '8px' }}>
+            <span style={{ fontFamily: font.body, fontSize: '11px', fontWeight: 600, textTransform: 'uppercase' as const, letterSpacing: '1px', color: 'var(--selah-text-3, #6E695F)' }}>Troubleshooting</span>
+          </div>
+          <HelpItem question="The AI isn't responding">
+            Check that your provider is configured in the AI Assistant section above. Make sure you&apos;ve selected a model and that your API key is saved (look for the green checkmark).
+          </HelpItem>
+          <HelpItem question="Ollama won't connect">
+            Make sure Ollama is running on your machine. The default URL is http://localhost:11434 — if Ollama is on a different device, use that device&apos;s IP address instead.
+          </HelpItem>
+          <HelpItem question="AI responses seem off">
+            Every model has its own personality. Try adjusting the temperature and penalty sliders in AI settings, or switch to a different model.
+          </HelpItem>
+          <HelpItem question="How do I restore a backup?">
+            In the Backup &amp; Data section above, click the upload area and select a .db backup file. Your current data will be replaced with the backup.
+          </HelpItem>
+          <HelpItem question="Where is my data stored?">
+            Everything lives in a single file on your machine (data/selah.db). No cloud, no sync, no tracking. Your study is yours alone.
+          </HelpItem>
+
+          {/* Footer */}
+          <div style={{ marginTop: '24px', textAlign: 'center' }}>
+            <span style={{ fontFamily: font.display, fontStyle: 'italic', fontSize: '13px', color: 'var(--selah-text-3, #6E695F)' }}>
+              Made with care for those who study Scripture.
+            </span>
           </div>
         </SettingsSection>
       </div>

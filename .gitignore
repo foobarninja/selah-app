@@ -49,6 +49,9 @@ next-env.d.ts
 /data/selah.db-wal
 /data/bible.eng.db
 
+# Local backups (auto-backup writes here in dev)
+/backups/
+
 # Claude Code local settings
 .claude/
 

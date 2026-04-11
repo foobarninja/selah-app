@@ -64,10 +64,10 @@ export async function POST(request: NextRequest) {
           config = {
             model: '',
             maxTokens: parseInt(await getSetting('openrouter_max_tokens') ?? '2400', 10),
-            temperature: parseFloat(await getSetting('openrouter_temperature') ?? '0.5'),
+            temperature: parseFloat(await getSetting('openrouter_temperature') ?? '0.7'),
             topP: parseFloat(await getSetting('openrouter_top_p') ?? '0.85'),
-            frequencyPenalty: parseFloat(await getSetting('openrouter_freq_penalty') ?? '0.6'),
-            presencePenalty: parseFloat(await getSetting('openrouter_pres_penalty') ?? '0.5'),
+            frequencyPenalty: parseFloat(await getSetting('openrouter_freq_penalty') ?? '0.3'),
+            presencePenalty: parseFloat(await getSetting('openrouter_pres_penalty') ?? '0.3'),
           }
         } else if (providerSetting === 'ollama') {
           config = {
@@ -82,10 +82,10 @@ export async function POST(request: NextRequest) {
           config = {
             model: '',
             maxTokens: 2400,
-            temperature: 0.5,
+            temperature: 0.7,
             topP: 0.85,
-            frequencyPenalty: 0.6,
-            presencePenalty: 0.5,
+            frequencyPenalty: 0.3,
+            presencePenalty: 0.3,
           }
         }
 

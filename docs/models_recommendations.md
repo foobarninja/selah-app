@@ -1,7 +1,7 @@
 # Selah AI Models: Recommendations, Testing Criteria, and Benchmarks
 
-**Last validated:** 2026-04-09
-**Test passage:** Judges 6 (Gideon's Call)
+**Last validated:** 2026-04-11
+**Test passages:** Judges 6 (Gideon's Call), Exodus 4:24-26 (Moses at the Lodging Place)
 
 This document is the permanent reference for Selah's AI model selection, testing methodology, and performance benchmarks. It captures what we know about how different models perform on Selah's grounded scholarship use case and how to reproduce the evaluations.
 
@@ -11,30 +11,36 @@ This document is the permanent reference for Selah's AI model selection, testing
 
 ### By budget and deployment
 
-| Tier | Primary Pick | Cost Profile | Deployment |
-|---|---|---|---|
-| **Premium (gold standard)** | Claude Opus 4.6 | ~$15 / $75 per M tokens | OpenRouter |
-| **Premium alternative** | Grok 4.2 | varies | OpenRouter |
-| **Default hosted** ⭐ | Claude Haiku 4.5 | ~$1 / $5 per M tokens | OpenRouter |
-| **Mid-tier hosted** | Claude Sonnet 4.6 | ~$3 / $15 per M tokens | OpenRouter |
-| **Local / Privacy** | Gemma 4 31B | free (local) | Ollama or OpenRouter |
-| **Budget hosted** | DeepSeek V3.1 | very low | OpenRouter |
+| Tier | Primary Pick | Score | Cost/prompt | Speed | Deployment |
+|---|---|---|---|---|---|
+| **Premium (gold standard)** | Claude Opus 4.6 | 47.5/50 | $0.081 | 36 tps | Bedrock / OpenRouter |
+| **Premium value** ⭐ | Claude Sonnet 4.6 | 47/50 | $0.053 | 38 tps | Google / OpenRouter |
+| **Daily driver** ⭐ | Claude Haiku 4.5 | 43/50 | $0.016 | 87 tps | Bedrock / OpenRouter |
+| **Premium alternative** | GPT-5.4 | 44/50 | $0.040 | 55 tps | OpenAI / OpenRouter |
+| **Budget hosted** | GPT-4.1 | 41/50 | $0.011 | 101 tps | OpenAI / OpenRouter |
+| **Local / Privacy** | Gemma 4 31B | 36.5/50 | $0.002 | 33 tps | Ollama / Parasail |
 
-⭐ **Recommended default for new users on hosted plans.** Claude Haiku 4.5 offers ~95% of the quality of the top-tier models at a fraction of the cost.
+⭐ **Two recommended defaults:**
+- **Sonnet 4.6** for users who want premium quality: ties Opus at 47/50 but 35% cheaper.
+- **Haiku 4.5** for daily use: 91% of Opus quality at 20% of the cost, 2x faster.
 
 ### By use case
 
-- **Serious research / academic work:** Grok 4.2 (deepest climate context sweep)
-- **Thoughtful pastoral conversation:** Claude Sonnet 4.6 or Opus 4.6 (warmest prose, best philosophical voice)
-- **Cost-conscious daily use:** Claude Haiku 4.5 (best cheap-tier model)
-- **Privacy / local-only:** Gemma 4 31B (best open-weight)
-- **Multi-provider with tight budget:** DeepSeek V3.1 (strong value, tier compliance good)
+- **Sermon prep / deep pastoral study:** Claude Sonnet 4.6 or Opus 4.6 (warmest prose, best synthesis, direct scholarly citations)
+- **Daily reading questions:** Claude Haiku 4.5 (fast, warm, well-grounded, $0.016/prompt)
+- **Budget-conscious:** GPT-4.1 ($0.011, fastest at 101 tps, but colder and less grounded than Haiku)
+- **Privacy / local-only:** Gemma 4 31B (free, accurate, needs conservative parameters)
+- **When quality matters most:** Opus 4.6 ($0.081, the absolute ceiling — "the same hand that turned a staff into a sign of power nearly struck down the man holding it")
 
 ### Models to AVOID as primary production picks
 
 - **GPT-4.1-mini** — worst tier compliance of all tested models, weak pipeline engagement
 - **Gemma 3 27B** — fine but consistently a step below Gemma 4 31B
 - **Qwen 122B** — capable but doesn't match top tier on grounding fidelity despite higher parameter count
+
+### Key finding: Grounding > Model Size
+
+The Selah grounding system is worth more than a model upgrade. Haiku 4.5 + grounding ($0.016) outscores Opus 4.6 alone ($0.075) — 43 vs 41. The curated data layer produces better results than spending 5x more on a stronger model without it.
 
 ---
 
@@ -352,6 +358,79 @@ The Scripture quote should be `(Canon)`. The model mislabeled it as `(AI-Assiste
 
 ---
 
+## 3d. The Exodus 4 Benchmark (Multi-Model Comparative Test)
+
+### Standard test prompt
+
+> **Why does God threaten the very man He has chosen to save Israel?**
+
+**Location:** Reader → Exodus 4 (specifically verses 24-26)
+**Why this question is a good benchmark:**
+1. One of the most enigmatic passages in Torah — forces the model to handle theological difficulty honestly
+2. Requires covenant theology background (Genesis 17:14 cross-reference)
+3. Has named scholarly commentary (Gill, Henry, K&D all have entries for Exodus 4)
+4. Tests warmth — a cold analytical answer misses the pastoral dimension
+5. Tests whether the model can synthesize across the chapter (burning bush → objections → firstborn declaration → lodging place)
+
+### Scoring rubric (0-10 per dimension, 50 max)
+
+| Dimension | What we measure |
+|---|---|
+| **Accuracy** | Factual correctness, correct translation (BSB), no fabricated claims |
+| **Direct answer** | Does it actually answer "why" clearly and early, not just describe the passage? |
+| **Grounding to sources** | Tier labels present and correct, named citations verifiable from DB |
+| **Warmth of delivery** | Pastoral voice a minister would trust, not clinical analysis |
+| **AI conjecture accuracy** | When synthesizing beyond sources, is it theologically sound? |
+
+### Results (2026-04-11, all with tuned parameters)
+
+| Rank | Model | Accuracy | Direct | Grounding | Warmth | Conjecture | **Total** | Cost | Speed |
+|---|---|---|---|---|---|---|---|---|---|
+| 1 | **Opus 4.6 + grounding** | 9.5 | 9.5 | 9.5 | 9.5 | 9.5 | **47.5** | $0.081 | 36 tps |
+| 2 | **Sonnet 4.6 + grounding** | 9.5 | 9.5 | 9.5 | 9 | 9.5 | **47** | $0.053 | 38 tps |
+| 3 | **GPT-5.4 + grounding** | 9 | 9.5 | 8.5 | 8 | 9 | **44** | $0.040 | 55 tps |
+| 4 | **Haiku 4.5 + grounding** | 8.5 | 9 | 9 | 8 | 8.5 | **43** | $0.016 | 87 tps |
+| 5 | **GPT-4.1 + grounding** | 8.5 | 8.5 | 8.5 | 7.5 | 8 | **41** | $0.011 | 101 tps |
+| 6 | Opus 4.6 (no grounding) | 9 | 9.5 | 4 | 9.5 | 9 | **41** | $0.075 | 38 tps |
+| 7 | **Gemma 4 31B + grounding** | 8 | 7.5 | 6 | 6.5 | 7.5 | **35.5** | $0.002 | 33 tps |
+| 8 | Haiku 4.5 (no grounding) | 7 | 7.5 | 3.5 | 7.5 | 7 | **32.5** | $0.008 | 90 tps |
+
+**Note:** Gemma 4 scored higher (36.5) with conservative parameters (0.5/0.6/0.5) and lower (35.5) with warm parameters (0.7/0.3/0.3). All other models scored higher with warm parameters. Local models should keep conservative defaults.
+
+### Standout lines by model
+
+Each model produced at least one unique insight no other model found:
+
+- **Opus:** "The same hand that turned a staff into a sign of power nearly struck down the man holding it."
+- **Sonnet:** "Her cry 'bridegroom of blood' reads less like a blessing and more like an accusation: *this covenant has cost me something.*"
+- **GPT-5.4:** "The deliverer must not stand over Pharaoh as though holiness were only demanded of Egypt."
+- **Haiku:** "They are not negotiable. They are not waived. They are enforced — sometimes lethally."
+- **GPT-4.1:** Henry's "severe mercy" — God threatening Moses is mercy in severe form.
+- **Gemma 4:** "God views their relationship as a partnership rather than a puppet show."
+
+### Parameter impact (before/after tuning on same benchmark)
+
+| Model | Old params (0.5/0.6/0.5) | New params (0.7/0.3/0.3) | Delta |
+|---|---|---|---|
+| Haiku 4.5 | 40 | **43** | **+3** |
+| GPT-4.1 | 38.5 | **41** | **+2.5** |
+| GPT-5.4 | 43 | **44** | **+1** |
+| Opus 4.6 | 47 | **47.5** | **+0.5** |
+| Gemma 4 31B | **36.5** | 35.5 | **−1** |
+
+Weaker models benefit more from the parameter change. Gemma is the exception — needs conservative params.
+
+### Grounding impact (with vs without, same model)
+
+| Model | Without grounding | With grounding | Delta |
+|---|---|---|---|
+| Haiku 4.5 | 32.5 | 43 | **+10.5 (32% gain)** |
+| Opus 4.6 | 41 | 47.5 | **+6.5 (16% gain)** |
+
+The grounding system lifts weaker models MORE than stronger ones. Haiku goes from C+ to A-. Opus goes from B+ to A+.
+
+---
+
 ## 4. Detailed Model Rankings
 
 ### Top Tier (Production Recommended)
@@ -422,7 +501,19 @@ The Scripture quote should be `(Canon)`. The model mislabeled it as `(AI-Assiste
 
 ## 5. Parameter Defaults
 
-**Recommended for all providers (OpenRouter, Ollama, custom):**
+**IMPORTANT: Per-provider parameters.** API models and local models need different settings.
+
+### API models (OpenRouter, custom, Bedrock, Google, OpenAI)
+
+```
+Temperature:       0.7
+Top P:             0.85
+Max tokens:        2400
+Frequency penalty: 0.3
+Presence penalty:  0.3
+```
+
+### Local models (Ollama — Gemma 4, Qwen, etc.)
 
 ```
 Temperature:       0.5
@@ -432,21 +523,31 @@ Frequency penalty: 0.6
 Presence penalty:  0.5
 ```
 
-**Rationale:**
+**Why different defaults?**
 
-- **Temperature 0.5** — The prompt structure handles compliance now; high temperature isn't needed. 0.5 gives natural prose variance without coherence risk.
-- **Top P 0.85** — Validated across every model tested. No reason to change.
-- **Max tokens 2400** — Enough for a full four-tier grounded response with all sections, but not so much that models pad with filler.
-- **Frequency penalty 0.6** — Pushes models toward rare curated vocabulary (limestone bedrock, pastoralists, theme-specific phrases). Below 0.4 loses this effect; above 0.9 can cause token-doubling artifacts on DeepSeek.
-- **Presence penalty 0.5** — Encourages introducing new concepts from grounding rather than circling back.
+The API parameters (0.7/0.3/0.3) were validated on 2026-04-11 via A/B testing across 6 models on the Exodus 4:24-26 benchmark. The change from (0.5/0.6/0.5) to (0.7/0.3/0.3) produced:
 
-**Do NOT use these penalties for:**
-- **DeepSeek V3.1** with penalties above 0.8 — risks "HistoricalHistorical)" doubling artifacts. Keep at 0.5-0.7.
-- **GPT-5.4** without the disambiguation prompt — will still mislabel Scripture as (AI-Assisted) regardless of parameters.
+- **Haiku 4.5:** +3 points (40→43). Warmth jumped from 6 to 8. Unlocked rhetorical patterns like "They are not negotiable. They are not waived. They are enforced — sometimes lethally."
+- **GPT-4.1:** +2.5 points (38.5→41). "Severe mercy" and "crucible" phrasing appeared.
+- **Opus 4.6:** +0.5 points (47→47.5). "The same hand that turned a staff into a sign of power nearly struck down the man holding it."
+
+**However, Gemma 4 31B went DOWN by 1 point** (36.5→35.5) with the new parameters. Higher temperature made it less disciplined about citing sources — the `(Scholarship)` label disappeared entirely. Local models need the conservative parameters to maintain grounding discipline.
+
+**Rationale for the API defaults:**
+
+- **Temperature 0.7** — Higher than previous 0.5. The grounding system (tier labels, BSB quotes, curated sources) provides factual guardrails that low temperature normally provides. Raising temp unlocks warmer, more pastoral prose without proportionally increasing hallucination risk.
+- **Top P 0.85** — Unchanged. Validated across every model tested.
+- **Max tokens 2400** — Unchanged. Enough for full four-tier responses.
+- **Frequency penalty 0.3** — Reduced from 0.6. The old value suppressed rhetorical repetition patterns that pastoral speech uses ("God sees... God calls... God sends..."). At 0.3, models can use deliberate repetition for emphasis.
+- **Presence penalty 0.3** — Reduced from 0.5. The old value pushed models to cover breadth over depth. At 0.3, models can dwell on important insights and develop them emotionally.
 
 **Special toggles:**
-- **`openrouter_disable_thinking: true`** — Recommended for DeepSeek V3.1/R1, Qwen3 thinking variants, Claude 3.7+, and GPT-5. Sends `reasoning: { effort: 'none' }` to OpenRouter. Prevents reasoning tokens from bleeding into the answer channel.
+- **`openrouter_disable_thinking: true`** — Recommended for DeepSeek V3.1/R1, Qwen3 thinking variants, Claude 3.7+, and GPT-5. Sends `reasoning: { effort: 'none' }` to OpenRouter.
 - **`ollama_disable_thinking: true`** — For Qwen 3 variants with internal reasoning mode.
+
+**Do NOT use:**
+- **DeepSeek V3.1** with penalties above 0.8 — risks doubling artifacts.
+- **GPT-5.4** without the disambiguation prompt — will mislabel regardless of parameters.
 
 ---
 

@@ -141,11 +141,11 @@ export async function getAIConfig(): Promise<AIConfig> {
   }
 
   const openrouterParams = {
-    temperature: await getSettingFloat('openrouter_temperature', 0.5),
+    temperature: await getSettingFloat('openrouter_temperature', 0.7),
     topP: await getSettingFloat('openrouter_top_p', 0.85),
     maxTokens: await getSettingNum('openrouter_max_tokens', 2400),
-    freqPenalty: await getSettingFloat('openrouter_freq_penalty', 0.6),
-    presPenalty: await getSettingFloat('openrouter_pres_penalty', 0.5),
+    freqPenalty: await getSettingFloat('openrouter_freq_penalty', 0.3),
+    presPenalty: await getSettingFloat('openrouter_pres_penalty', 0.3),
     promptCost: (await getSetting('openrouter_prompt_cost')) ?? '',
     completionCost: (await getSetting('openrouter_completion_cost')) ?? '',
     disableThinking: await getSettingBool('openrouter_disable_thinking', false),

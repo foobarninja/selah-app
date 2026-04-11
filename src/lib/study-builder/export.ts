@@ -130,6 +130,54 @@ function buildItemSection(db: Database.Database, item: ExportItem, index: number
     }
   }
 
+  // Full climate context for climate items
+  if (item.entityType === 'climate') {
+    const climate = fetchClimateContext(db, item.entityId)
+    if (climate) {
+      const fields: Array<{ label: string; value: string }> = [
+        { label: 'Geographic', value: climate.geographic },
+        { label: 'Political', value: climate.political },
+        { label: 'Economic', value: climate.economic },
+        { label: 'Social', value: climate.social },
+        { label: 'Religious', value: climate.religious },
+        { label: 'Daily life', value: climate.dailyLife },
+        { label: 'Modern parallel', value: climate.modernParallel },
+      ].filter((f) => f.value)
+      for (const field of fields) {
+        paragraphs.push(
+          new Paragraph({
+            spacing: { before: 40, after: 40 },
+            children: [
+              new TextRun({ text: `${field.label}: `, bold: true, size: DOCX_SIZES.meta, color: DOCX_COLORS.dim, font: FONT_NAMES.body }),
+              new TextRun({ text: field.value, size: DOCX_SIZES.body, color: DOCX_COLORS.bodyDark, font: FONT_NAMES.body }),
+            ],
+          }),
+        )
+      }
+    }
+  }
+
+  // Verse text for standalone verse items
+  if (item.entityType === 'verse') {
+    const verseText = fetchPassageText(db, item.entityId, item.title)
+    if (verseText) {
+      paragraphs.push(
+        new Paragraph({
+          spacing: { before: 100, after: 50 },
+          children: [
+            new TextRun({ text: verseText, italics: true, size: DOCX_SIZES.body, font: FONT_NAMES.body }),
+          ],
+        }),
+        new Paragraph({
+          spacing: { after: 100 },
+          children: [
+            new TextRun({ text: '— Berean Standard Bible', size: DOCX_SIZES.footnote, color: DOCX_COLORS.footnote, font: FONT_NAMES.body }),
+          ],
+        }),
+      )
+    }
+  }
+
   // Full commentary text for commentary items
   if (item.entityType === 'commentary') {
     const comm = fetchCommentaryText(db, item.entityId)
@@ -147,7 +195,7 @@ function buildItemSection(db: Database.Database, item: ExportItem, index: number
   }
 
   // Preview text (for items without special fetching)
-  if (item.preview && !['passage', 'character', 'theme', 'commentary'].includes(item.entityType)) {
+  if (item.preview && !['passage', 'character', 'theme', 'commentary', 'climate', 'verse'].includes(item.entityType)) {
     paragraphs.push(
       new Paragraph({
         spacing: { before: 50, after: 100 },
@@ -245,6 +293,18 @@ function fetchCharacterBio(db: Database.Database, entityId: string): string | nu
 function fetchThemeDefinition(db: Database.Database, entityId: string): string | null {
   const row = db.prepare('SELECT definition, modern_framing FROM themes WHERE id = ?').get(entityId) as { definition: string | null; modern_framing: string | null } | undefined
   return row?.definition || row?.modern_framing || null
+}
+
+function fetchClimateContext(db: Database.Database, entityId: string): {
+  geographic: string; political: string; economic: string;
+  social: string; religious: string; dailyLife: string; modernParallel: string;
+} | null {
+  const row = db.prepare(`
+    SELECT geographic, political, economic, social, religious,
+           daily_life as dailyLife, modern_parallel as modernParallel
+    FROM climate_contexts WHERE id = ?
+  `).get(entityId) as Record<string, string> | undefined
+  return row ?? null
 }
 
 function fetchCommentaryText(db: Database.Database, entityId: string): { author: string; text: string } | null {

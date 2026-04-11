@@ -189,8 +189,8 @@ export function StudyWorkspace({ activeProject, assemblyItems, sourceSections, s
 
       {mobileSourceOpen && (
         <>
-          <div className="md:hidden fixed inset-0 z-40" style={{ backgroundColor: 'rgba(15, 13, 11, 0.6)' }} onClick={() => setMobileSourceOpen(false)} />
-          <div className="md:hidden fixed bottom-0 left-0 right-0 z-50 rounded-t-2xl overflow-hidden flex flex-col" style={{ maxHeight: '75vh', backgroundColor: 'var(--selah-bg-page, #0F0D0B)', borderTop: '1px solid var(--selah-border-color, #3D3835)' }}>
+          <div className="md:hidden fixed inset-0 z-40 transition-opacity duration-250" style={{ backgroundColor: 'rgba(15, 13, 11, 0.6)' }} onClick={() => setMobileSourceOpen(false)} />
+          <div className="md:hidden fixed bottom-0 left-0 right-0 z-50 rounded-t-2xl overflow-hidden flex flex-col transition-transform duration-250 ease-out" style={{ maxHeight: '75vh', backgroundColor: 'var(--selah-bg-page, #0F0D0B)', borderTop: '1px solid var(--selah-border-color, #3D3835)', transform: mobileSourceOpen ? 'translateY(0)' : 'translateY(100%)' }}>
             <div className="flex justify-center py-3"><div className="rounded-full" style={{ width: '36px', height: '4px', backgroundColor: 'var(--selah-text-3, #6E695F)', opacity: 0.5 }} /></div>
             <div className="flex gap-1 overflow-x-auto px-4 pb-3" style={{ scrollbarWidth: 'none' }}>
               {sourceSections.map((section) => (<button key={section.id} onClick={() => setActiveSourceSection(section.id)} className="shrink-0" style={{ padding: '4px 10px', borderRadius: '10px', fontFamily: font.body, fontSize: '12px', fontWeight: 500, border: 'none', cursor: 'pointer', backgroundColor: activeSourceSection === section.id ? 'var(--selah-gold-900, #4A3711)' : 'transparent', color: activeSourceSection === section.id ? 'var(--selah-gold-300, #E8C767)' : 'var(--selah-text-3, #6E695F)' }}>{section.label}</button>))}

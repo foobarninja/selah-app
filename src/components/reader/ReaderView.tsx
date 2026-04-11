@@ -724,18 +724,19 @@ export function ReaderView({
         <>
           {/* Backdrop */}
           <div
-            className="md:hidden fixed inset-0 z-40"
+            className="md:hidden fixed inset-0 z-40 transition-opacity duration-250"
             style={{ backgroundColor: 'rgba(15, 13, 11, 0.6)' }}
             onClick={() => setMobileDrawerOpen(false)}
           />
 
           {/* Sheet */}
           <div
-            className="md:hidden fixed bottom-0 left-0 right-0 z-50 rounded-t-2xl overflow-hidden"
+            className="md:hidden fixed bottom-0 left-0 right-0 z-50 rounded-t-2xl overflow-hidden transition-transform duration-250 ease-out"
             style={{
               maxHeight: '85vh',
               backgroundColor: 'var(--selah-bg-page, #0F0D0B)',
               borderTop: '1px solid var(--selah-border-color, #3D3835)',
+              transform: mobileDrawerOpen ? 'translateY(0)' : 'translateY(100%)',
             }}
           >
             {/* Drag handle */}

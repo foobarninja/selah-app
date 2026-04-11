@@ -251,7 +251,7 @@ function fetchCommentary(db: Database.Database, entityId: string, title: string)
 
   return rows.map((r) => ({
     author: r.author,
-    text: r.text.length > 500 ? r.text.slice(0, 500).replace(/\s+\S*$/, '') + '...' : r.text,
+    text: r.text,
   }))
 }
 

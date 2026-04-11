@@ -154,6 +154,7 @@ export function SettingsView({ translations, aiConfig, aiProviders, studyPrefere
     : null
 
   return (
+    <>
     <div className="h-full overflow-y-auto" style={{ padding: '40px 32px' }}>
       <div style={{ maxWidth: '640px', margin: '0 auto' }}>
         <h1 style={{ fontFamily: font.display, fontWeight: 300, fontSize: '36px', letterSpacing: '0.5px', color: 'var(--selah-text-1, #E8E2D9)', marginBottom: '36px' }}>Settings</h1>
@@ -455,5 +456,6 @@ export function SettingsView({ translations, aiConfig, aiProviders, studyPrefere
       onConfirm={() => { if (restoreFile) onRestoreBackup?.(restoreFile); setRestoreFile(null) }}
       onCancel={() => setRestoreFile(null)}
     />
+    </>
   )
 }

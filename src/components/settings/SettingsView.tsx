@@ -32,7 +32,12 @@ function Toggle({ label, checked, onChange }: { label: string; checked: boolean;
 }
 
 function LabelRow({ label, children }: { label: string; children: React.ReactNode }) {
-  return (<div className="flex items-center justify-between py-1"><span style={{ fontFamily: font.body, fontSize: '14px', color: 'var(--selah-text-1, #E8E2D9)' }}>{label}</span>{children}</div>)
+  return (
+    <div className="flex flex-col gap-1 py-1 md:flex-row md:items-center md:justify-between">
+      <span style={{ fontFamily: font.body, fontSize: '14px', color: 'var(--selah-text-1, #E8E2D9)' }}>{label}</span>
+      <div className="w-full md:w-auto">{children}</div>
+    </div>
+  )
 }
 
 export function SettingsView({ translations, aiConfig, aiProviders, studyPreferences, backupInfo, onChangePrimary, onToggleParallel, onToggleDisplay, onSelectProvider, onSaveAIConfig, onTestConnection, onChangeCommentary, onToggleSourceTier, onChangeDailyBreadAudience, onChangeFontSize, onChangeTheme, onDownloadBackup, onToggleAutoBackup, onChangeRetention, onRestoreBackup, onExportJournal, onExportCollections, onExportConversations }: SettingsProps) {

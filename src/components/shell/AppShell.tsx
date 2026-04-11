@@ -166,7 +166,9 @@ export default function AppShell({
         {/* Mobile spacer for top bar */}
         <div className="h-14 md:hidden" />
 
-        {children}
+        <div className="max-w-7xl mx-auto w-full">
+          {children}
+        </div>
       </main>
     </div>
   )

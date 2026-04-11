@@ -130,8 +130,24 @@ function buildItemSection(db: Database.Database, item: ExportItem, index: number
     }
   }
 
+  // Full commentary text for commentary items
+  if (item.entityType === 'commentary') {
+    const comm = fetchCommentaryText(db, item.entityId)
+    if (comm) {
+      paragraphs.push(
+        new Paragraph({
+          spacing: { before: 50, after: 100 },
+          children: [
+            new TextRun({ text: `${comm.author}: `, bold: true, size: DOCX_SIZES.meta, color: DOCX_COLORS.dim, font: FONT_NAMES.body }),
+            new TextRun({ text: comm.text, size: DOCX_SIZES.body, color: DOCX_COLORS.bodyDark, font: FONT_NAMES.body }),
+          ],
+        }),
+      )
+    }
+  }
+
   // Preview text (for items without special fetching)
-  if (item.preview && !['passage', 'character', 'theme'].includes(item.entityType)) {
+  if (item.preview && !['passage', 'character', 'theme', 'commentary'].includes(item.entityType)) {
     paragraphs.push(
       new Paragraph({
         spacing: { before: 50, after: 100 },
@@ -229,6 +245,18 @@ function fetchCharacterBio(db: Database.Database, entityId: string): string | nu
 function fetchThemeDefinition(db: Database.Database, entityId: string): string | null {
   const row = db.prepare('SELECT definition, modern_framing FROM themes WHERE id = ?').get(entityId) as { definition: string | null; modern_framing: string | null } | undefined
   return row?.definition || row?.modern_framing || null
+}
+
+function fetchCommentaryText(db: Database.Database, entityId: string): { author: string; text: string } | null {
+  const id = parseInt(entityId, 10)
+  if (isNaN(id)) return null
+  const row = db.prepare(`
+    SELECT ce.text, cs.english_name as author
+    FROM commentary_entries ce
+    JOIN commentary_sources cs ON cs.id = ce.source_id
+    WHERE ce.id = ?
+  `).get(id) as { text: string; author: string } | undefined
+  return row ?? null
 }
 
 function fetchCommentary(db: Database.Database, entityId: string, title: string): Array<{ author: string; text: string }> {

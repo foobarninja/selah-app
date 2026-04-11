@@ -46,11 +46,12 @@ export async function generateDocx(projectId: number): Promise<Buffer> {
   const db = getDb()
   const sections: Paragraph[] = []
 
-  // Cover page via shared primitive
+  // Header (no page break — study exports flow directly into items)
   sections.push(
     ...buildCoverPage({
       title: project.topic,
       subtitle: `${formatLabels[project.format] || project.format} — Assembled with Selah`,
+      pageBreak: false,
     }),
   )
 

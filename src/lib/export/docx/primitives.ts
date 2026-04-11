@@ -14,11 +14,14 @@ export interface CoverPageOptions {
   title: string
   subtitle?: string
   metadata?: string
+  /** If false, omits the trailing page break (content flows immediately after header). Default: true. */
+  pageBreak?: boolean
 }
 
 /**
  * Build a title-page Paragraph array.
- * Ends with a page break so the document body starts on page 2.
+ * By default ends with a page break so the document body starts on page 2.
+ * Pass `pageBreak: false` for inline headers that flow into content.
  */
 export function buildCoverPage(options: CoverPageOptions): Paragraph[] {
   const paragraphs: Paragraph[] = [
@@ -68,11 +71,13 @@ export function buildCoverPage(options: CoverPageOptions): Paragraph[] {
     )
   }
 
-  paragraphs.push(
-    new Paragraph({
-      children: [new PageBreak()],
-    }),
-  )
+  if (options.pageBreak !== false) {
+    paragraphs.push(
+      new Paragraph({
+        children: [new PageBreak()],
+      }),
+    )
+  }
 
   return paragraphs
 }

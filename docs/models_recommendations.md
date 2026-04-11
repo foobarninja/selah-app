@@ -18,7 +18,8 @@ This document is the permanent reference for Selah's AI model selection, testing
 | **Daily driver** ⭐ | Claude Haiku 4.5 | 43/50 | $0.016 | 87 tps | Bedrock / OpenRouter |
 | **Premium alternative** | GPT-5.4 | 44/50 | $0.040 | 55 tps | OpenAI / OpenRouter |
 | **Budget hosted** | GPT-4.1 | 41/50 | $0.011 | 101 tps | OpenAI / OpenRouter |
-| **Local / Privacy** | Gemma 4 31B | 36.5/50 | $0.002 | 33 tps | Ollama / Parasail |
+| **Local / Privacy (large)** | Gemma 4 31B | 36.5/50 | $0.002 | 33 tps | Ollama / Parasail |
+| **Local / Privacy (small)** | Qwen 3.5 9B | 37/50 | $0.00 | local | Ollama (temp 0.1 required) |
 
 ⭐ **Two recommended defaults:**
 - **Sonnet 4.6** for users who want premium quality: ties Opus at 47/50 but 35% cheaper.
@@ -29,7 +30,8 @@ This document is the permanent reference for Selah's AI model selection, testing
 - **Sermon prep / deep pastoral study:** Claude Sonnet 4.6 or Opus 4.6 (warmest prose, best synthesis, direct scholarly citations)
 - **Daily reading questions:** Claude Haiku 4.5 (fast, warm, well-grounded, $0.016/prompt)
 - **Budget-conscious:** GPT-4.1 ($0.011, fastest at 101 tps, but colder and less grounded than Haiku)
-- **Privacy / local-only:** Gemma 4 31B (free, accurate, needs conservative parameters)
+- **Privacy / local-only (large VRAM):** Gemma 4 31B (free, consistent, needs conservative parameters)
+- **Privacy / local-only (small VRAM):** Qwen 3.5 9B 8Q (free, scores higher than Gemma at 1/3 model size, but requires temp 0.1 — fabricates at higher temperatures)
 - **When quality matters most:** Opus 4.6 ($0.081, the absolute ceiling — "the same hand that turned a staff into a sign of power nearly struck down the man holding it")
 
 ### Models to AVOID as primary production picks
@@ -392,10 +394,14 @@ The Scripture quote should be `(Canon)`. The model mislabeled it as `(AI-Assiste
 | 4 | **Haiku 4.5 + grounding** | 8.5 | 9 | 9 | 8 | 8.5 | **43** | $0.016 | 87 tps |
 | 5 | **GPT-4.1 + grounding** | 8.5 | 8.5 | 8.5 | 7.5 | 8 | **41** | $0.011 | 101 tps |
 | 6 | Opus 4.6 (no grounding) | 9 | 9.5 | 4 | 9.5 | 9 | **41** | $0.075 | 38 tps |
-| 7 | **Gemma 4 31B + grounding** | 8 | 7.5 | 6 | 6.5 | 7.5 | **35.5** | $0.002 | 33 tps |
-| 8 | Haiku 4.5 (no grounding) | 7 | 7.5 | 3.5 | 7.5 | 7 | **32.5** | $0.008 | 90 tps |
+| 7 | **Qwen 3.5 9B + grounding** | 8.5 | 8 | 7.5 | 5.5 | 7.5 | **37** | $0.00 | local |
+| 8 | **Gemma 4 31B + grounding** | 8 | 8 | 7.5 | 5.5 | 7.5 | **36.5** | $0.002 | 33 tps |
+| 9 | Haiku 4.5 (no grounding) | 7 | 7.5 | 3.5 | 7.5 | 7 | **32.5** | $0.008 | 90 tps |
 
-**Note:** Gemma 4 scored higher (36.5) with conservative parameters (0.5/0.6/0.5) and lower (35.5) with warm parameters (0.7/0.3/0.3). All other models scored higher with warm parameters. Local models should keep conservative defaults.
+**Notes on local models and parameters:**
+- Gemma 4 scored 36.5 with conservative parameters (0.5/0.6/0.5) and 35.5 with warm parameters — warm params hurt it.
+- Qwen 3.5 9B requires **very low temperature (0.1)** to avoid fabrication. At temp 0.5 it scored 31 and invented false Hebrew etymologies. At temp 0.1 it scored 37 with no fabrication. **Temperature is the critical parameter for small local models.**
+- All API models scored higher with warm parameters (0.7/0.3/0.3). Local models should keep conservative defaults.
 
 ### Standout lines by model
 
@@ -407,6 +413,7 @@ Each model produced at least one unique insight no other model found:
 - **Haiku:** "They are not negotiable. They are not waived. They are enforced — sometimes lethally."
 - **GPT-4.1:** Henry's "severe mercy" — God threatening Moses is mercy in severe form.
 - **Gemma 4:** "God views their relationship as a partnership rather than a puppet show."
+- **Qwen 3.5 9B:** "God's holiness is not passive; it actively judges those who approach without the proper signs of belonging."
 
 ### Parameter impact (before/after tuning on same benchmark)
 
@@ -417,8 +424,9 @@ Each model produced at least one unique insight no other model found:
 | GPT-5.4 | 43 | **44** | **+1** |
 | Opus 4.6 | 47 | **47.5** | **+0.5** |
 | Gemma 4 31B | **36.5** | 35.5 | **−1** |
+| Qwen 3.5 9B (temp 0.5→0.1) | 31 | **37** | **+6** (but temp 0.1, not 0.7) |
 
-Weaker models benefit more from the parameter change. Gemma is the exception — needs conservative params.
+Weaker models benefit more from the parameter change. Local models are the exception — they need conservative or ultra-conservative params. Qwen 3.5 9B specifically needs temp 0.1 to prevent fabrication; at 0.5 it invented false Hebrew etymologies.
 
 ### Grounding impact (with vs without, same model)
 
@@ -513,7 +521,7 @@ Frequency penalty: 0.3
 Presence penalty:  0.3
 ```
 
-### Local models (Ollama — Gemma 4, Qwen, etc.)
+### Local models (Ollama — Gemma 4 31B)
 
 ```
 Temperature:       0.5
@@ -522,6 +530,18 @@ Max tokens:        2400
 Frequency penalty: 0.6
 Presence penalty:  0.5
 ```
+
+### Small local models (Ollama — Qwen 3.5 9B and similar <10B models)
+
+```
+Temperature:       0.1
+Top P:             0.95
+Max tokens:        2304
+Frequency penalty: 0.5
+Presence penalty:  0.1
+```
+
+**Critical:** Small models fabricate at higher temperatures. Qwen 3.5 9B at temp 0.5 invented a false Hebrew etymology for "bridegroom of blood" — presented confidently as scholarship, completely wrong. At temp 0.1 the same model scored 37/50 with zero fabrication. **The lower the parameter count, the lower the temperature must be.**
 
 **Why different defaults?**
 

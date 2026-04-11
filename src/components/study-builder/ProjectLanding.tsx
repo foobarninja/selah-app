@@ -3,6 +3,7 @@
 import { useState } from 'react'
 import { Plus, Presentation, ChevronRight, Trash2 } from 'lucide-react'
 import type { StudyBuilderProps, ProjectSummary, ProjectFormat } from './types'
+import { ConfirmDialog } from '@/components/ui/ConfirmDialog'
 
 const font = {
   display: "var(--selah-font-display, 'Cormorant Garamond', serif)",
@@ -13,6 +14,8 @@ const formatLabels: Record<string, string> = { sermon: 'Sermon', teaching: 'Teac
 const formats: ProjectFormat[] = ['sermon', 'teaching', 'small-group', 'personal']
 
 function ProjectCard({ project, onOpen, onDelete }: { project: ProjectSummary; onOpen?: () => void; onDelete?: () => void }) {
+  const [showConfirm, setShowConfirm] = useState(false)
+
   return (
     <div className="flex items-center gap-2 group">
       <button onClick={onOpen} className="flex items-center gap-4 flex-1 min-w-0 text-left rounded-lg transition-colors duration-150" style={{ padding: '16px 18px', backgroundColor: 'var(--selah-bg-surface, #1C1917)', border: '1px solid var(--selah-border-color, #3D3835)', cursor: 'pointer' }} onMouseEnter={(e) => { (e.currentTarget as HTMLElement).style.borderColor = 'var(--selah-gold-300, #E8C767)' }} onMouseLeave={(e) => { (e.currentTarget as HTMLElement).style.borderColor = 'var(--selah-border-color, #3D3835)' }}>
@@ -30,7 +33,7 @@ function ProjectCard({ project, onOpen, onDelete }: { project: ProjectSummary; o
         <ChevronRight size={16} strokeWidth={1.5} className="shrink-0 opacity-0 group-hover:opacity-100 transition-opacity duration-150" style={{ color: 'var(--selah-text-3, #6E695F)' }} />
       </button>
       <button
-        onClick={(e) => { e.stopPropagation(); if (confirm(`Delete "${project.topic}"?`)) onDelete?.() }}
+        onClick={(e) => { e.stopPropagation(); setShowConfirm(true) }}
         className="shrink-0 opacity-0 group-hover:opacity-100 transition-opacity duration-150 rounded-lg"
         title="Delete project"
         style={{ padding: '10px', background: 'none', border: 'none', cursor: 'pointer', color: 'var(--selah-text-3, #6E695F)' }}
@@ -39,6 +42,15 @@ function ProjectCard({ project, onOpen, onDelete }: { project: ProjectSummary; o
       >
         <Trash2 size={15} strokeWidth={1.5} />
       </button>
+      <ConfirmDialog
+        open={showConfirm}
+        title="Remove this study project?"
+        message={`"${project.topic}" and all its assembled items will be removed. This can't be undone.`}
+        confirmLabel="Remove"
+        cancelLabel="Keep it"
+        onConfirm={() => { setShowConfirm(false); onDelete?.() }}
+        onCancel={() => setShowConfirm(false)}
+      />
     </div>
   )
 }

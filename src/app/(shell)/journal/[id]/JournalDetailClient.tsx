@@ -6,6 +6,8 @@ import JournalDetail from '@/components/journal/JournalDetail'
 import NoteEditor from '@/components/journal/NoteEditor'
 import NewJournalModal from '@/components/journal/NewJournalModal'
 import type { JournalDetail as JournalDetailType, JournalEntry, AnchorType } from '@/components/journal/types'
+import { useToast } from '@/components/ui/ToastProvider'
+import { ConfirmDialog } from '@/components/ui/ConfirmDialog'
 
 interface Props {
   journal: JournalDetailType
@@ -15,9 +17,11 @@ interface Props {
 
 export default function JournalDetailClient({ journal, entries, availableTags = [] }: Props) {
   const router = useRouter()
+  const toast = useToast()
   const [editingEntry, setEditingEntry] = useState<JournalEntry | null | undefined>(undefined)
   // undefined = editor closed, null = new note, JournalEntry = editing existing
   const [showJournalEdit, setShowJournalEdit] = useState(false)
+  const [confirmDelete, setConfirmDelete] = useState(false)
 
   const editorOpen = editingEntry !== undefined
 
@@ -68,13 +72,13 @@ export default function JournalDetailClient({ journal, entries, availableTags = 
   }
 
   async function handleDeleteJournal() {
-    if (!confirm(`Delete "${journal.name}"? Notes will be moved to the default journal.`)) return
+    setConfirmDelete(false)
     const res = await fetch(`/api/journals/${journal.id}`, { method: 'DELETE' })
     if (res.ok) {
       router.push('/journal')
     } else {
       const body = await res.json().catch(() => ({}))
-      alert(body.error ?? 'Failed to delete journal.')
+      toast.error("Couldn't remove that journal", body.error)
     }
   }
 
@@ -82,7 +86,7 @@ export default function JournalDetailClient({ journal, entries, availableTags = 
     try {
       const res = await fetch(`/api/journals/${journal.id}/export`)
       if (!res.ok) {
-        alert('Export not available yet.')
+        toast.info('Export is coming soon')
         return
       }
       const blob = await res.blob()
@@ -93,7 +97,7 @@ export default function JournalDetailClient({ journal, entries, availableTags = 
       a.click()
       URL.revokeObjectURL(url)
     } catch {
-      alert('Export not available yet.')
+      toast.info('Export is coming soon')
     }
   }
 
@@ -123,7 +127,7 @@ export default function JournalDetailClient({ journal, entries, availableTags = 
         entries={entries}
         onBack={() => router.push('/journal')}
         onEdit={() => setShowJournalEdit(true)}
-        onDelete={handleDeleteJournal}
+        onDelete={() => setConfirmDelete(true)}
         onExport={handleExport}
         onEditNote={handleEditNote}
         onNewNote={handleNewNote}
@@ -161,6 +165,16 @@ export default function JournalDetailClient({ journal, entries, availableTags = 
           availableTags={availableTags}
         />
       )}
+
+      <ConfirmDialog
+        open={confirmDelete}
+        title="Remove this journal?"
+        message={`"${journal.name}" will be removed and its notes will move to the default journal. This can't be undone.`}
+        confirmLabel="Remove"
+        cancelLabel="Keep it"
+        onConfirm={handleDeleteJournal}
+        onCancel={() => setConfirmDelete(false)}
+      />
     </>
   )
 }

@@ -3,6 +3,7 @@
 import { useEffect, useState } from 'react'
 import { Eye, EyeOff, Check, X, Download, Upload, Minus, Plus, Sun, Moon, Monitor } from 'lucide-react'
 import type { SettingsProps, AIProvider, ThemeMode, AudienceLevel, RetentionDays } from './types'
+import { ConfirmDialog } from '@/components/ui/ConfirmDialog'
 
 const font = {
   display: "var(--selah-font-display, 'Cormorant Garamond', serif)",
@@ -42,6 +43,7 @@ function LabelRow({ label, children }: { label: string; children: React.ReactNod
 
 export function SettingsView({ translations, aiConfig, aiProviders, studyPreferences, backupInfo, onChangePrimary, onToggleParallel, onToggleDisplay, onSelectProvider, onSaveAIConfig, onTestConnection, onChangeCommentary, onToggleSourceTier, onChangeDailyBreadAudience, onChangeFontSize, onChangeTheme, onDownloadBackup, onToggleAutoBackup, onChangeRetention, onRestoreBackup, onExportJournal, onExportCollections, onExportConversations }: SettingsProps) {
   const [showApiKey, setShowApiKey] = useState(false)
+  const [restoreFile, setRestoreFile] = useState<File | null>(null)
   const [apiKey, setApiKey] = useState('')
   const [ollamaUrl, setOllamaUrl] = useState(aiConfig.ollamaUrl || 'http://localhost:11434')
   const [selectedProvider, setSelectedProvider] = useState<AIProvider | null>(aiConfig.provider)
@@ -429,7 +431,7 @@ export function SettingsView({ translations, aiConfig, aiProviders, studyPrefere
             <p style={{ fontFamily: font.body, fontSize: '14px', color: 'var(--selah-text-1)' }}>Restore from backup</p>
             <label className="flex items-center gap-2 transition-colors duration-150 cursor-pointer" style={{ fontFamily: font.body, fontSize: '13px', fontWeight: 500, padding: '8px 16px', borderRadius: '8px', backgroundColor: 'var(--selah-bg-surface)', color: 'var(--selah-text-1)', border: '1px solid var(--selah-border-color)' }}>
               <Upload size={14} strokeWidth={1.5} />Choose file
-              <input type="file" accept=".db,.sqlite,.sqlite3" className="hidden" onChange={(e) => { const f = e.target.files?.[0]; if (f && confirm(`Restore from "${f.name}"? This will replace all current data.`)) onRestoreBackup?.(f) }} />
+              <input type="file" accept=".db,.sqlite,.sqlite3" className="hidden" onChange={(e) => { const f = e.target.files?.[0]; if (f) setRestoreFile(f) }} />
             </label>
           </div>
           <div style={{ borderTop: '1px solid var(--selah-border-color, #3D3835)', paddingTop: '16px', marginTop: '8px' }}>
@@ -443,5 +445,15 @@ export function SettingsView({ translations, aiConfig, aiProviders, studyPrefere
         </SettingsSection>
       </div>
     </div>
+
+    <ConfirmDialog
+      open={!!restoreFile}
+      title="Restore from backup?"
+      message={`This will replace all your current data with the backup "${restoreFile?.name}". Your existing notes, journals, and settings will be overwritten.`}
+      confirmLabel="Restore"
+      cancelLabel="Cancel"
+      onConfirm={() => { if (restoreFile) onRestoreBackup?.(restoreFile); setRestoreFile(null) }}
+      onCancel={() => setRestoreFile(null)}
+    />
   )
 }

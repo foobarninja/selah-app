@@ -17,15 +17,12 @@ export async function extractCharacterContext(ctx: CharacterContext): Promise<st
 
   // ── Biography ─────────────────────────────────────────────────────────────
   if (profile.bio) {
-    const bio = profile.bio.length > 600 ? profile.bio.slice(0, 600) + '...' : profile.bio
-    parts.push(`\n### Biography\n${bio}`)
+    parts.push(`\n### Biography\n${profile.bio}`)
   }
 
   // ── Faith journey ─────────────────────────────────────────────────────────
   if (profile.faithJourney) {
-    const fj = profile.faithJourney.text
-    const excerpt = fj.length > 400 ? fj.slice(0, 400) + '...' : fj
-    parts.push(`\n### Faith Journey\n${excerpt}`)
+    parts.push(`\n### Faith Journey\n${profile.faithJourney.text}`)
   }
 
   // ── Modern bridge ─────────────────────────────────────────────────────────

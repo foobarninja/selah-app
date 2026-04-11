@@ -21,10 +21,7 @@ export async function extractThemeContext(ctx: ThemeContext): Promise<string> {
   }
 
   if (profile.scholarlyDefinition) {
-    const def = profile.scholarlyDefinition.length > 500
-      ? profile.scholarlyDefinition.slice(0, 500) + '...'
-      : profile.scholarlyDefinition
-    parts.push(`\n### Scholarly Definition\n${def}`)
+    parts.push(`\n### Scholarly Definition\n${profile.scholarlyDefinition}`)
   }
 
   // ── Child themes ──────────────────────────────────────────────────────────

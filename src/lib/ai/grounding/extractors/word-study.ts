@@ -30,10 +30,7 @@ export async function extractWordStudyContext(ctx: WordStudyContext): Promise<st
   }
 
   if (entry.fullDefinition) {
-    const def = entry.fullDefinition.length > 600
-      ? entry.fullDefinition.slice(0, 600) + '...'
-      : entry.fullDefinition
-    parts.push(`\n### Full Definition\n${def}`)
+    parts.push(`\n### Full Definition\n${entry.fullDefinition}`)
   }
 
   // ── Morphology / derivation ───────────────────────────────────────────────

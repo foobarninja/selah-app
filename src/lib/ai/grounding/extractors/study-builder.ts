@@ -115,8 +115,7 @@ export async function extractStudyBuilderContext(ctx: StudyBuilderContext): Prom
       if (entry) {
         const bookName = BOOK_NAMES[entry.bookId] ?? entry.bookId
         const verseRef = entry.verse ? `:${entry.verse}` : ''
-        const excerpt = entry.text.length > 600 ? entry.text.slice(0, 600) + '...' : entry.text
-        parts.push(`\n**${entry.source.englishName}** (${bookName} ${entry.chapter}${verseRef}): ${excerpt}`)
+        parts.push(`\n**${entry.source.englishName}** (${bookName} ${entry.chapter}${verseRef}): ${entry.text}`)
       }
     }
   }
@@ -224,7 +223,7 @@ export async function extractStudyBuilderContext(ctx: StudyBuilderContext): Prom
           if (c.era) lines.push(`Era: ${c.era}`)
           if (c.occupation) lines.push(`Role: ${c.occupation}`)
           if (c.bioBrief) lines.push(`Bio: ${c.bioBrief}`)
-          if (c.faithJourney) lines.push(`Faith journey: ${c.faithJourney.slice(0, 400)}`)
+          if (c.faithJourney) lines.push(`Faith journey: ${c.faithJourney}`)
           if (c.modernParallel) lines.push(`Modern parallel: ${c.modernParallel}`)
           if (c.relationshipsA.length > 0) {
             const rels = c.relationshipsA.map((r: { relationship: string; charB: { name: string } }) => `${r.relationship}: ${r.charB.name}`).join(', ')

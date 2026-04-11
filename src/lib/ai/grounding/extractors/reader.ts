@@ -149,7 +149,7 @@ export async function extractReaderContext(ctx: ReaderContext): Promise<ContextS
       if (profile) {
         if (profile.bioBrief) charLines.push(`  Bio: ${profile.bioBrief}`)
         if (profile.era) charLines.push(`  Era: ${profile.era}`)
-        if (profile.faithJourney) charLines.push(`  Faith journey: ${profile.faithJourney.slice(0, 300)}`)
+        if (profile.faithJourney) charLines.push(`  Faith journey: ${profile.faithJourney}`)
         if (profile.relationshipsA.length > 0) {
           const rels = profile.relationshipsA.map((r: { relationship: string; charB: { name: string } }) => `${r.relationship}: ${r.charB.name}`).join(', ')
           charLines.push(`  Key relationships: ${rels}`)
@@ -210,8 +210,7 @@ export async function extractReaderContext(ctx: ReaderContext): Promise<ContextS
       const lines: string[] = []
       lines.push('\n### Key Hebrew/Greek Words')
       for (const e of topEntries) {
-        const def = e.definition.length > 150 ? e.definition.slice(0, 150) + '...' : e.definition
-        lines.push(`- **${e.word}** (${e.transliteration}, ${e.number}) v.${e.verse}: ${def}`)
+        lines.push(`- **${e.word}** (${e.transliteration}, ${e.number}) v.${e.verse}: ${e.definition}`)
       }
       const content = lines.join('\n')
       if (content) {
@@ -244,12 +243,14 @@ export async function extractReaderContext(ctx: ReaderContext): Promise<ContextS
     const lines: string[] = []
     lines.push('\n### Commentary')
     let commentaryChars = 0
-    const MAX_COMMENTARY_CHARS = 8000
+    const MAX_COMMENTARY_CHARS = 15000
+    const MAX_ENTRY_CHARS = 2000
     for (const c of selected) {
-      const excerpt = c.excerpt.length > 600 ? c.excerpt.slice(0, 600) + '...' : c.excerpt
-      if (commentaryChars + excerpt.length > MAX_COMMENTARY_CHARS) break
-      lines.push(`**${c.author}** (${c.verseRange}): ${excerpt}`)
-      commentaryChars += excerpt.length
+      const text = c.excerpt.length > MAX_ENTRY_CHARS ? c.excerpt.slice(0, MAX_ENTRY_CHARS).replace(/\s+\S*$/, '') + '...' : c.excerpt
+      if (commentaryChars + text.length > MAX_COMMENTARY_CHARS) break
+      lines.push(`**${c.author}** (${c.verseRange}): ${text}`)
+      commentaryChars += text.length
+      commentaryChars += c.excerpt.length
     }
     const content = lines.join('\n')
     if (content) {

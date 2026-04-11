@@ -2,6 +2,7 @@
 
 import { useState, useEffect, useCallback } from 'react'
 import { SettingsView } from '@/components/settings'
+import { useToast } from '@/components/ui/ToastProvider'
 import type {
   SettingsProps,
   AIProvider,
@@ -21,6 +22,7 @@ type SettingsData = {
 
 export default function SettingsPage() {
   const [data, setData] = useState<SettingsData | null>(null)
+  const toast = useToast()
 
   const loadSettings = useCallback(async () => {
     const res = await fetch('/api/settings')
@@ -215,10 +217,10 @@ export default function SettingsPage() {
         const res = await fetch('/api/settings/restore', { method: 'POST', body: formData })
         const result = await res.json()
         if (result.success) {
-          alert('Backup restored successfully. Please reload the page.')
+          toast.success('Backup restored', 'Reload the page to see your restored data.')
           window.location.reload()
         } else {
-          alert(`Restore failed: ${result.error}`)
+          toast.error("Couldn't restore backup", result.error)
         }
       }}
 

@@ -22,10 +22,15 @@ A self-hosted Bible study app with pre-baked contextual knowledge. Everything ru
 ```bash
 git clone https://github.com/foobarninja/selah-app.git
 cd selah-app
+cp .env.example .env
+mkdir -p data
+gh release download v1.0.0 --dir data/
 docker compose up
 ```
 
 Open [http://localhost:4610](http://localhost:4610)
+
+> **Note:** The database (~500MB) is downloaded from GitHub Releases. If you don't have the `gh` CLI, download `selah.db` manually from the [v1.0.0 release](https://github.com/foobarninja/selah-app/releases/tag/v1.0.0) and place it in the `data/` directory.
 
 ## Manual Install
 
@@ -33,6 +38,7 @@ Open [http://localhost:4610](http://localhost:4610)
 
 - Node.js 20+
 - npm 10+
+- [GitHub CLI](https://cli.github.com/) (optional, for downloading the database)
 
 ### Steps
 
@@ -41,10 +47,15 @@ git clone https://github.com/foobarninja/selah-app.git
 cd selah-app
 npm install
 npx prisma generate
+cp .env.example .env
+mkdir -p data
+gh release download v1.0.0 --dir data/
 npm run dev -- -p 4610
 ```
 
 Open [http://localhost:4610](http://localhost:4610)
+
+> **Without `gh` CLI:** Download `selah.db` from the [v1.0.0 release](https://github.com/foobarninja/selah-app/releases/tag/v1.0.0) page and save it to `data/selah.db`.
 
 ## AI Provider Setup
 

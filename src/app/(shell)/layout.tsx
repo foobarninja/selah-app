@@ -1,4 +1,5 @@
 import { AppShell } from '@/components/shell'
+import { ShellProviders } from '@/components/shell/ShellProviders'
 import { getAIConfig } from '@/lib/settings/queries'
 
 export default async function ShellLayout({
@@ -9,11 +10,13 @@ export default async function ShellLayout({
   const aiConfig = await getAIConfig()
 
   return (
-    <AppShell
-      user={{ name: 'Study User' }}
-      isAIConfigured={aiConfig.isConfigured}
-    >
-      {children}
-    </AppShell>
+    <ShellProviders>
+      <AppShell
+        user={{ name: 'Study User' }}
+        isAIConfigured={aiConfig.isConfigured}
+      >
+        {children}
+      </AppShell>
+    </ShellProviders>
   )
 }

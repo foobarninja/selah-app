@@ -3,7 +3,7 @@ services:
   selah:
     build: .
     ports:
-      - "3000:3000"
+      - "4610:4610"
     volumes:
       - selah-data:/app/data
       - selah-backups:/app/backups

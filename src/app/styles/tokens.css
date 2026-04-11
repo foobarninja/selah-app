@@ -80,6 +80,13 @@
   --selah-radius-sm: 6px;
   --selah-radius-md: 10px;
   --selah-radius-lg: 12px;
+
+  /* ── Skeleton Shimmer ── */
+  --selah-shimmer-low: rgba(198,162,60,0.12);
+  --selah-shimmer-high: rgba(245,228,184,0.4);
+
+  /* ── Resurfacing Quote ── */
+  --selah-resurface-quote: var(--selah-gold-100);
 }
 
 /* Dark mode aliases */
@@ -104,6 +111,9 @@
   --selah-text-2: var(--selah-text-light-2);
   --selah-text-3: var(--selah-text-light-3);
   --selah-jesus-words: var(--selah-jesus-light);
+  --selah-shimmer-low: rgba(198,162,60,0.1);
+  --selah-shimmer-high: rgba(198,162,60,0.25);
+  --selah-resurface-quote: var(--selah-gold-700);
 }
 
 /* System preference */
@@ -130,5 +140,59 @@
     --selah-text-2: var(--selah-text-light-2);
     --selah-text-3: var(--selah-text-light-3);
     --selah-jesus-words: var(--selah-jesus-light);
+    --selah-shimmer-low: rgba(198,162,60,0.1);
+    --selah-shimmer-high: rgba(198,162,60,0.25);
+    --selah-resurface-quote: var(--selah-gold-700);
   }
+}
+
+/* ── Keyframes ── */
+
+@keyframes selahShimmer {
+  0% { background-position: -200% 0; }
+  100% { background-position: 200% 0; }
+}
+
+@keyframes selahResurface {
+  from { opacity: 0; transform: translateY(8px); }
+  to { opacity: 1; transform: translateY(0); }
+}
+
+@keyframes selahPageEnter {
+  from { opacity: 0; transform: translateY(6px); }
+  to { opacity: 1; transform: translateY(0); }
+}
+
+@keyframes selahToastIn {
+  from { opacity: 0; transform: translateY(12px); }
+  to { opacity: 1; transform: translateY(0); }
+}
+
+@keyframes selahToastOut {
+  from { opacity: 1; transform: translateY(0); }
+  to { opacity: 0; transform: translateY(12px); }
+}
+
+/* ── Animation Utilities ── */
+
+.animate-shimmer {
+  background: linear-gradient(90deg, var(--selah-shimmer-low) 25%, var(--selah-shimmer-high) 50%, var(--selah-shimmer-low) 75%);
+  background-size: 200% 100%;
+  animation: selahShimmer 2s ease-in-out infinite;
+}
+
+.animate-resurface {
+  animation: selahResurface 400ms ease-out forwards;
+}
+
+.animate-page-enter {
+  animation: selahPageEnter 450ms ease-out forwards;
+}
+
+.animate-toast-in {
+  animation: selahToastIn 250ms ease-out forwards;
+}
+
+.animate-toast-out {
+  animation: selahToastOut 250ms ease-in forwards;
 }

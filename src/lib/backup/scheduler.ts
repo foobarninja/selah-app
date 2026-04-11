@@ -9,7 +9,10 @@ const CHECK_INTERVAL_MS = 60 * 60 * 1000 // 1 hour
  * In dev: ./backups relative to the project root
  */
 function getBackupsDir(): string {
-  return process.env.BACKUPS_DIR || '/app/backups'
+  if (process.env.BACKUPS_DIR) return process.env.BACKUPS_DIR
+  // In production Docker: /app/backups (mounted volume)
+  // In dev: ./backups relative to cwd
+  return process.env.NODE_ENV === 'production' ? '/app/backups' : './backups'
 }
 
 /**
@@ -76,8 +79,14 @@ async function checkAndRunAutoBackup(): Promise<void> {
     const { getBackupInfo, createBackup } = await import('@/lib/settings/queries')
 
     const info = await getBackupInfo()
-    if (!info.autoBackupEnabled) return
-    if (!shouldRunBackupToday(info.lastBackup)) return
+    if (!info.autoBackupEnabled) {
+      console.log('[auto-backup] Skipped — auto-backup is disabled')
+      return
+    }
+    if (!shouldRunBackupToday(info.lastBackup)) {
+      console.log(`[auto-backup] Skipped — already backed up today (${info.lastBackup.slice(0, 10)})`)
+      return
+    }
 
     console.log('[auto-backup] Starting daily backup...')
     const buffer = await createBackup()
@@ -106,7 +115,7 @@ export function startAutoBackupScheduler(): void {
   // Run first check after a short delay (let the server finish starting)
   setTimeout(() => {
     checkAndRunAutoBackup()
-  }, 10_000)
+  }, 3_000)
 
   schedulerInterval = setInterval(() => {
     checkAndRunAutoBackup()

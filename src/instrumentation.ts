@@ -8,7 +8,7 @@
  * See: https://nextjs.org/docs/app/building-your-application/optimizing/instrumentation
  */
 export async function register() {
-  // Only run on the server, not during build or in the browser
+  // Run on the Node.js server runtime (not edge, not during build)
   if (process.env.NEXT_RUNTIME === 'nodejs') {
     const { startAutoBackupScheduler } = await import('@/lib/backup/scheduler')
     startAutoBackupScheduler()

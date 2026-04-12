@@ -303,7 +303,10 @@ function fetchClimateContext(db: Database.Database, entityId: string): {
     SELECT geographic, political, economic, social, religious,
            daily_life as dailyLife, modern_parallel as modernParallel
     FROM climate_contexts WHERE id = ?
-  `).get(entityId) as Record<string, string> | undefined
+  `).get(entityId) as {
+    geographic: string; political: string; economic: string;
+    social: string; religious: string; dailyLife: string; modernParallel: string;
+  } | undefined
   return row ?? null
 }
 

@@ -235,6 +235,7 @@ export async function getSceneCast(
   chapter: number,
   verseStart: number,
   verseEnd: number,
+  visibleTiers?: Set<number>,
 ): Promise<UICharacterAppearance[]> {
   const appearances = await prisma.characterAppearance.findMany({
     where: {
@@ -260,6 +261,10 @@ export async function getSceneCast(
 
   // Sort by role priority
   result.sort((a, b) => ROLE_ORDER.indexOf(a.role) - ROLE_ORDER.indexOf(b.role))
+
+  if (visibleTiers) {
+    return result.filter((item) => visibleTiers.has(item.sourceTier))
+  }
   return result
 }
 
@@ -270,6 +275,7 @@ export async function getThemes(
   chapter: number,
   verseStart: number,
   verseEnd: number,
+  visibleTiers?: Set<number>,
 ): Promise<ThemeAnnotation[]> {
   const passageThemes = await prisma.passageTheme.findMany({
     where: {
@@ -281,12 +287,17 @@ export async function getThemes(
     include: { theme: { select: { name: true } } },
   })
 
-  return passageThemes.map((pt) => ({
+  const result = passageThemes.map((pt) => ({
     themeId: pt.themeId,
     name: pt.theme.name,
     annotation: pt.contextNote ?? '',
     sourceTier: toSourceTier(pt.sourceTier),
   }))
+
+  if (visibleTiers) {
+    return result.filter((item) => visibleTiers.has(item.sourceTier))
+  }
+  return result
 }
 
 // ── Climate contexts ──────────────────────────────────────────────────────────
@@ -296,6 +307,7 @@ export async function getClimateContexts(
   chapter: number,
   verseStart: number,
   verseEnd: number,
+  visibleTiers?: Set<number>,
 ): Promise<UIClimateContext[]> {
   const passageClimates = await prisma.passageClimate.findMany({
     where: {
@@ -307,7 +319,7 @@ export async function getClimateContexts(
     include: { context: true },
   })
 
-  return passageClimates.map((pc) => {
+  const result = passageClimates.map((pc) => {
     // Use passage-specific note, supplemented by parent context if truncated
     let content = pc.contextNote ?? ''
     if (content.length < 500 || !content) {
@@ -326,6 +338,11 @@ export async function getClimateContexts(
       sourceTier: toSourceTier(pc.context.sourceTier),
     }
   })
+
+  if (visibleTiers) {
+    return result.filter((item) => visibleTiers.has(item.sourceTier))
+  }
+  return result
 }
 
 // ── Cross-references ──────────────────────────────────────────────────────────
@@ -335,7 +352,10 @@ export async function getCrossRefs(
   chapter: number,
   verseStart: number,
   verseEnd: number,
+  visibleTiers?: Set<number>,
 ): Promise<UICrossReference[]> {
+  // Cross-references are hardcoded as scholarship tier (2)
+  if (visibleTiers && !visibleTiers.has(2)) return []
   const refs = await prisma.crossReference.findMany({
     where: {
       sourceBook: bookId,
@@ -394,7 +414,10 @@ export async function getCommentaries(
   chapter: number,
   verseStart: number,
   verseEnd: number,
+  visibleTiers?: Set<number>,
 ): Promise<UICommentary[]> {
+  // Commentaries are hardcoded as scholarship tier (2)
+  if (visibleTiers && !visibleTiers.has(2)) return []
   const entries = await prisma.commentaryEntry.findMany({
     where: {
       bookId,
@@ -462,14 +485,15 @@ export async function getPassageContext(
   chapter: number,
   verseStart: number,
   verseEnd: number,
+  visibleTiers?: Set<number>,
 ): Promise<PassageContextResult> {
   const [sceneCast, themes, climateContexts, crossReferences, commentaries] =
     await Promise.all([
-      getSceneCast(bookId, chapter, verseStart, verseEnd),
-      getThemes(bookId, chapter, verseStart, verseEnd),
-      getClimateContexts(bookId, chapter, verseStart, verseEnd),
-      getCrossRefs(bookId, chapter, verseStart, verseEnd),
-      getCommentaries(bookId, chapter, verseStart, verseEnd),
+      getSceneCast(bookId, chapter, verseStart, verseEnd, visibleTiers),
+      getThemes(bookId, chapter, verseStart, verseEnd, visibleTiers),
+      getClimateContexts(bookId, chapter, verseStart, verseEnd, visibleTiers),
+      getCrossRefs(bookId, chapter, verseStart, verseEnd, visibleTiers),
+      getCommentaries(bookId, chapter, verseStart, verseEnd, visibleTiers),
     ])
 
   const lensTags = buildLensTags(sceneCast, themes, climateContexts)

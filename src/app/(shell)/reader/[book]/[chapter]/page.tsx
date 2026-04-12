@@ -1,7 +1,7 @@
 import { notFound } from 'next/navigation'
 import { BOOK_NAMES, BOOK_CHAPTERS } from '@/lib/constants'
 import { getChapterText, getNarrativeContext, getPassageContext, getTranslations } from '@/lib/reader/queries'
-import { getDisplaySettings, getTranslationConfig } from '@/lib/settings/queries'
+import { getDisplaySettings, getStudyPreferences, getTranslationConfig } from '@/lib/settings/queries'
 import { recordReading } from '@/lib/reader/history'
 import { surfaceNotes } from '@/lib/resurfacing'
 import ReaderClient from './ReaderClient'
@@ -26,11 +26,12 @@ export default async function ReaderPage({ params, searchParams }: Props) {
     notFound()
   }
 
-  const [narrativeCtx, translations, displaySettings, translationConfig] = await Promise.all([
+  const [narrativeCtx, translations, displaySettings, translationConfig, studyPrefs] = await Promise.all([
     getNarrativeContext(bookId, chapter),
     getTranslations(),
     getDisplaySettings(),
     getTranslationConfig(),
+    getStudyPreferences(),
   ])
 
   const parallelIds = translationConfig.parallelIds
@@ -43,9 +44,17 @@ export default async function ReaderPage({ params, searchParams }: Props) {
   const { passage, prevUnit, nextUnit } = narrativeCtx
   const verseEnd = passage.verseEnd === 999 ? 200 : passage.verseEnd
 
+  const vis = studyPrefs.sourceTierVisibility
+  const visibleTiers = new Set<number>()
+  if (vis.canon) visibleTiers.add(1)
+  if (vis.scholarship) visibleTiers.add(2)
+  if (vis.historical) visibleTiers.add(3)
+  if (vis.aiAssisted) visibleTiers.add(4)
+  if (vis.conjecture) visibleTiers.add(5)
+
   const [verses, context, resurfacedEntries] = await Promise.all([
     getChapterText(activeTranslation, bookId, chapter, parallelIds),
-    getPassageContext(bookId, chapter, passage.verseStart, verseEnd),
+    getPassageContext(bookId, chapter, passage.verseStart, verseEnd, visibleTiers),
     surfaceNotes(bookId, chapter, passage.verseStart, verseEnd),
   ])
 

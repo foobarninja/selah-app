@@ -1,16 +1,27 @@
 import { getChapterText, getPassageContext } from '@/lib/reader/queries'
 import { BOOK_NAMES } from '@/lib/constants'
 import { prisma } from '@/lib/db'
+import { getStudyPreferences } from '@/lib/settings/queries'
 import type { ReaderContext, ContextSection } from '../../types'
 
 export async function extractReaderContext(ctx: ReaderContext): Promise<ContextSection[]> {
   const { bookId, chapter, verse, translationId = 'BSB' } = ctx
   const bookName = BOOK_NAMES[bookId] ?? bookId
 
+  // Build visible tiers set from study preferences
+  const studyPrefs = await getStudyPreferences()
+  const vis = studyPrefs.sourceTierVisibility
+  const visibleTiers = new Set<number>()
+  if (vis.canon) visibleTiers.add(1)
+  if (vis.scholarship) visibleTiers.add(2)
+  if (vis.historical) visibleTiers.add(3)
+  if (vis.aiAssisted) visibleTiers.add(4)
+  if (vis.conjecture) visibleTiers.add(5)
+
   // Run queries individually so failures in enrichment don't break core data
   const [verses, passageCtx] = await Promise.all([
     getChapterText(translationId, bookId, chapter),
-    getPassageContext(bookId, chapter, 1, 999),
+    getPassageContext(bookId, chapter, 1, 999, visibleTiers),
   ])
 
   const narrativeUnit = await prisma.narrativeUnit.findFirst({

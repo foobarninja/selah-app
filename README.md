@@ -23,14 +23,24 @@ A self-hosted Bible study app with pre-baked contextual knowledge. Everything ru
 
 ### Prerequisites
 
-- [Docker](https://docs.docker.com/get-docker/) with [Docker Compose](https://docs.docker.com/compose/install/)
-- [xz](https://tukaani.org/xz/) to decompress the database (pre-installed on Linux/macOS; on Windows use [7-Zip](https://www.7-zip.org/) or [XZ Utils for Windows](https://tukaani.org/xz/))
+**Docker + Docker Compose:**
+
+- **macOS** — Install [Docker Desktop for Mac](https://docs.docker.com/desktop/install/mac-install/) (includes Compose). Apple Silicon and Intel supported.
+- **Windows** — Install [Docker Desktop for Windows](https://docs.docker.com/desktop/install/windows-install/) (includes Compose). Requires WSL 2.
+- **Linux** — Install [Docker Engine](https://docs.docker.com/engine/install/) plus the [Compose plugin](https://docs.docker.com/compose/install/linux/) via your distro's package manager. Example (Ubuntu/Debian): `sudo apt install docker.io docker-compose-v2`.
+
+**xz** to decompress the database:
+
+- **macOS/Linux** — Usually pre-installed. If not: `brew install xz` (macOS) or `sudo apt install xz-utils` (Debian/Ubuntu).
+- **Windows** — Install [7-Zip](https://www.7-zip.org/) (recommended) or [XZ Utils for Windows](https://tukaani.org/xz/).
+
+### Install
 
 ```bash
 git clone https://github.com/foobarninja/selah-app.git
 cd selah-app
 cp .env.example .env
-curl -L -o data/selah.db.xz https://huggingface.co/datasets/foooobear/selah-db/resolve/main/selah.db.xz
+curl -L -o data/selah.db.xz https://huggingface.co/datasets/foooobear/selah-db/resolve/main/selah-seed.db.xz
 xz -d data/selah.db.xz
 docker compose up
 ```
@@ -49,7 +59,7 @@ Open [http://localhost:4610](http://localhost:4610)
 
 - Node.js 22+
 - npm 10+
-- [xz](https://tukaani.org/xz/) to decompress the database (see note above)
+- [xz](https://tukaani.org/xz/) to decompress the database (see Quick Start prerequisites above)
 
 ### Steps
 
@@ -59,14 +69,14 @@ cd selah-app
 npm install
 npx prisma generate
 cp .env.example .env
-curl -L -o data/selah.db.xz https://huggingface.co/datasets/foooobear/selah-db/resolve/main/selah.db.xz
+curl -L -o data/selah.db.xz https://huggingface.co/datasets/foooobear/selah-db/resolve/main/selah-seed.db.xz
 xz -d data/selah.db.xz
 npm run dev -- -p 4610
 ```
 
 Open [http://localhost:4610](http://localhost:4610)
 
-> **Manual download:** If `curl` fails, download `selah.db.xz` from the [Hugging Face dataset page](https://huggingface.co/datasets/foooobear/selah-db/blob/main/selah.db.xz) directly and save it to `data/selah.db.xz` before running `xz -d`.
+> **Manual download:** If `curl` fails, download `selah-seed.db.xz` from the [Hugging Face dataset page](https://huggingface.co/datasets/foooobear/selah-db/blob/main/selah-seed.db.xz) directly, save it as `data/selah.db.xz`, then run `xz -d data/selah.db.xz`.
 
 ## AI Provider Setup
 

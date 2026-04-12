@@ -42,12 +42,21 @@ cd selah-app
 cp .env.example .env
 curl -L -o data/selah.db.xz https://huggingface.co/datasets/foooobear/selah-db/resolve/main/selah-seed.db.xz
 xz -d data/selah.db.xz
-docker compose up
+docker compose up -d
 ```
 
 Open [http://localhost:4610](http://localhost:4610)
 
-> **First build:** Expect ~15 minutes the first time you run `docker compose up` — `better-sqlite3` compiles native bindings from source and the dependency tree is large. Subsequent builds use the Docker layer cache and finish in seconds.
+**Managing the container:**
+
+```bash
+docker compose logs -f   # follow logs
+docker compose stop      # stop the app (keeps data)
+docker compose down      # stop and remove the container (keeps data volume)
+docker compose up -d     # start again
+```
+
+> **First build:** Expect ~15 minutes the first time you run `docker compose up -d` — `better-sqlite3` compiles native bindings from source and the dependency tree is large. Subsequent builds use the Docker layer cache and finish in seconds. The `-d` flag runs it detached so your terminal stays free.
 
 > **Windows PowerShell:** For decompression, right-click `selah.db.xz` in File Explorer and use 7-Zip → Extract Here.
 

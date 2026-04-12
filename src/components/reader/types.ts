@@ -152,6 +152,8 @@ export interface ReaderProps {
   showStrongs?: boolean
   showCrossReferences?: boolean
   showFootnotes?: boolean
+  /** When true, the "Additional commentaries" section starts expanded */
+  showExtendedCommentary?: boolean
 
   /** Navigate to a different passage by narrative unit ID or passage reference */
   onNavigatePassage?: (passageRef: string) => void

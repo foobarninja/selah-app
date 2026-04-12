@@ -175,6 +175,8 @@ interface ContextDrawerProps {
   climateContexts: ClimateContext[]
   crossReferences: CrossReference[]
   commentaries: Commentary[]
+  /** Initial expand state for "Additional commentaries" — from user settings */
+  showExtendedCommentaryByDefault?: boolean
   onClose?: () => void
   onOpenCharacterProfile?: (characterId: string) => void
   onOpenThemeDetail?: (themeId: string) => void
@@ -187,12 +189,13 @@ export function ContextDrawer({
   climateContexts,
   crossReferences,
   commentaries,
+  showExtendedCommentaryByDefault = false,
   onClose,
   onOpenCharacterProfile,
   onOpenThemeDetail,
   onFollowCrossReference,
 }: ContextDrawerProps) {
-  const [showExtended, setShowExtended] = useState(false)
+  const [showExtended, setShowExtended] = useState(showExtendedCommentaryByDefault)
   const curatedCommentaries = commentaries.filter((c) => c.displayTier === 'curated')
   const extendedCommentaries = commentaries.filter((c) => c.displayTier === 'extended')
 

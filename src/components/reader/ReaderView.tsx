@@ -488,6 +488,7 @@ export function ReaderView({
   showStrongs = true,
   showCrossReferences = true,
   showFootnotes = true,
+  showExtendedCommentary = false,
 }: ReaderProps) {
   const [drawerOpen, setDrawerOpen] = useState(true)
   const [mobileDrawerOpen, setMobileDrawerOpen] = useState(false)
@@ -672,6 +673,7 @@ export function ReaderView({
             climateContexts={climateContexts}
             crossReferences={showCrossReferences ? crossReferences : []}
             commentaries={commentaries}
+            showExtendedCommentaryByDefault={showExtendedCommentary}
             onClose={() => setDrawerOpen(false)}
             onOpenCharacterProfile={onOpenCharacterProfile}
             onOpenThemeDetail={onOpenThemeDetail}
@@ -759,6 +761,7 @@ export function ReaderView({
                 climateContexts={climateContexts}
                 crossReferences={showCrossReferences ? crossReferences : []}
                 commentaries={commentaries}
+                showExtendedCommentaryByDefault={showExtendedCommentary}
                 onClose={() => setMobileDrawerOpen(false)}
                 onOpenCharacterProfile={onOpenCharacterProfile}
                 onOpenThemeDetail={onOpenThemeDetail}

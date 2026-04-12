@@ -84,6 +84,7 @@ export default async function ReaderPage({ params, searchParams }: Props) {
       showStrongs={displaySettings.showStrongs}
       showCrossReferences={displaySettings.showCrossReferences}
       showFootnotes={displaySettings.showFootnotes}
+      showExtendedCommentary={studyPrefs.commentaryDisplay === 'curated-extended'}
     />
   )
 }

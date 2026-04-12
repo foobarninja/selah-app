@@ -405,9 +405,22 @@ export async function getCommentaries(
       ],
     },
     include: { source: { select: { id: true, englishName: true } } },
+    orderBy: { id: 'asc' },
   })
 
-  return entries.map((e) => ({
+  // Defensive dedup: some commentary sources have identical duplicate rows in the
+  // import (same source + verse + text). Key on sourceId+verse+text so that
+  // legitimately different notes on the same verse are preserved.
+  const seen = new Set<string>()
+  const unique: typeof entries = []
+  for (const e of entries) {
+    const key = `${e.source.id}|${e.verse ?? '-'}|${e.text}`
+    if (seen.has(key)) continue
+    seen.add(key)
+    unique.push(e)
+  }
+
+  return unique.map((e) => ({
     id: String(e.id),
     author: e.source.englishName,
     excerpt: e.text,

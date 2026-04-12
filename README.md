@@ -43,7 +43,7 @@ Open [http://localhost:4610](http://localhost:4610)
 
 ### Prerequisites
 
-- Node.js 20+
+- Node.js 22+
 - npm 10+
 - [xz](https://tukaani.org/xz/) to decompress the database (see note above)
 

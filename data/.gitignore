@@ -2,6 +2,7 @@
 sources/bible.eng.db
 sources/strongs/
 sources/*.json
+sources/*.txt
 
 # Keep the directory structure
 !sources/.gitkeep

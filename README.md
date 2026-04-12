@@ -28,7 +28,6 @@ A self-hosted Bible study app with pre-baked contextual knowledge. Everything ru
 git clone https://github.com/foobarninja/selah-app.git
 cd selah-app
 cp .env.example .env
-mkdir -p data
 curl -L -o data/selah.db.xz https://huggingface.co/datasets/foooobear/selah-db/resolve/main/selah.db.xz
 xz -d data/selah.db.xz
 docker compose up
@@ -36,7 +35,7 @@ docker compose up
 
 Open [http://localhost:4610](http://localhost:4610)
 
-> **Windows PowerShell:** Use `mkdir data` instead of `mkdir -p data`. For decompression, right-click `selah.db.xz` in File Explorer and use 7-Zip → Extract Here.
+> **Windows PowerShell:** For decompression, right-click `selah.db.xz` in File Explorer and use 7-Zip → Extract Here.
 
 > **Note:** The database is hosted on [Hugging Face Datasets](https://huggingface.co/datasets/foooobear/selah-db) (~83MB compressed, ~500MB decompressed). No account is required to download.
 
@@ -56,7 +55,6 @@ cd selah-app
 npm install
 npx prisma generate
 cp .env.example .env
-mkdir -p data
 curl -L -o data/selah.db.xz https://huggingface.co/datasets/foooobear/selah-db/resolve/main/selah.db.xz
 xz -d data/selah.db.xz
 npm run dev -- -p 4610

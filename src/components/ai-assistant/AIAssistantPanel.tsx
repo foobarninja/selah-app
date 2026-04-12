@@ -73,14 +73,45 @@ function MessageBubble({ message, onSave, onCopy, onSaveToCollection, isStreamin
   const [copied, setCopied] = useState(false)
   const [collected, setCollected] = useState(false)
 
-  const handleCopy = () => {
+  const handleCopy = async () => {
     if (!message.content) return
-    navigator.clipboard.writeText(message.content).then(() => {
+    const text = message.content
+
+    const showCopied = () => {
       setCopied(true)
       setTimeout(() => setCopied(false), 1500)
-    }).catch(() => {
-      // Clipboard permission denied or unavailable — fail silently.
-    })
+    }
+
+    // Prefer the async Clipboard API (secure contexts: HTTPS or localhost)
+    if (typeof navigator !== 'undefined' && navigator.clipboard && window.isSecureContext) {
+      try {
+        await navigator.clipboard.writeText(text)
+        showCopied()
+        onCopy?.()
+        return
+      } catch {
+        // fall through to legacy path
+      }
+    }
+
+    // Legacy fallback — works over plain HTTP (e.g., LAN production deploys)
+    try {
+      const textarea = document.createElement('textarea')
+      textarea.value = text
+      textarea.setAttribute('readonly', '')
+      textarea.style.position = 'fixed'
+      textarea.style.top = '0'
+      textarea.style.left = '0'
+      textarea.style.opacity = '0'
+      document.body.appendChild(textarea)
+      textarea.focus()
+      textarea.select()
+      const ok = document.execCommand('copy')
+      document.body.removeChild(textarea)
+      if (ok) showCopied()
+    } catch {
+      // Clipboard unavailable — fail silently.
+    }
     onCopy?.()
   }
 

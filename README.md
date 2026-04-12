@@ -23,14 +23,13 @@ A self-hosted Bible study app with pre-baked contextual knowledge. Everything ru
 
 - [Docker](https://docs.docker.com/get-docker/) with [Docker Compose](https://docs.docker.com/compose/install/)
 - [xz](https://tukaani.org/xz/) to decompress the database (pre-installed on Linux/macOS; on Windows use [7-Zip](https://www.7-zip.org/) or [XZ Utils for Windows](https://tukaani.org/xz/))
-- [GitHub CLI](https://cli.github.com/) (optional, for downloading the database)
 
 ```bash
 git clone https://github.com/foobarninja/selah-app.git
 cd selah-app
 cp .env.example .env
 mkdir -p data
-gh release download v1.0.0 --dir data/ --pattern "selah.db.xz"
+curl -L -o data/selah.db.xz https://huggingface.co/datasets/foooobear/selah-db/resolve/main/selah.db.xz
 xz -d data/selah.db.xz
 docker compose up
 ```
@@ -39,7 +38,7 @@ Open [http://localhost:4610](http://localhost:4610)
 
 > **Windows PowerShell:** Use `mkdir data` instead of `mkdir -p data`. For decompression, right-click `selah.db.xz` in File Explorer and use 7-Zip → Extract Here.
 
-> **Note:** The compressed database is ~83MB; decompressed it's ~500MB. If you don't have the `gh` CLI, download `selah.db.xz` manually from the [v1.0.0 release](https://github.com/foobarninja/selah-app/releases/tag/v1.0.0) and place it in the `data/` directory before decompressing.
+> **Note:** The database is hosted on [Hugging Face Datasets](https://huggingface.co/datasets/foooobear/selah-db) (~83MB compressed, ~500MB decompressed). No account is required to download.
 
 ## Manual Install
 
@@ -48,7 +47,6 @@ Open [http://localhost:4610](http://localhost:4610)
 - Node.js 20+
 - npm 10+
 - [xz](https://tukaani.org/xz/) to decompress the database (see note above)
-- [GitHub CLI](https://cli.github.com/) (optional, for downloading the database)
 
 ### Steps
 
@@ -59,14 +57,14 @@ npm install
 npx prisma generate
 cp .env.example .env
 mkdir -p data
-gh release download v1.0.0 --dir data/ --pattern "selah.db.xz"
+curl -L -o data/selah.db.xz https://huggingface.co/datasets/foooobear/selah-db/resolve/main/selah.db.xz
 xz -d data/selah.db.xz
 npm run dev -- -p 4610
 ```
 
 Open [http://localhost:4610](http://localhost:4610)
 
-> **Without `gh` CLI:** Download `selah.db.xz` from the [v1.0.0 release](https://github.com/foobarninja/selah-app/releases/tag/v1.0.0) page, save it to `data/selah.db.xz`, then decompress it.
+> **Manual download:** If `curl` fails, download `selah.db.xz` from the [Hugging Face dataset page](https://huggingface.co/datasets/foooobear/selah-db/blob/main/selah.db.xz) directly and save it to `data/selah.db.xz` before running `xz -d`.
 
 ## AI Provider Setup
 

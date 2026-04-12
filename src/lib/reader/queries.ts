@@ -38,8 +38,9 @@ export async function getChapterText(
   translationId: string,
   bookId: string,
   chapter: number,
+  parallelIds: string[] = [],
 ): Promise<Verse[]> {
-  const [verses, strongsMaps, footnotes] = await Promise.all([
+  const [verses, strongsMaps, footnotes, parallelVerses, parallelTranslations] = await Promise.all([
     prisma.verse.findMany({
       where: { translationId, bookId, chapter },
       orderBy: { verse: 'asc' },
@@ -52,6 +53,19 @@ export async function getChapterText(
     prisma.footnote.findMany({
       where: { translationId, bookId, chapter },
     }),
+    parallelIds.length > 0
+      ? prisma.verse.findMany({
+          where: { translationId: { in: parallelIds }, bookId, chapter },
+          select: { translationId: true, verse: true, text: true },
+          orderBy: { verse: 'asc' },
+        })
+      : Promise.resolve([]),
+    parallelIds.length > 0
+      ? prisma.translation.findMany({
+          where: { id: { in: parallelIds } },
+          select: { id: true, shortName: true },
+        })
+      : Promise.resolve([]),
   ])
 
   // Group Strong's by verse number
@@ -68,6 +82,24 @@ export async function getChapterText(
     const arr = footnotesByVerse.get(fn.verse) ?? []
     arr.push(fn)
     footnotesByVerse.set(fn.verse, arr)
+  }
+
+  // Build shortName lookup for parallel translations
+  const shortNameById = new Map<string, string>()
+  for (const t of parallelTranslations) {
+    shortNameById.set(t.id, t.shortName)
+  }
+
+  // Group parallel verses by verse number, preserving parallelIds order
+  const parallelByVerse = new Map<number, Array<{ translation: string; text: string }>>()
+  for (const id of parallelIds) {
+    const label = shortNameById.get(id) ?? id
+    for (const pv of parallelVerses) {
+      if (pv.translationId !== id) continue
+      const arr = parallelByVerse.get(pv.verse) ?? []
+      arr.push({ translation: label, text: pv.text })
+      parallelByVerse.set(pv.verse, arr)
+    }
   }
 
   return verses.map((v) => {
@@ -87,7 +119,7 @@ export async function getChapterText(
       wordsOfJesus: Boolean(v.wordsOfJesus),
       strongs,
       footnotes: fnotes,
-      parallelTexts: [],
+      parallelTexts: parallelByVerse.get(v.verse) ?? [],
     }
   })
 }

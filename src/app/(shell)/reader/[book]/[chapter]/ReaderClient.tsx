@@ -49,7 +49,7 @@ export default function ReaderClient({
   const [activeVerse, setActiveVerse] = useState<number | undefined>(undefined)
   const [selectedVerses, setSelectedVerses] = useState<Set<number>>(new Set())
   const lastClickedVerse = useRef<number | undefined>(undefined)
-  const [parallelTranslations] = useState<string[]>([])
+  const parallelTranslations: string[] = []
   const [showBookPicker, setShowBookPicker] = useState(false)
   const [showTranslationPicker, setShowTranslationPicker] = useState(false)
   const [showNoteEditor, setShowNoteEditor] = useState(false)

@@ -1,7 +1,7 @@
 import { notFound } from 'next/navigation'
 import { BOOK_NAMES, BOOK_CHAPTERS } from '@/lib/constants'
 import { getChapterText, getNarrativeContext, getPassageContext, getTranslations } from '@/lib/reader/queries'
-import { getDisplaySettings } from '@/lib/settings/queries'
+import { getDisplaySettings, getTranslationConfig } from '@/lib/settings/queries'
 import { recordReading } from '@/lib/reader/history'
 import { surfaceNotes } from '@/lib/resurfacing'
 import ReaderClient from './ReaderClient'
@@ -26,11 +26,14 @@ export default async function ReaderPage({ params, searchParams }: Props) {
     notFound()
   }
 
-  const [narrativeCtx, translations, displaySettings] = await Promise.all([
+  const [narrativeCtx, translations, displaySettings, translationConfig] = await Promise.all([
     getNarrativeContext(bookId, chapter),
     getTranslations(),
     getDisplaySettings(),
+    getTranslationConfig(),
   ])
+
+  const parallelIds = translationConfig.parallelIds
 
   // Use requested translation or default to BSB
   const activeTranslation = translationParam && translations.some((t) => t.id === translationParam)
@@ -41,7 +44,7 @@ export default async function ReaderPage({ params, searchParams }: Props) {
   const verseEnd = passage.verseEnd === 999 ? 200 : passage.verseEnd
 
   const [verses, context, resurfacedEntries] = await Promise.all([
-    getChapterText(activeTranslation, bookId, chapter),
+    getChapterText(activeTranslation, bookId, chapter, parallelIds),
     getPassageContext(bookId, chapter, passage.verseStart, verseEnd),
     surfaceNotes(bookId, chapter, passage.verseStart, verseEnd),
   ])

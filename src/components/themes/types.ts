@@ -47,6 +47,8 @@ export interface ThemePassage {
   passageTitle: string
   annotation: string
   sourceTier: SourceTier
+  bookId: string
+  chapter: number
 }
 
 export interface ConnectedCharacter {

@@ -132,7 +132,7 @@ function PassageEntry({ passage, onNavigate }: { passage: ThemePassage; onNaviga
 }
 
 /* ── Era group ── */
-function EraGroup({ era, passages, onNavigatePassage }: { era: string; passages: ThemePassage[]; onNavigatePassage?: (ref: string) => void }) {
+function EraGroup({ era, passages, onNavigatePassage }: { era: string; passages: ThemePassage[]; onNavigatePassage?: (bookId: string, chapter: number) => void }) {
   const [isOpen, setIsOpen] = useState(true)
   return (
     <div className="mb-6">
@@ -159,7 +159,7 @@ function EraGroup({ era, passages, onNavigatePassage }: { era: string; passages:
             <PassageEntry
               key={passage.id}
               passage={passage}
-              onNavigate={() => onNavigatePassage?.(passage.passageRef)}
+              onNavigate={() => onNavigatePassage?.(passage.bookId, passage.chapter)}
             />
           ))}
         </div>
@@ -226,7 +226,7 @@ function RelatedPill({ theme, onOpen }: { theme: RelatedTheme; onOpen?: () => vo
 interface ThemeProfileProps {
   profile: ThemeProfileType
   onBack?: () => void
-  onNavigatePassage?: (passageRef: string) => void
+  onNavigatePassage?: (bookId: string, chapter: number) => void
   onNavigateBook?: (bookId: string, chapter: number) => void
   onOpenCharacter?: (characterId: string) => void
   onOpenRelatedTheme?: (themeId: string) => void

@@ -11,8 +11,8 @@ export default function ThemeProfileClient({ profile }: { profile: ThemeProfile 
     <ThemeProfileView
       profile={profile}
       onBack={() => router.back()}
-      onNavigatePassage={(ref) => {
-        router.push(`/reader?passage=${encodeURIComponent(ref)}`)
+      onNavigatePassage={(bookId, chapter) => {
+        router.push(`/reader/${bookId}/${chapter}`)
       }}
       onNavigateBook={(bookId, chapter) => {
         router.push(`/reader/${bookId}/${chapter}`)

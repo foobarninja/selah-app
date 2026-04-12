@@ -158,6 +158,8 @@ async function getThemePassages(themeId: string): Promise<ThemePassageWithEra[]>
       passageTitle: `${bookName} ${r.chapter}`,
       annotation: r.contextNote ?? '',
       sourceTier: toSourceTier(r.sourceTier),
+      bookId: r.bookId,
+      chapter: r.chapter,
       era,
     }
   })

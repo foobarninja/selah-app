@@ -698,9 +698,10 @@ export function ReaderView({
       )}
 
       {/* ── Mobile context trigger ── */}
+      {/* Stacked above the global AIToggleButton (fixed bottom:24/right:24, 48px circle) */}
       <button
         onClick={() => setMobileDrawerOpen(true)}
-        className="md:hidden fixed bottom-6 right-6 z-30 flex items-center gap-2 rounded-full shadow-lg transition-all duration-150"
+        className="md:hidden fixed bottom-24 right-6 z-30 flex items-center gap-2 rounded-full shadow-lg transition-all duration-150"
         style={{
           padding: '12px 20px',
           backgroundColor: 'var(--selah-bg-surface, #1C1917)',

@@ -19,7 +19,7 @@ export interface SeasonalCard { isActive: boolean; season: string; week: number;
 export interface GoingDeeper { narrativeUnitRef: string; prompt: string }
 
 export interface Devotional {
-  id: string; title: string; passageRef: string; audienceLevel: AudienceLevel
+  id: string; title: string; bookId: string; chapter: number; passageRef: string; audienceLevel: AudienceLevel
   estimatedMinutes: number; seasonalSet: SeasonalSet; moodMatch: string
   passage: string; contextBrief: string; modernMoment: string
   conversationStarters: string[]; goingDeeper: GoingDeeper
@@ -53,7 +53,7 @@ export interface DailyBreadProps {
   onBeginSeasonal?: (devotionalId: string) => void
   onChangeTab?: (tab: DailyBreadTab) => void
   onOverrideAudience?: (level: AudienceLevel) => void
-  onNavigatePassage?: (passageRef: string) => void
+  onNavigatePassage?: (bookId: string, chapter: number) => void
   onComplete?: (notes: string, rating: number | null) => void
   onOpenDevotional?: (devotionalId: string) => void
   onDismissCloseOut?: () => void

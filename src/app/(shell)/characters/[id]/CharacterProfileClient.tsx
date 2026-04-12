@@ -11,15 +11,8 @@ export default function CharacterProfileClient({ profile }: { profile: Character
     <CharacterProfileView
       profile={profile}
       onBack={() => router.back()}
-      onNavigatePassage={(ref) => {
-        // Parse "Genesis 1:1-5" → /reader/GEN/1
-        const match = ref.match(/^(\w[\w\s]+?)\s+(\d+)/)
-        if (match) {
-          const bookName = match[1]
-          const chapter = match[2]
-          // Reverse lookup book ID from name
-          router.push(`/reader?passage=${encodeURIComponent(ref)}`)
-        }
+      onNavigatePassage={(bookId, chapter) => {
+        router.push(`/reader/${bookId}/${chapter}`)
       }}
       onOpenCharacter={(id) => router.push(`/characters/${id}`)}
       onOpenTheme={(id) => router.push(`/themes/${id}`)}

@@ -106,6 +106,8 @@ export async function getCuratedOccurrences(
 
     return {
       id: String(m.id),
+      bookId: m.bookId,
+      chapter: m.chapter,
       verseRef: `${bookName} ${m.chapter}:${m.verse}`,
       verseText,
       rendering: word,
@@ -166,7 +168,7 @@ export async function getNarrativeConnections(strongsNumber: string): Promise<Na
     take: 50,
   })
 
-  const unitMap = new Map<string, { title: string; themes: string[] }>()
+  const unitMap = new Map<string, { bookId: string; chapter: number; title: string; themes: string[] }>()
 
   for (const vm of verseMaps) {
     const units = await prisma.narrativeUnit.findMany({
@@ -175,13 +177,15 @@ export async function getNarrativeConnections(strongsNumber: string): Promise<Na
         chapterStart: { lte: vm.chapter },
         OR: [{ chapterEnd: { gte: vm.chapter } }, { chapterEnd: null }],
       },
-      select: { id: true, title: true, conceptualNote: true },
+      select: { id: true, bookId: true, chapterStart: true, title: true, conceptualNote: true },
       take: 1,
     })
 
     for (const u of units) {
       if (!unitMap.has(u.id)) {
         unitMap.set(u.id, {
+          bookId: u.bookId,
+          chapter: u.chapterStart,
           title: u.title,
           themes: u.conceptualNote ? [u.conceptualNote.substring(0, 50)] : [],
         })
@@ -193,6 +197,8 @@ export async function getNarrativeConnections(strongsNumber: string): Promise<Na
 
   return Array.from(unitMap.entries()).map(([id, val]) => ({
     narrativeUnitRef: id,
+    bookId: val.bookId,
+    chapter: val.chapter,
     title: val.title,
     themes: val.themes,
   }))

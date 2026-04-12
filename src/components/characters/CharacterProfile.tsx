@@ -234,7 +234,7 @@ function RelationshipRow({
 interface CharacterProfileComponentProps {
   profile: CharacterProfileType
   onBack?: () => void
-  onNavigatePassage?: (passageRef: string) => void
+  onNavigatePassage?: (bookId: string, chapter: number) => void
   onOpenCharacter?: (characterId: string) => void
   onOpenTheme?: (themeId: string) => void
 }
@@ -342,7 +342,7 @@ export function CharacterProfileView({
                 key={app.id}
                 appearance={app}
                 isLast={i === profile.appearances.length - 1}
-                onNavigate={() => onNavigatePassage?.(app.passageRef)}
+                onNavigate={() => onNavigatePassage?.(app.bookId, app.chapter)}
               />
             ))}
           </div>

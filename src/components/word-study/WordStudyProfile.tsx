@@ -362,7 +362,7 @@ export function WordStudyProfile({
               key={occ.id}
               entry={occ}
               language={entry.language}
-              onNavigate={() => onNavigatePassage?.(occ.verseRef)}
+              onNavigate={() => onNavigatePassage?.(occ.bookId, occ.chapter)}
             />
           ))}
 
@@ -408,7 +408,7 @@ export function WordStudyProfile({
             {narrativeConnections.map((nc) => (
               <button
                 key={nc.narrativeUnitRef}
-                onClick={() => onOpenNarrativeUnit?.(nc.narrativeUnitRef)}
+                onClick={() => onOpenNarrativeUnit?.(nc.bookId, nc.chapter)}
                 className="flex items-start gap-3 w-full text-left rounded-lg mb-2 transition-colors duration-150"
                 style={{
                   padding: '12px 16px',

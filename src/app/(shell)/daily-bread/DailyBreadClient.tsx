@@ -89,7 +89,7 @@ export default function DailyBreadClient({
         onBack={handleBackFromReading}
         onComplete={onComplete}
         onOverrideAudience={setAudienceLevel}
-        onNavigatePassage={(ref) => router.push(`/reader?passage=${encodeURIComponent(ref)}`)}
+        onNavigatePassage={(bookId, chapter) => router.push(`/reader/${bookId}/${chapter}`)}
       />
     )
   }

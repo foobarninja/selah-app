@@ -33,6 +33,8 @@ export interface TranslationCluster {
 
 export interface ConcordanceEntry {
   id: string
+  bookId: string
+  chapter: number
   verseRef: string
   verseText: string
   rendering: string
@@ -54,6 +56,8 @@ export interface RelatedWord {
 
 export interface NarrativeConnection {
   narrativeUnitRef: string
+  bookId: string
+  chapter: number
   title: string
   themes: string[]
 }
@@ -72,7 +76,7 @@ export interface WordStudyProps {
 
   onBack?: () => void
   onSearch?: (query: string) => void
-  onNavigatePassage?: (passageRef: string) => void
+  onNavigatePassage?: (bookId: string, chapter: number) => void
   onOpenEntry?: (strongsNumber: string) => void
-  onOpenNarrativeUnit?: (narrativeUnitRef: string) => void
+  onOpenNarrativeUnit?: (bookId: string, chapter: number) => void
 }

@@ -18,12 +18,12 @@ export default function WordStudyClient(props: Props) {
           router.push(`/word-study/${q.toUpperCase()}`)
         }
       }}
-      onNavigatePassage={(ref) => {
-        router.push(`/reader?passage=${encodeURIComponent(ref)}`)
+      onNavigatePassage={(bookId, chapter) => {
+        router.push(`/reader/${bookId}/${chapter}`)
       }}
       onOpenEntry={(number) => router.push(`/word-study/${number}`)}
-      onOpenNarrativeUnit={(ref) => {
-        router.push(`/reader?passage=${encodeURIComponent(ref)}`)
+      onOpenNarrativeUnit={(bookId, chapter) => {
+        router.push(`/reader/${bookId}/${chapter}`)
       }}
     />
   )

@@ -128,6 +128,8 @@ async function getCharacterAppearances(characterId: string): Promise<CharacterAp
     const verseEnd = r.verseEnd ? `-${r.verseEnd}` : ''
     return {
       id: String(r.id),
+      bookId: r.bookId,
+      chapter: r.chapter,
       passageRef: `${bookName} ${r.chapter}:${r.verseStart}${verseEnd}`,
       passageTitle: r.narrativeNote ?? `${bookName} ${r.chapter}`,
       role: r.role as SceneRole,

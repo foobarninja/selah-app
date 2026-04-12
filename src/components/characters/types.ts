@@ -59,6 +59,8 @@ export interface CharacterSummary {
 
 export interface CharacterAppearance {
   id: string
+  bookId: string
+  chapter: number
   passageRef: string
   passageTitle: string
   role: SceneRole
@@ -122,7 +124,7 @@ export interface CharactersProps {
   /** Clear all active filters */
   onClearFilters?: () => void
   /** Navigate to a passage in the Reader */
-  onNavigatePassage?: (passageRef: string) => void
+  onNavigatePassage?: (bookId: string, chapter: number) => void
   /** Open a theme's detail view */
   onOpenTheme?: (themeId: string) => void
   /** Refresh the discover card with a new character */

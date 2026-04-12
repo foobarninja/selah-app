@@ -167,6 +167,8 @@ async function mapDevotional(dev: {
   return {
     id: dev.id,
     title: dev.title,
+    bookId: dev.bookId,
+    chapter: dev.chapter,
     passageRef,
     audienceLevel: dev.audience as Devotional['audienceLevel'],
     estimatedMinutes: dev.estimatedMinutes,

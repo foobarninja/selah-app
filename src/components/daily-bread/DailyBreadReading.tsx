@@ -48,7 +48,7 @@ interface DailyBreadReadingProps {
   currentAudienceLevel: AudienceLevel
   onBack?: () => void
   onOverrideAudience?: (level: AudienceLevel) => void
-  onNavigatePassage?: (passageRef: string) => void
+  onNavigatePassage?: (bookId: string, chapter: number) => void
   onComplete?: (notes: string, rating: number | null) => void
   onDismissCloseOut?: () => void
 }
@@ -117,7 +117,7 @@ export function DailyBreadReading({ devotional, currentAudienceLevel, onBack, on
         </div>
 
         <div className="mb-12">
-          <button onClick={() => onNavigatePassage?.(devotional.goingDeeper.narrativeUnitRef)} className="flex items-center gap-3 w-full text-left rounded-lg transition-colors duration-150" style={{ padding: '14px 18px', backgroundColor: 'var(--selah-bg-surface, #1C1917)', border: '1px solid var(--selah-border-color, #3D3835)', cursor: 'pointer' }} onMouseEnter={(e) => { (e.currentTarget as HTMLElement).style.borderColor = 'var(--selah-gold-300, #E8C767)' }} onMouseLeave={(e) => { (e.currentTarget as HTMLElement).style.borderColor = 'var(--selah-border-color, #3D3835)' }}>
+          <button onClick={() => onNavigatePassage?.(devotional.bookId, devotional.chapter)} className="flex items-center gap-3 w-full text-left rounded-lg transition-colors duration-150" style={{ padding: '14px 18px', backgroundColor: 'var(--selah-bg-surface, #1C1917)', border: '1px solid var(--selah-border-color, #3D3835)', cursor: 'pointer' }} onMouseEnter={(e) => { (e.currentTarget as HTMLElement).style.borderColor = 'var(--selah-gold-300, #E8C767)' }} onMouseLeave={(e) => { (e.currentTarget as HTMLElement).style.borderColor = 'var(--selah-border-color, #3D3835)' }}>
             <div className="flex-1">
               <p style={{ fontFamily: font.body, fontSize: '10px', fontWeight: 500, textTransform: 'uppercase', letterSpacing: '1px', color: 'var(--selah-text-3, #6E695F)', marginBottom: '4px' }}>Going deeper</p>
               <p style={{ fontFamily: font.body, fontSize: '14px', color: 'var(--selah-text-2, #A39E93)', lineHeight: 1.5 }}>{devotional.goingDeeper.prompt}</p>

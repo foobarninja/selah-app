@@ -19,6 +19,11 @@ A self-hosted Bible study app with pre-baked contextual knowledge. Everything ru
 
 ## Quick Start
 
+### Prerequisites
+
+- [Docker](https://docs.docker.com/get-docker/) with [Docker Compose](https://docs.docker.com/compose/install/)
+- [GitHub CLI](https://cli.github.com/) (optional, for downloading the database)
+
 ```bash
 git clone https://github.com/foobarninja/selah-app.git
 cd selah-app

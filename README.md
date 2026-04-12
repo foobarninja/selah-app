@@ -35,6 +35,8 @@ docker compose up
 
 Open [http://localhost:4610](http://localhost:4610)
 
+> **Windows PowerShell:** Use `mkdir data` instead of `mkdir -p data` (PowerShell doesn't need the `-p` flag).
+
 > **Note:** The database (~500MB) is downloaded from GitHub Releases. If you don't have the `gh` CLI, download `selah.db` manually from the [v1.0.0 release](https://github.com/foobarninja/selah-app/releases/tag/v1.0.0) and place it in the `data/` directory.
 
 ## Manual Install

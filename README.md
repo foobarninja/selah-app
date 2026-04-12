@@ -1,5 +1,7 @@
 # Selah
 
+*For Chris — a brother in life, a brother in Christ. Built with love, inspired by your walk.*
+
 A self-hosted Bible study app with pre-baked contextual knowledge. Everything runs on your machine — no accounts, no cloud, no tracking.
 
 ## Features
@@ -34,6 +36,8 @@ docker compose up
 ```
 
 Open [http://localhost:4610](http://localhost:4610)
+
+> **First build:** Expect ~15 minutes the first time you run `docker compose up` — `better-sqlite3` compiles native bindings from source and the dependency tree is large. Subsequent builds use the Docker layer cache and finish in seconds.
 
 > **Windows PowerShell:** For decompression, right-click `selah.db.xz` in File Explorer and use 7-Zip → Extract Here.
 

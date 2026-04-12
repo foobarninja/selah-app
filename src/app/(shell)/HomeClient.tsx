@@ -45,7 +45,7 @@ export default function HomeClient({ dailyBread, history, recentNotes, isFirstLa
       return
     }
     try {
-      const resp = await fetch(`/api/search?q=${encodeURIComponent(query)}&limit=5`)
+      const resp = await fetch(`/api/search?q=${encodeURIComponent(query)}&limit=10`)
       const data = await resp.json()
       setSearchResults({
         passages: (data.verses ?? []).map((v: { bookId: string; bookName: string; chapter: number; verse: number; text: string }) => ({

@@ -1,5 +1,6 @@
 import Database from 'better-sqlite3'
 import { BOOK_NAMES } from '@/lib/constants'
+import { parseSearchQuery, type ParsedSearchQuery } from './parser'
 
 // FTS5 queries require raw SQLite (Prisma doesn't support virtual tables)
 function getDb() {
@@ -21,80 +22,82 @@ export async function universalSearch(query: string, limit = 10): Promise<Search
     return { verses: [], characters: [], themes: [], strongs: [], narratives: [] }
   }
 
+  const parsed = parseSearchQuery(query)
+
+  // Need at least one positive term for any search to make sense
+  if (parsed.positiveTerms.length === 0) {
+    return { verses: [], characters: [], themes: [], strongs: [], narratives: [] }
+  }
+
   const db = getDb()
-  const ftsQuery = sanitizeFtsQuery(query)
-  const likeQuery = `%${query}%`
 
   try {
-    // Verse search — try FTS first, fall back to LIKE
+    // ── Verses: FTS5 boolean query, fall back to LIKE on first positive term ──
     let rawVerses: Array<{ id: number; book_id: string; chapter: number; verse: number; text: string }> = []
-    try {
-      rawVerses = db.prepare(`
-        SELECT v.id, v.book_id, v.chapter, v.verse, v.text
-        FROM verses_fts f
-        JOIN verses v ON v.id = f.rowid
-        WHERE verses_fts MATCH ? AND v.translation_id = 'BSB'
-        ORDER BY rank
-        LIMIT ?
-      `).all(ftsQuery, limit) as typeof rawVerses
-    } catch {
-      rawVerses = db.prepare(`
-        SELECT id, book_id, chapter, verse, text FROM verses
-        WHERE translation_id = 'BSB' AND text LIKE ?
-        LIMIT ?
-      `).all(likeQuery, limit) as typeof rawVerses
+    if (parsed.ftsExpression) {
+      try {
+        rawVerses = db.prepare(`
+          SELECT v.id, v.book_id, v.chapter, v.verse, v.text
+          FROM verses_fts f
+          JOIN verses v ON v.id = f.rowid
+          WHERE verses_fts MATCH ? AND v.translation_id = 'BSB'
+          ORDER BY rank
+          LIMIT ?
+        `).all(parsed.ftsExpression, limit) as typeof rawVerses
+      } catch {
+        rawVerses = fallbackVerseLike(db, parsed, limit)
+      }
+    } else {
+      rawVerses = fallbackVerseLike(db, parsed, limit)
     }
 
-    // Character search — LIKE with name-priority
-    let rawCharacters: Array<{ id: string; name: string; bio_brief: string }> = []
-    try {
-      rawCharacters = db.prepare(`
-        SELECT id, name, bio_brief FROM characters
-        WHERE name LIKE ?
-        ORDER BY CASE WHEN LOWER(name) = LOWER(?) THEN 0 ELSE 1 END, name
-        LIMIT ?
-      `).all(likeQuery, query, limit) as typeof rawCharacters
-    } catch { /* ignore */ }
+    // ── Characters: OR across positive terms, exclude negatives ──
+    const rawCharacters = searchEntities<{ id: string; name: string; bio_brief: string }>(
+      db,
+      'SELECT id, name, bio_brief FROM characters',
+      parsed,
+      ['name'],
+      'name',
+      limit,
+    )
 
-    // Theme LIKE search
-    let rawThemes: Array<{ id: string; name: string; definition: string }> = []
-    try {
-      rawThemes = db.prepare(`
-        SELECT id, name, definition FROM themes
-        WHERE name LIKE ? OR definition LIKE ?
-        LIMIT ?
-      `).all(likeQuery, likeQuery, limit) as typeof rawThemes
-    } catch { /* ignore */ }
+    // ── Themes: LIKE on name and definition ──
+    const rawThemes = searchEntities<{ id: string; name: string; definition: string }>(
+      db,
+      'SELECT id, name, definition FROM themes',
+      parsed,
+      ['name', 'definition'],
+      'name',
+      limit,
+    )
 
-    // Strong's LIKE search
-    let rawStrongs: Array<{ number: string; word: string; transliteration: string; short_definition: string }> = []
-    try {
-      rawStrongs = db.prepare(`
-        SELECT number, word, transliteration, short_definition FROM strongs_entries
-        WHERE short_definition LIKE ? OR transliteration LIKE ? OR word LIKE ? OR number = ?
-        LIMIT ?
-      `).all(likeQuery, likeQuery, likeQuery, query.toUpperCase(), limit) as typeof rawStrongs
-    } catch { /* ignore */ }
+    // ── Strong's: LIKE on word, transliteration, short_definition, number ──
+    const rawStrongs = searchEntities<{ number: string; word: string; transliteration: string; short_definition: string }>(
+      db,
+      'SELECT number, word, transliteration, short_definition FROM strongs_entries',
+      parsed,
+      ['word', 'transliteration', 'short_definition', 'number'],
+      'number',
+      limit,
+    )
 
-    // Narrative search — try FTS first, fall back to LIKE
+    // ── Narrative units: FTS5 boolean, fall back to LIKE ──
     let rawNarratives: Array<{ id: string; title: string; summary: string; book_id: string }> = []
-    try {
-      rawNarratives = db.prepare(`
-        SELECT n.id, n.title, n.summary, n.book_id
-        FROM narrative_fts f
-        JOIN narrative_units n ON n.rowid = f.rowid
-        WHERE narrative_fts MATCH ?
-        ORDER BY rank
-        LIMIT ?
-      `).all(ftsQuery, limit) as typeof rawNarratives
-    } catch {
+    if (parsed.ftsExpression) {
       try {
         rawNarratives = db.prepare(`
-          SELECT id, title, summary, book_id FROM narrative_units
-          WHERE title LIKE ? OR summary LIKE ?
+          SELECT n.id, n.title, n.summary, n.book_id
+          FROM narrative_fts f
+          JOIN narrative_units n ON n.rowid = f.rowid
+          WHERE narrative_fts MATCH ?
+          ORDER BY rank
           LIMIT ?
-        `).all(likeQuery, likeQuery, limit) as typeof rawNarratives
-      } catch { /* ignore */ }
+        `).all(parsed.ftsExpression, limit) as typeof rawNarratives
+      } catch {
+        rawNarratives = fallbackNarrativeLike(db, parsed, limit)
+      }
+    } else {
+      rawNarratives = fallbackNarrativeLike(db, parsed, limit)
     }
 
     return {
@@ -134,12 +137,90 @@ export async function universalSearch(query: string, limit = 10): Promise<Search
   }
 }
 
-function sanitizeFtsQuery(query: string): string {
-  // Remove FTS5 special characters, wrap in quotes for phrase search
-  const cleaned = query.replace(/['"*()]/g, '').trim()
-  if (cleaned.includes(' ')) {
-    // Multi-word: use implicit AND
-    return cleaned.split(/\s+/).filter(Boolean).join(' ')
+/**
+ * LIKE-based entity search: OR across (column × positive term) combinations,
+ * then exclude rows matching any negative term in any searched column.
+ *
+ * Column names are hardcoded by callers (no user input), so the string-
+ * concatenated SQL is safe from injection.
+ */
+function searchEntities<T>(
+  db: Database.Database,
+  baseSelect: string,
+  parsed: ParsedSearchQuery,
+  searchColumns: string[],
+  orderByColumn: string,
+  limit: number,
+): T[] {
+  const { positiveTerms, negativeTerms } = parsed
+  if (positiveTerms.length === 0) return []
+
+  const posClauses: string[] = []
+  const posParams: string[] = []
+  for (const term of positiveTerms) {
+    for (const col of searchColumns) {
+      posClauses.push(`${col} LIKE ?`)
+      posParams.push(`%${term}%`)
+    }
   }
-  return cleaned
+
+  const negClauses: string[] = []
+  const negParams: string[] = []
+  for (const term of negativeTerms) {
+    for (const col of searchColumns) {
+      negClauses.push(`${col} NOT LIKE ?`)
+      negParams.push(`%${term}%`)
+    }
+  }
+
+  let where = `(${posClauses.join(' OR ')})`
+  if (negClauses.length > 0) {
+    where += ` AND (${negClauses.join(' AND ')})`
+  }
+
+  const sql = `${baseSelect} WHERE ${where} ORDER BY ${orderByColumn} LIMIT ?`
+  try {
+    return db.prepare(sql).all(...posParams, ...negParams, limit) as T[]
+  } catch {
+    return []
+  }
+}
+
+function fallbackVerseLike(
+  db: Database.Database,
+  parsed: ParsedSearchQuery,
+  limit: number,
+): Array<{ id: number; book_id: string; chapter: number; verse: number; text: string }> {
+  if (parsed.positiveTerms.length === 0) return []
+  const likeClauses = parsed.positiveTerms.map(() => 'text LIKE ?').join(' AND ')
+  try {
+    return db.prepare(
+      `SELECT id, book_id, chapter, verse, text FROM verses
+       WHERE translation_id = 'BSB' AND (${likeClauses})
+       LIMIT ?`,
+    ).all(...parsed.positiveTerms.map((t) => `%${t}%`), limit) as Array<{ id: number; book_id: string; chapter: number; verse: number; text: string }>
+  } catch {
+    return []
+  }
+}
+
+function fallbackNarrativeLike(
+  db: Database.Database,
+  parsed: ParsedSearchQuery,
+  limit: number,
+): Array<{ id: string; title: string; summary: string; book_id: string }> {
+  if (parsed.positiveTerms.length === 0) return []
+  const perTerm = parsed.positiveTerms
+    .map(() => '(title LIKE ? OR summary LIKE ?)')
+    .join(' AND ')
+  const params = parsed.positiveTerms.flatMap((t) => [`%${t}%`, `%${t}%`])
+  try {
+    return db.prepare(
+      `SELECT id, title, summary, book_id FROM narrative_units
+       WHERE ${perTerm}
+       LIMIT ?`,
+    ).all(...params, limit) as Array<{ id: string; title: string; summary: string; book_id: string }>
+  } catch {
+    return []
+  }
 }

@@ -43,11 +43,21 @@ next-env.d.ts
 
 /src/generated/prisma
 
-# Database
+# Database — runtime, seed snapshots, test, and compressed variants
 /data/selah.db
 /data/selah.db-journal
 /data/selah.db-shm
 /data/selah.db-wal
+/data/selah.db.xz
+/data/selah-seed.db
+/data/selah-seed.db-journal
+/data/selah-seed.db-shm
+/data/selah-seed.db-wal
+/data/selah-seed.db.xz
+/data/selah-test.db
+/data/selah-test.db-journal
+/data/selah-test.db-shm
+/data/selah-test.db-wal
 /data/bible.eng.db
 
 # Local backups (auto-backup writes here in dev)

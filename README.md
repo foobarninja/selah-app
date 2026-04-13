@@ -97,13 +97,18 @@ Selah works fully without AI. The AI assistant is optional — configure it in S
 2. Generate an API key
 3. In Selah, go to Settings → AI Assistant and select **OpenRouter**
 4. Paste your API key
-5. Choose a model (recommended: Gemma 4 27B, DeepSeek V3.1, or Qwen 3.5)
+5. Choose a model. Benchmarked picks:
+   - **Claude Sonnet 4.6** — premium value, 47/50, ~$0.05/prompt
+   - **Claude Haiku 4.5** — recommended daily driver, 43/50, ~$0.016/prompt, fast
+   - **GPT-4.1** — budget pick, 41/50, ~$0.011/prompt
 6. Click **Test Connection**
 
 ### Ollama (fully local, no API key needed)
 
 1. Install Ollama from [ollama.ai](https://ollama.ai/)
-2. Pull a model: `ollama pull gemma3:27b`
+2. Pull a benchmarked local model (check [ollama.com/library](https://ollama.com/library) for exact tags):
+   - **Gemma 4 31B** — best local large model, 36.5/50. Uses Selah's default Ollama parameters (temp 0.5, freq 0.6, pres 0.5).
+   - **Qwen 3.5 9B** — best small model, 42/50 with tuned parameters. **Requires** temp 0.2, freq 0.3, pres 0.3 — above temp 0.3 it fabricates Hebrew etymologies. Set these in Settings → AI Assistant before use.
 3. In Selah, go to Settings → AI Assistant and select **Ollama**
 4. Set URL to `http://localhost:11434` (default)
 5. Select your model from the dropdown
@@ -128,8 +133,9 @@ See [docs/models_recommendations.md](docs/models_recommendations.md) for detaile
 | Primary translation | Settings → Translations | BSB | Default Bible translation for reading |
 | Parallel translations | Settings → Translations | None | Up to 3 side-by-side translations |
 | AI provider | Settings → AI Assistant | None | OpenRouter, Ollama, or Custom |
-| AI temperature | Settings → AI Assistant | 0.5 | Lower = more focused, higher = more creative |
-| AI frequency penalty | Settings → AI Assistant | 0.6 | Reduces repetitive phrasing |
+| AI temperature | Settings → AI Assistant | 0.7 (API) / 0.5 (Ollama) | Lower = more focused, higher = more creative |
+| AI frequency penalty | Settings → AI Assistant | 0.3 (API) / 0.6 (Ollama) | Reduces repetitive phrasing |
+| AI presence penalty | Settings → AI Assistant | 0.3 (API) / 0.5 (Ollama) | Pushes the model toward broader source coverage |
 | Commentary display | Settings → Study | Curated | Show curated commentaries or all available |
 | Source tier visibility | Settings → Study | All except Conjecture | Which content tiers appear in the context drawer |
 | Daily Bread audience | Settings → Study | Adults | Adjusts devotional language level |

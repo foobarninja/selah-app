@@ -155,6 +155,11 @@ export interface ReaderProps {
   /** When true, the "Additional commentaries" section starts expanded */
   showExtendedCommentary?: boolean
 
+  /** Optional slot rendered in the passage header row, between the title and
+   *  the translation switcher. Used for the verse action bar when verses are
+   *  selected. */
+  headerSlot?: React.ReactNode
+
   /** Navigate to a different passage by narrative unit ID or passage reference */
   onNavigatePassage?: (passageRef: string) => void
   /** Move to the previous narrative unit in the current book */

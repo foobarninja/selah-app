@@ -489,6 +489,7 @@ export function ReaderView({
   showCrossReferences = true,
   showFootnotes = true,
   showExtendedCommentary = false,
+  headerSlot,
 }: ReaderProps) {
   const [drawerOpen, setDrawerOpen] = useState(true)
   const [mobileDrawerOpen, setMobileDrawerOpen] = useState(false)
@@ -531,7 +532,7 @@ export function ReaderView({
       >
         <div style={{ maxWidth: '680px' }}>
           {/* Passage header */}
-          <div className="flex items-center justify-between mb-1">
+          <div className="flex items-center justify-between mb-1 gap-3 flex-wrap">
             <div className="flex items-center gap-2">
               {/* Previous unit */}
               <button
@@ -582,6 +583,9 @@ export function ReaderView({
                 <ChevronRight size={20} strokeWidth={1.5} />
               </button>
             </div>
+
+            {/* Header slot — verse action bar when verses are selected */}
+            {headerSlot}
 
             {/* Translation switcher */}
             <button

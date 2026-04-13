@@ -7,7 +7,7 @@ import { BOOK_NAMES, BOOK_CHAPTERS } from '@/lib/constants'
 import type { ReaderProps, Translation } from '@/components/reader/types'
 import JournalPicker from '@/components/journal/JournalPicker'
 
-interface ReaderClientProps extends Omit<ReaderProps, 'activeVerseNumber' | 'parallelTranslations' | 'onNavigatePassage' | 'onPreviousUnit' | 'onNextUnit' | 'onChangeTranslation' | 'onToggleParallelTranslation' | 'onSelectVerse' | 'onOpenCharacterProfile' | 'onOpenThemeDetail' | 'onOpenWordStudy' | 'onFollowCrossReference' | 'onOpenJournalEntry'> {
+interface ReaderClientProps extends Omit<ReaderProps, 'activeVerseNumber' | 'parallelTranslations' | 'onNavigatePassage' | 'onPreviousUnit' | 'onNextUnit' | 'onChangeTranslation' | 'onToggleParallelTranslation' | 'onSelectVerse' | 'onOpenCharacterProfile' | 'onOpenThemeDetail' | 'onOpenWordStudy' | 'onFollowCrossReference' | 'onOpenJournalEntry' | 'headerSlot'> {
   prevUnit: { bookId: string; chapter: number } | null
   nextUnit: { bookId: string; chapter: number } | null
   bookId: string
@@ -122,6 +122,98 @@ export default function ReaderClient({
     router.push(`/reader/${book}/${chapter}`)
   }, [router])
 
+  // Verse action bar — inline element rendered in ReaderView's header slot
+  // when verses are selected. Sits in the blank space between the passage
+  // title and the translation switcher; wraps to its own row on narrow
+  // screens via the header's flex-wrap.
+  const verseActionBar =
+    selectedVerses.size > 0 && !showNoteEditor && !showBookPicker && !showTranslationPicker ? (
+      <div
+        className="flex items-center gap-2 rounded-full"
+        style={{
+          padding: '6px 14px',
+          backgroundColor: 'var(--selah-bg-surface, #1C1917)',
+          border: '1px solid var(--selah-border-color, #3D3835)',
+        }}
+      >
+        <span style={{
+          fontFamily: "var(--selah-font-mono)",
+          fontSize: '12px',
+          color: 'var(--selah-gold-500, #C6A23C)',
+        }}>
+          {readerProps.passage.book} {readerProps.passage.chapter}:{formatVerseRange(selectedVerses)}
+        </span>
+        <button
+          onClick={() => {
+            setNoteContent('')
+            setNoteType('annotation')
+            setNoteCharAnchors(new Set())
+            setNoteThemeTags(new Set())
+            setShowNoteEditor(true)
+          }}
+          style={{
+            padding: '4px 14px',
+            borderRadius: '16px',
+            backgroundColor: 'var(--selah-gold-900, #4A3711)',
+            color: 'var(--selah-gold-300, #E8C767)',
+            border: 'none',
+            fontFamily: "var(--selah-font-body)",
+            fontSize: '12px',
+            fontWeight: 500,
+            cursor: 'pointer',
+          }}
+        >
+          + Note
+        </button>
+        <button
+          onClick={async () => {
+            await fetch('/api/bookmarks', {
+              method: 'POST',
+              headers: { 'Content-Type': 'application/json' },
+              body: JSON.stringify({ bookId, chapter: readerProps.passage.chapter, verse: activeVerse ?? [...selectedVerses][0] }),
+            })
+            setActiveVerse(undefined)
+            setSelectedVerses(new Set())
+          }}
+          style={{
+            padding: '4px 14px',
+            borderRadius: '16px',
+            backgroundColor: 'transparent',
+            color: 'var(--selah-text-2, #A39E93)',
+            border: '1px solid var(--selah-border-color, #3D3835)',
+            fontFamily: "var(--selah-font-body)",
+            fontSize: '12px',
+            fontWeight: 500,
+            cursor: 'pointer',
+          }}
+        >
+          Bookmark
+        </button>
+        <button
+          onClick={async () => {
+            const resp = await fetch('/api/collections', { cache: 'no-store' })
+            const cols = await resp.json()
+            setAvailableCollections(cols)
+            setCollectNote('')
+            setShowCollectPicker(true)
+          }}
+          style={{
+            padding: '4px 14px',
+            borderRadius: '16px',
+            backgroundColor: 'transparent',
+            color: 'var(--selah-text-2, #A39E93)',
+            border: '1px solid var(--selah-border-color, #3D3835)',
+            fontFamily: "var(--selah-font-body)",
+            fontSize: '12px',
+            fontWeight: 500,
+            cursor: 'pointer',
+          }}
+        >
+          Collect
+        </button>
+      </div>
+    ) : null
+
   return (
     <div className="relative h-full">
       <ReaderView
@@ -129,6 +221,7 @@ export default function ReaderClient({
         activeVerseNumber={activeVerse}
         selectedVerses={selectedVerses}
         parallelTranslations={parallelTranslations}
+        headerSlot={verseActionBar}
         onSelectVerse={handleVerseSelect}
         onPreviousUnit={prevUnit ? () => router.push(`/reader/${prevUnit.bookId}/${prevUnit.chapter}`) : undefined}
         onNextUnit={nextUnit ? () => router.push(`/reader/${nextUnit.bookId}/${nextUnit.chapter}`) : undefined}
@@ -154,95 +247,6 @@ export default function ReaderClient({
         }}
         onOpenJournalEntry={(id) => router.push(`/journal?entry=${id}`)}
       />
-
-      {/* ── Verse Action Bar (shown when a verse is selected) ── */}
-      {selectedVerses.size > 0 && !showNoteEditor && !showBookPicker && !showTranslationPicker && (
-        <div
-          className="fixed bottom-6 left-1/2 z-40 flex items-center gap-2 rounded-full shadow-lg"
-          style={{
-            transform: 'translateX(-50%)',
-            padding: '8px 20px',
-            backgroundColor: 'var(--selah-bg-surface, #1C1917)',
-            border: '1px solid var(--selah-border-color, #3D3835)',
-          }}
-        >
-          <span style={{
-            fontFamily: "var(--selah-font-mono)",
-            fontSize: '12px',
-            color: 'var(--selah-gold-500, #C6A23C)',
-          }}>
-            {readerProps.passage.book} {readerProps.passage.chapter}:{formatVerseRange(selectedVerses)}
-          </span>
-          <button
-            onClick={() => {
-              setNoteContent('')
-              setNoteType('annotation')
-              setNoteCharAnchors(new Set())
-              setNoteThemeTags(new Set())
-              setShowNoteEditor(true)
-            }}
-            style={{
-              padding: '4px 14px',
-              borderRadius: '16px',
-              backgroundColor: 'var(--selah-gold-900, #4A3711)',
-              color: 'var(--selah-gold-300, #E8C767)',
-              border: 'none',
-              fontFamily: "var(--selah-font-body)",
-              fontSize: '12px',
-              fontWeight: 500,
-              cursor: 'pointer',
-            }}
-          >
-            + Note
-          </button>
-          <button
-            onClick={async () => {
-              await fetch('/api/bookmarks', {
-                method: 'POST',
-                headers: { 'Content-Type': 'application/json' },
-                body: JSON.stringify({ bookId, chapter: readerProps.passage.chapter, verse: activeVerse ?? [...selectedVerses][0] }),
-              })
-              setActiveVerse(undefined)
-              setSelectedVerses(new Set())
-            }}
-            style={{
-              padding: '4px 14px',
-              borderRadius: '16px',
-              backgroundColor: 'transparent',
-              color: 'var(--selah-text-2, #A39E93)',
-              border: '1px solid var(--selah-border-color, #3D3835)',
-              fontFamily: "var(--selah-font-body)",
-              fontSize: '12px',
-              fontWeight: 500,
-              cursor: 'pointer',
-            }}
-          >
-            Bookmark
-          </button>
-          <button
-            onClick={async () => {
-              const resp = await fetch('/api/collections', { cache: 'no-store' })
-              const cols = await resp.json()
-              setAvailableCollections(cols)
-              setCollectNote('')
-              setShowCollectPicker(true)
-            }}
-            style={{
-              padding: '4px 14px',
-              borderRadius: '16px',
-              backgroundColor: 'transparent',
-              color: 'var(--selah-text-2, #A39E93)',
-              border: '1px solid var(--selah-border-color, #3D3835)',
-              fontFamily: "var(--selah-font-body)",
-              fontSize: '12px',
-              fontWeight: 500,
-              cursor: 'pointer',
-            }}
-          >
-            Collect
-          </button>
-        </div>
-      )}
 
       {/* ── Collection Picker ── */}
       {showCollectPicker && selectedVerses.size > 0 && (

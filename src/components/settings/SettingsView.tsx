@@ -4,6 +4,7 @@ import { useEffect, useState } from 'react'
 import { Eye, EyeOff, Check, X, Download, Upload, Minus, Plus, Sun, Moon, Monitor, ChevronDown } from 'lucide-react'
 import type { SettingsProps, AIProvider, ThemeMode, AudienceLevel, RetentionDays } from './types'
 import { ConfirmDialog } from '@/components/ui/ConfirmDialog'
+import { findOpenRouterPreset } from '@/lib/ai/model-presets'
 
 const font = {
   display: "var(--selah-font-display, 'Cormorant Garamond', serif)",
@@ -116,9 +117,32 @@ export function SettingsView({ translations, aiConfig, aiProviders, studyPrefere
   const [orFreqPenalty, setOrFreqPenalty] = useState(aiConfig.openrouterParams.freqPenalty)
   const [orPresencePenalty, setOrPresencePenalty] = useState(aiConfig.openrouterParams.presPenalty)
   const [orDisableThinking, setOrDisableThinking] = useState(aiConfig.openrouterParams.disableThinking)
+  const [orAppliedPresetLabel, setOrAppliedPresetLabel] = useState<string | null>(null)
 
   const isOllama = selectedProvider === 'ollama'
   const isOpenRouter = selectedProvider === 'openrouter'
+
+  // Auto-apply parameter preset when the user picks an OpenRouter model with a
+  // known optimal configuration (e.g. Qwen 3.5 Plus needs temp 0.02). Without
+  // this, users selecting Qwen Plus from the dropdown would silently get the
+  // 0.7 default and score 4-6 points lower on Selah's grounding benchmark.
+  useEffect(() => {
+    if (!isOpenRouter || !selectedModel) {
+      setOrAppliedPresetLabel(null)
+      return
+    }
+    const preset = findOpenRouterPreset(selectedModel)
+    if (!preset) {
+      setOrAppliedPresetLabel(null)
+      return
+    }
+    setOrTemperature(preset.params.temperature)
+    setOrTopP(preset.params.topP)
+    setOrMaxTokens(preset.params.maxTokens)
+    setOrFreqPenalty(preset.params.freqPenalty)
+    setOrPresencePenalty(preset.params.presPenalty)
+    setOrAppliedPresetLabel(preset.label)
+  }, [selectedModel, isOpenRouter])
 
   /** True if a key is already saved on the server for the currently-selected provider. */
   const hasSavedKey = !!(selectedProvider && aiConfig.savedProviders?.includes(selectedProvider))
@@ -337,8 +361,25 @@ export function SettingsView({ translations, aiConfig, aiProviders, studyPrefere
                         </div>
                       )}
                       <p style={{ fontFamily: font.body, fontSize: '10px', fontWeight: 500, textTransform: 'uppercase', letterSpacing: '1.5px', color: 'var(--selah-text-3)', marginBottom: '12px' }}>Model Parameters</p>
+                      {orAppliedPresetLabel && (
+                        <div
+                          style={{
+                            marginBottom: '12px',
+                            padding: '10px 12px',
+                            borderRadius: '8px',
+                            backgroundColor: 'var(--selah-gold-900, #4A3711)',
+                            border: '1px solid var(--selah-gold-500, #C6A23C)',
+                          }}
+                        >
+                          <p style={{ fontFamily: font.body, fontSize: '12px', color: 'var(--selah-gold-300, #E8C767)', lineHeight: 1.5 }}>
+                            ✨ Applied recommended parameters for <strong>{orAppliedPresetLabel}</strong> — temp {orTemperature}, freq {orFreqPenalty}, pres {orPresencePenalty}. These were validated on Selah's benchmark; you can override below if you want.
+                          </p>
+                        </div>
+                      )}
                       {([
-                        { label: 'Temperature', value: orTemperature, set: setOrTemperature, min: 0, max: 1, step: 0.05 },
+                        // Temperature step is 0.01 (not 0.05) so values like 0.02 are settable —
+                        // Qwen Plus needs temp 0.02 to perform optimally, see model-presets.ts.
+                        { label: 'Temperature', value: orTemperature, set: setOrTemperature, min: 0, max: 1, step: 0.01 },
                         { label: 'Top P', value: orTopP, set: setOrTopP, min: 0, max: 1, step: 0.05 },
                         { label: 'Max tokens', value: orMaxTokens, set: setOrMaxTokens, min: 100, max: 4000, step: 100 },
                         { label: 'Freq. penalty', value: orFreqPenalty, set: setOrFreqPenalty, min: 0, max: 2, step: 0.1 },

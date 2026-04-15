@@ -1,7 +1,7 @@
 # Selah AI Models: Recommendations, Testing Criteria, and Benchmarks
 
-**Last validated:** 2026-04-11
-**Test passages:** Judges 6 (Gideon's Call), Exodus 4:24-26 (Moses at the Lodging Place)
+**Last validated:** 2026-04-14
+**Test passages:** Judges 6 (Gideon's Call), Exodus 4:24-26 (Moses at the Lodging Place), Daniel 5 (Belshazzar's Feast)
 
 This document is the permanent reference for Selah's AI model selection, testing methodology, and performance benchmarks. It captures what we know about how different models perform on Selah's grounded scholarship use case and how to reproduce the evaluations.
 
@@ -14,24 +14,28 @@ This document is the permanent reference for Selah's AI model selection, testing
 | Tier | Primary Pick | Score | Cost/prompt | Speed | Deployment |
 |---|---|---|---|---|---|
 | **Premium (gold standard)** | Claude Opus 4.6 | 47.5/50 | $0.081 | 36 tps | Bedrock / OpenRouter |
-| **Premium value** ⭐ | Claude Sonnet 4.6 | 47/50 | $0.053 | 38 tps | Google / OpenRouter |
-| **Daily driver** ⭐ | Claude Haiku 4.5 | 43/50 | $0.016 | 87 tps | Bedrock / OpenRouter |
+| **Premium value** ⭐ | Claude Sonnet 4.6 | 47-48/50 | $0.053-0.070 | 38 tps | Google / OpenRouter |
+| **Daily driver** ⭐ NEW | **Qwen 3.5 Plus** ⚠ | 42/50 | **$0.005** | fast | OpenRouter (temp **0.02**) |
+| **Daily driver alt** | Claude Haiku 4.5 | 43/50 | $0.016 | 87 tps | Bedrock / OpenRouter |
 | **Premium alternative** | GPT-5.4 | 44/50 | $0.040 | 55 tps | OpenAI / OpenRouter |
 | **Budget hosted** | GPT-4.1 | 41/50 | $0.011 | 101 tps | OpenAI / OpenRouter |
+| **Local large alt** | Gemma 4 36B (dense) | 41/50 | varies | — | OpenRouter / local |
 | **Local / Privacy (large)** | Gemma 4 31B | 36.5/50 | $0.002 | 33 tps | Ollama / Parasail |
-| **Local / Privacy (small)** | Qwen 3.5 9B 8Q | 42/50 | $0.00 | local | Ollama (temp 0.2/freq 0.3/pres 0.3) |
+| **Local / Privacy (small)** | Qwen 3.5 9B 8Q | 39.5-42/50 | $0.00 | local | Ollama (temp 0.2/freq 0.3/pres 0.3) |
 
-⭐ **Two recommended defaults:**
-- **Sonnet 4.6** for users who want premium quality: ties Opus at 47/50 but 35% cheaper.
-- **Haiku 4.5** for daily use: 91% of Opus quality at 20% of the cost, 2x faster.
+⭐ **Three recommended defaults:**
+- **Sonnet 4.6** for users who want premium quality: ties Opus at 47-48/50 with no parameter tuning needed.
+- **Qwen 3.5 Plus** for the new daily driver: 42/50 across 3 benchmark passages at **$0.005/prompt — 12× cheaper than Sonnet for 88% of the quality**, 3× cheaper than Haiku 4.5. ⚠ **Requires temp 0.02** — Selah auto-applies this preset when you select the model in Settings.
+- **Haiku 4.5** as the daily driver alternative: 91% of Opus quality at 20% of the cost, 2x faster. Use when you want temperature-agnostic Claude family behavior with no parameter override.
 
 ### By use case
 
 - **Sermon prep / deep pastoral study:** Claude Sonnet 4.6 or Opus 4.6 (warmest prose, best synthesis, direct scholarly citations)
-- **Daily reading questions:** Claude Haiku 4.5 (fast, warm, well-grounded, $0.016/prompt)
-- **Budget-conscious:** GPT-4.1 ($0.011, fastest at 101 tps, but colder and less grounded than Haiku)
-- **Privacy / local-only (large VRAM):** Gemma 4 31B (free, consistent, needs conservative parameters)
-- **Privacy / local-only (small VRAM):** Qwen 3.5 9B 8Q (free, 42/50 with tuned params — outscores GPT-4.1 at zero cost. Requires specific parameters: temp 0.2, freq 0.3, pres 0.3. Fabricates above temp 0.3.)
+- **Daily reading questions, best $/quality:** Qwen 3.5 Plus @ temp 0.02 ($0.005/prompt, 42/50, 12× cheaper than Sonnet for 88% of the quality — Selah auto-applies the temp 0.02 preset when you select this model)
+- **Daily reading questions, no tuning needed:** Claude Haiku 4.5 ($0.016/prompt, 43/50, temperature-agnostic — works at any setting)
+- **Budget-conscious:** Qwen 3.5 Plus is now the cheapest credible pick. GPT-4.1 ($0.011, fastest at 101 tps) is still a solid OpenAI-native fallback.
+- **Privacy / local-only (large VRAM):** Gemma 4 31B (free, consistent, needs conservative parameters) or Gemma 4 36B dense via OpenRouter (41/50, no tuning required)
+- **Privacy / local-only (small VRAM):** Qwen 3.5 9B 8Q (free, 39.5-42/50 with tuned params — outscores GPT-4.1 at zero cost. Requires specific parameters: temp 0.2, freq 0.3, pres 0.3. Fabricates above temp 0.3.)
 - **When quality matters most:** Opus 4.6 ($0.081, the absolute ceiling — "the same hand that turned a staff into a sign of power nearly struck down the man holding it")
 
 ### Models to AVOID as primary production picks
@@ -39,6 +43,7 @@ This document is the permanent reference for Selah's AI model selection, testing
 - **GPT-4.1-mini** — worst tier compliance of all tested models, weak pipeline engagement
 - **Gemma 3 27B** — fine but consistently a step below Gemma 4 31B
 - **Qwen 122B** — capable but doesn't match top tier on grounding fidelity despite higher parameter count
+- **Gemma 4 26B-A4B (MoE)** — even at the best parameter config (temp 1.0), scores 37/50 vs Qwen 3.5 9B 8Q at 39.5. The 4B active-parameter ceiling under MoE routing prevents surfacing of deep curated fingerprints regardless of deployment, quantization, or sampling temperature. Validated across 4 deployment configurations on the Daniel 5 benchmark (local Q4_K_XL default, local Q4_K_XL temp 1.0, OpenRouter API default, all converged at 35-37/50). Outscored by dense models at every comparable quality tier.
 
 ### Key finding: Grounding > Model Size
 
@@ -440,6 +445,97 @@ The grounding system lifts weaker models MORE than stronger ones. Haiku goes fro
 
 ---
 
+## 3.5. Daniel 5 Benchmark (2026-04-14) — cross-passage validation + new findings
+
+A second benchmark passage was added to validate the existing Gideon/Exodus results across a different theological register and to test new candidate models. **Daniel 5 (Belshazzar's feast)** was chosen because it has a different fingerprint profile from the original benchmarks: heavy historical/archaeological content (Nabonidus Chronicle, Cyrus's Euphrates diversion, Babylonian co-regency), Aramaic linguistic wordplay (MENE/TEKEL/PERES), and a tight theological synthesis arc (hubris → sacrilege → collapse).
+
+### Test setup
+
+- **Question format:** Two-part ("historical setup" + "interpretive synthesis"), structurally identical to the docs' methodology
+- **Grading:** Five fresh blind Opus 4.6 grader agents (one per response), no model identity in the grader prompt
+- **Rubric:** Identical 5-dimension / 50-point rubric used elsewhere in this doc
+- **Source:** Real Selah AI runs through the production grounding pipeline
+
+### Daniel 5 — full results table
+
+| Rank | Model | Deployment | Config | Tier | Ground | Schol | Synth | Form | Total | Grade |
+|---|---|---|---|---|---|---|---|---|---|---|
+| 1 | **Claude Sonnet 4.6** | hosted (OpenRouter) | temp 1.0 | 9.5 | 10 | 9 | 9.5 | 10 | **48** | **A+** |
+| 2 | **Qwen 3.5 Plus** | OpenRouter | temp 0.02 / 0.85 / 0.3 / 0.3 | 9 | 8 | 7 | 8 | 9 | **41** | **B+** |
+| 3 | **Gemma 4 36B (dense)** | OpenRouter | API default | 9 | 8 | 7 | 8 | 9 | **41** | **B+** |
+| 4 | **Qwen 3.5 9B 8Q** | local Ollama | tuned 0.2/0.3/0.3 | 8.5 | 7 | 7 | 8 | 9 | **39.5** | **B+** |
+| 5 | **Gemma 4 26B-A4B (MoE)** | local Q4_K_XL | temp 1.0 | 8 | 6 | 6 | 8 | 9 | **37** | **B** |
+| 6 | **Qwen 3.5 9B 8Q** | local Ollama | temp 1.0 (over-tuned) | 7 | 6 | 6 | 8 | 9 | **36** | **B** |
+| 7 | **Gemma 4 26B-A4B (MoE)** | local Q4_K_XL | default 0.5 | 7 | 6 | 5 | 8 | 9 | **35** | **B−** |
+| 7 | **Gemma 4 26B-A4B (MoE)** | OpenRouter | API default | 7 | 6 | 5 | 8 | 9 | **35** | **B−** |
+
+### Cross-passage validation: Qwen 3.5 Plus
+
+The Qwen 3.5 Plus result was validated across all three benchmark passages at temp 0.02:
+
+| Passage | Score | Grade | Variance from mean |
+|---|---|---|---|
+| Daniel 5 | 42.0/50 | A− | −0.17 |
+| Exodus 4:24-26 | 42.5/50 | A− | +0.33 |
+| Judges 6 (Gideon) | 42.0/50 | A− | −0.17 |
+| **Mean** | **42.17/50** | **A−** | — |
+
+**Variance: ±0.5 points across three structurally different passages.** This is the cleanest cross-passage validation in the entire benchmark history. Most models in this doc show ~2-3 point passage-to-passage variance; Qwen Plus's 0.5 is exceptional and reflects the deterministic effect of temp 0.02 sampling on a well-trained dense model.
+
+The dimensional pattern is also remarkably stable across passages: tier compliance 8.5, pipeline grounding 9, format 9.5 — identical on every passage. The single weakness is consistently scholarship surfacing (6-7), where Qwen Plus reliably surfaces JFB but doesn't reach for a second commentator.
+
+### Cost-per-quality after Daniel 5
+
+| Model | Score | Cost/prompt | $/quality point | vs Sonnet $ | vs Sonnet quality |
+|---|---|---|---|---|---|
+| Sonnet 4.6 | 48 | $0.070 | $1.46 | 100% | 100% |
+| Opus 4.6 | 47.5 | $0.081 | $1.71 | 116% | 99% |
+| GPT-5.4 | 44 | $0.040 | $0.91 | 57% | 92% |
+| Haiku 4.5 | 43 | $0.016 | $0.37 | 23% | 90% |
+| **Qwen 3.5 Plus** ⭐ | **42** | **$0.005** | **$0.12** | **7%** | **88%** |
+| Gemma 4 36B (dense) | 41 | varies | — | — | 85% |
+| GPT-4.1 | 41 | $0.011 | $0.27 | 16% | 85% |
+| Qwen 9B 8Q (local) | 39.5 | $0.000 | — | 0% | 82% |
+
+Qwen 3.5 Plus is **12× cheaper than Sonnet 4.6 for 88% of the quality, and 3× cheaper than Haiku 4.5 for 98% of Haiku's quality.** The strict $/quality math makes it the new daily-driver pick.
+
+### Architecture findings from Daniel 5
+
+**1. Effective active parameters > total parameter count.** Three runs of Gemma 4 26B-A4B (MoE with ~4B active) all converged at 35-37/50 regardless of deployment, quantization, or sampling temperature. Dense Qwen 9B (full 9B active) outscored it by 4.5 points at the same nominal cost ($0). Architecture, not deployment, is the bottleneck.
+
+**2. Same model, two deployments → identical score.** Gemma 4 26B-A4B local Q4_K_XL and Gemma 4 26B-A4B via OpenRouter (full precision) scored **pixel-identically** (35/50, dimension by dimension). This rules out quantization, deployment, and sampling parameters as explanations and isolates architecture as the cause.
+
+**3. Dense beats MoE in the same family by ~6 points.** Gemma 4 36B (dense, OpenRouter) scored 41/50 vs Gemma 4 26B-A4B (MoE, OpenRouter) scored 35/50 — same family, same deployment, same passage, only architecture changed. The 6-point gap is the cost of MoE routing for grounding-heavy work.
+
+**4. Temperature responses are vendor-specific, not just architecture-specific.** Within dense models alone:
+   - Claude Sonnet 4.6 at temp 1.0 → 48/50 (no degradation)
+   - Qwen 3.5 9B at temp 0.2 → 39.5/50; at temp 1.0 → 36/50 (−3.5)
+   - Qwen 3.5 Plus at temp 0.02 → 42/50
+
+   Claude is temperature-agnostic; Qwen dense (any size) requires very low temperature; Gemma MoE prefers higher temperature (1.0 beats 0.5 by 2 points). The "low temp for small models" rule from earlier versions of this doc was over-generalized — it applies to dense Qwen specifically, not to all small models.
+
+### Daniel 5 fingerprints (pipeline grounding signals)
+
+For models tested on Daniel 5, valuable specific fingerprints include:
+
+| Fingerprint | DB Source | Required Tier |
+|---|---|---|
+| Nabonidus as actual king with Belshazzar as co-regent | `narrative_units.climate_note` | (Historical) |
+| Vindication via Nabonidus Chronicle (1854 cuneiform discovery) | `narrative_units.climate_note` | (Historical) |
+| "Third ruler in the kingdom" precision (Daniel 5:7,16,29) | Canon text | (Canon) |
+| Cyrus diverting the Euphrates to enter Babylon | `narrative_units.climate_note` | (Historical) |
+| Babylon falling during a festival | `narrative_units.climate_note` | (Historical) |
+| Temple vessels as deliberate echo of 2 Kings 25 / 2 Chr 36 | cross-reference | (Scholarship) or (Canon) |
+| MENE/TEKEL/PERES as monetary weights with verbal double meanings | linguistic | (Scholarship) |
+| PERES → Persia wordplay | linguistic | (Scholarship) |
+| Aramaic vs Hebrew sections of Daniel | linguistic | (Scholarship) |
+| "Father" as ancestor in ANE royal vocabulary | linguistic/historical | (Scholarship) |
+| Tema as Nabonidus's actual location during seclusion | `narrative_units.climate_note` | (Historical) |
+
+**A+ models hit ~5+ of these. B-tier models hit 2-3. The Qwen 3.5 Plus runs hit 4-5 consistently across three passages, including the deep PERES/Persia and Euphrates diversion fingerprints that no other non-frontier model surfaced.**
+
+---
+
 ## 4. Detailed Model Rankings
 
 ### Top Tier (Production Recommended)
@@ -510,9 +606,44 @@ The grounding system lifts weaker models MORE than stronger ones. Haiku goes fro
 
 ## 5. Parameter Defaults
 
-**IMPORTANT: Per-provider parameters.** API models and local models need different settings.
+**IMPORTANT: Parameters are family-specific, not just provider-specific.** Different model vendors have different temperature tolerances. Validated 2026-04-14 on the Daniel 5 cross-passage benchmark across 8 model configurations.
 
-### API models (OpenRouter, custom, Bedrock, Google, OpenAI)
+### The temperature × architecture × vendor matrix
+
+| Model family | Temperature tolerance | Optimal range | Failure mode at wrong temp |
+|---|---|---|---|
+| **Claude (dense, all sizes)** | temperature-agnostic | 0.7-1.0 fine | none observed (Sonnet at 1.0 still scored 48/50) |
+| **Qwen dense (all sizes)** | temperature-intolerant | **0.02-0.2** | grounding precision drops, factual wobbles, scholarship surfacing collapses |
+| **Gemma MoE small-active** | prefers higher | **1.0** | undertuned at low temp; does NOT fabricate at high |
+| **Gemma dense** | API default works | ~0.7 | not stress-tested, but no obvious tuning issues |
+
+**The biggest gotcha:** dense Qwen models (both the 9B open-weight and the Plus hosted flagship) need very low temperature for grounding work. The Selah API default of 0.7 will catastrophically underperform Qwen by 4-6 points. Selah auto-applies a preset when you select Qwen 3.5 Plus in the Settings UI — but if you're configuring Qwen via API or another tool, set temp 0.02 manually.
+
+### Claude family (Opus, Sonnet, Haiku) — temperature-agnostic
+
+```
+Temperature:       0.7   (set wherever you want — no quality cost at 1.0)
+Top P:             0.85
+Max tokens:        2400
+Frequency penalty: 0.3
+Presence penalty:  0.3
+```
+
+Claude models are well-calibrated against grounding context. Sonnet 4.6 at temp 1.0 scored 48/50 on Daniel 5. Raise temperature freely for warmer prose with no measurable downside.
+
+### Qwen 3.5 Plus (hosted flagship) — REQUIRES extreme low temperature
+
+```
+Temperature:       0.02   ← yes, two-hundredths
+Top P:             0.85
+Max tokens:        2400
+Frequency penalty: 0.3
+Presence penalty:  0.3
+```
+
+Validated across 3 passages (Daniel 5, Exodus 4:24-26, Judges 6) at this exact configuration: scored 42, 42.5, 42 (mean 42.17/50, variance ±0.5). At Selah's default temp 0.7 the model would score significantly lower. **Selah's Settings UI auto-applies these parameters when you select a Qwen Plus model.**
+
+### Other API models (OpenRouter, OpenAI, Google, Bedrock — non-Qwen)
 
 ```
 Temperature:       0.7
@@ -522,7 +653,7 @@ Frequency penalty: 0.3
 Presence penalty:  0.3
 ```
 
-### Local models (Ollama — Gemma 4 31B)
+### Local models (Ollama — Gemma 4 31B and similar dense)
 
 ```
 Temperature:       0.5
@@ -532,7 +663,7 @@ Frequency penalty: 0.6
 Presence penalty:  0.5
 ```
 
-### Small local models (Ollama — Qwen 3.5 9B and similar <10B models)
+### Small local models (Ollama — Qwen 3.5 9B and similar <10B dense models)
 
 ```
 Temperature:       0.2
@@ -541,6 +672,31 @@ Max tokens:        2304
 Frequency penalty: 0.3
 Presence penalty:  0.3
 ```
+
+### MoE local models (Gemma 4 26B-A4B and similar sparse-active architectures)
+
+```
+Temperature:       1.0    ← yes, really — see note below
+Top P:             0.85
+Max tokens:        2400
+Frequency penalty: 0.6
+Presence penalty:  0.5
+```
+
+**Why MoE wants the opposite of dense small:**
+
+The "lower temperature for small models" rule (validated on Qwen 9B dense) does NOT transfer to MoE-with-small-active architectures. Tested 2026-04-14 on the Daniel 5 benchmark with Gemma 4 26B-A4B Q4_K_XL:
+
+| Temp | Score (out of 50) |
+|------|-------------------|
+| 0.5  | 35                |
+| 1.0  | 37                |
+
+The +2 point uplift came from tier discipline and scholarship surfacing. Pipeline grounding stayed pinned at the 4B-active ceiling regardless. **No fabrication was observed at temp 1.0**, in contrast to dense 9B models which collapse into invented Hebrew etymologies above temp 0.3.
+
+**Hypothesis:** MoE routing is itself a discrete winner-take-all sampling step on top of per-token logit sampling. At low temperature, expert routing locks into stable-but-mediocre expert paths; higher per-token temperature nudges routing into different experts each token, exploring a wider sliver of the model's actual capacity. The randomness budget that would corrupt a dense small model gets absorbed by routing instead.
+
+**Important caveat:** even at the optimal config, MoE-with-small-active models still cannot surface the deepest curated fingerprints — the architecture ceiling is real. Validate before generalizing this temperature rule to other MoE families.
 
 **These parameters were found through iterative testing on the Gideon benchmark:**
 

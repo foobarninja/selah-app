@@ -1,0 +1,24 @@
+{
+  "name": "selah-mcp",
+  "version": "0.1.0",
+  "private": true,
+  "description": "Selah authoring + research MCP server for Claude Desktop",
+  "type": "module",
+  "main": "server.ts",
+  "scripts": {
+    "typecheck": "tsc --noEmit",
+    "start": "tsx server.ts",
+    "inspect": "npx @modelcontextprotocol/inspector tsx server.ts"
+  },
+  "dependencies": {
+    "@modelcontextprotocol/sdk": "^1.0.4",
+    "better-sqlite3": "^12.8.0",
+    "zod": "^3.23.8"
+  },
+  "devDependencies": {
+    "@types/better-sqlite3": "^7.6.13",
+    "@types/node": "^20",
+    "tsx": "^4.21.0",
+    "typescript": "^5"
+  }
+}

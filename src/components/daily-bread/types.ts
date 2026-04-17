@@ -36,6 +36,7 @@ export interface DevotionalHistory {
 }
 
 export interface CompletionState { devotionalId: string; familyNotes: string; rating: number | null }
+export interface DevotionalBook { id: string; name: string }
 
 // ── Component props ──
 
@@ -46,6 +47,7 @@ export interface DailyBreadProps {
   selectedDevotional?: Devotional
   history: DevotionalHistory[]
   browseDevotionals: DevotionalSummary[]
+  devotionalBooks?: DevotionalBook[]
   activeTab: DailyBreadTab
   completionState: CompletionState | null
 

@@ -9,7 +9,7 @@ const upsertSchema = {
   bookId: z.string().describe("UPPERCASE 3-letter book code."),
   chapter: z.number().int().positive(),
   verse: z.number().int().positive().nullable().optional().describe("null/undefined = chapter-level. isIntroduction should be true in that case."),
-  text: z.string().min(1),
+  text: z.string().min(1).describe("The commentary text. The BSB verse text will be auto-prepended as a quote — do NOT include it yourself."),
   isIntroduction: z.boolean().default(false),
   model: z.string().optional(),
 };
@@ -47,7 +47,7 @@ export function registerCommentaryWrites(server: McpServer): void {
   server.registerTool(
     "upsert_commentary_entry",
     {
-      description: `Upsert a commentary entry attached to the '${SELAH_AI_SOURCE_ID}' source. Natural key: (sourceId, bookId, chapter, verse). Calls ensure_ai_commentary_source transparently on first use.`,
+      description: `Upsert a commentary entry attached to the '${SELAH_AI_SOURCE_ID}' source. Natural key: (sourceId, bookId, chapter, verse). Auto-prepends the BSB verse text as a quote before the commentary. Calls ensure_ai_commentary_source transparently on first use.`,
       inputSchema: upsertSchema,
       annotations: { readOnlyHint: false, idempotentHint: true },
     },
@@ -64,6 +64,8 @@ export function registerCommentaryWrites(server: McpServer): void {
           const book = db.prepare(`SELECT 1 FROM books WHERE id = ?`).get(args.bookId);
           if (!book) throw new Error(`bookId '${args.bookId}' does not exist`);
 
+          const finalText = prependVerseText(args.bookId, args.chapter, args.verse ?? null, args.text);
+
           const existing = db.prepare(`
             SELECT id FROM commentary_entries
             WHERE source_id = ? AND book_id = ? AND chapter = ? AND (verse IS ? OR verse = ?)
@@ -72,13 +74,13 @@ export function registerCommentaryWrites(server: McpServer): void {
           if (existing) {
             db.prepare(`
               UPDATE commentary_entries SET text=?, is_introduction=? WHERE id=?
-            `).run(args.text, args.isIntroduction ? 1 : 0, existing.id);
+            `).run(finalText, args.isIntroduction ? 1 : 0, existing.id);
             return { action: "updated", id: existing.id };
           } else {
             const info = db.prepare(`
               INSERT INTO commentary_entries (source_id, book_id, chapter, verse, text, is_introduction)
               VALUES (?, ?, ?, ?, ?, ?)
-            `).run(SELAH_AI_SOURCE_ID, args.bookId, args.chapter, args.verse ?? null, args.text, args.isIntroduction ? 1 : 0);
+            `).run(SELAH_AI_SOURCE_ID, args.bookId, args.chapter, args.verse ?? null, finalText, args.isIntroduction ? 1 : 0);
             return { action: "created", id: Number(info.lastInsertRowid) };
           }
         },
@@ -87,6 +89,20 @@ export function registerCommentaryWrites(server: McpServer): void {
       return { content: [{ type: "text" as const, text: JSON.stringify(result, null, 2) }] };
     }
   );
+}
+
+function prependVerseText(bookId: string, chapter: number, verse: number | null, commentary: string): string {
+  if (verse === null) return commentary;
+  const bookRow = db.prepare(`SELECT name FROM books WHERE id = ?`).get(bookId) as { name: string } | undefined;
+  const verseRow = db.prepare(
+    `SELECT text FROM verses WHERE translation_id = 'BSB' AND book_id = ? AND chapter = ? AND verse = ?`
+  ).get(bookId, chapter, verse) as { text: string } | undefined;
+  if (!verseRow) return commentary;
+  const bookName = bookRow?.name ?? bookId;
+  const ref = `${bookName} ${chapter}:${verse}`;
+  const prefix = `${ref} — "${verseRow.text}" — `;
+  if (commentary.startsWith(ref)) return commentary;
+  return prefix + commentary;
 }
 
 function ensureAiSource(): void {

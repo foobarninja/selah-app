@@ -2,6 +2,7 @@
 
 import { useState } from 'react'
 import { Wheat, Clock } from 'lucide-react'
+import { DevotionalBrowse } from './DevotionalBrowse'
 import type {
   DailyBreadProps,
   MoodTile,
@@ -78,6 +79,7 @@ function HistoryEntry({ entry, onOpen }: { entry: DevotionalHistory; onOpen?: ()
 
 export function DailyBreadLanding({
   moodTiles, seasonalCard, history, browseDevotionals,
+  devotionalBooks,
   activeTab: initialTab,
   onSelectMood, onBeginSeasonal, onChangeTab, onOpenDevotional,
 }: DailyBreadProps) {
@@ -108,10 +110,12 @@ export function DailyBreadLanding({
         )}
 
         {activeTab === 'browse' && (
-          <div className="space-y-3">
-            <p style={{ fontFamily: font.body, fontSize: '12px', color: 'var(--selah-text-3, #6E695F)', marginBottom: '8px' }}>{browseDevotionals.length} devotionals</p>
-            {browseDevotionals.map((dev) => (<BrowseCard key={dev.id} devotional={dev} onOpen={() => onOpenDevotional?.(dev.id)} />))}
-          </div>
+          <DevotionalBrowse
+            initialData={browseDevotionals}
+            moodTiles={moodTiles}
+            books={devotionalBooks ?? []}
+            onOpenDevotional={onOpenDevotional ? (id) => onOpenDevotional(id) : undefined}
+          />
         )}
 
         {activeTab === 'history' && (

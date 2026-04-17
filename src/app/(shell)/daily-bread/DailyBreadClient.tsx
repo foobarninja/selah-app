@@ -7,6 +7,7 @@ import type {
   Devotional,
   DevotionalSummary,
   DevotionalHistory,
+  DevotionalBook,
   MoodTile,
   AudienceLevel,
   DailyBreadTab,
@@ -18,6 +19,7 @@ interface Props {
   browseDevotionals: DevotionalSummary[]
   history: DevotionalHistory[]
   tonightDevotional: Devotional | null
+  devotionalBooks: DevotionalBook[]
 }
 
 export default function DailyBreadClient({
@@ -25,6 +27,7 @@ export default function DailyBreadClient({
   browseDevotionals,
   history,
   tonightDevotional,
+  devotionalBooks,
 }: Props) {
   const router = useRouter()
   const [selectedDevotional, setSelectedDevotional] = useState<Devotional | null>(null)
@@ -110,6 +113,7 @@ export default function DailyBreadClient({
       onChangeTab={setActiveTab}
       onOverrideAudience={setAudienceLevel}
       onOpenDevotional={selectById}
+      devotionalBooks={devotionalBooks}
     />
   )
 }

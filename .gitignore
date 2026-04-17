@@ -110,7 +110,5 @@ next-env.d.ts
 # Superpowers brainstorming mockups
 /.superpowers/
 
-# MCP server build + logs
-/mcp/node_modules
-/mcp/dist
-/mcp/logs/*.jsonl
+# MCP server (private tooling, not shared)
+/mcp/

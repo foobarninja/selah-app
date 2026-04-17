@@ -15,18 +15,19 @@ export interface SearchResults {
   themes: Array<{ id: string; name: string; definition: string }>
   strongs: Array<{ number: string; word: string; transliteration: string; shortDefinition: string }>
   narratives: Array<{ id: string; title: string; summary: string; bookId: string }>
+  devotionals: Array<{ id: string; title: string; passageRef: string; snippet: string }>
 }
 
 export async function universalSearch(query: string, limit = 10): Promise<SearchResults> {
   if (!query || query.trim().length < 2) {
-    return { verses: [], characters: [], themes: [], strongs: [], narratives: [] }
+    return { verses: [], characters: [], themes: [], strongs: [], narratives: [], devotionals: [] }
   }
 
   const parsed = parseSearchQuery(query)
 
   // Need at least one positive term for any search to make sense
   if (parsed.positiveTerms.length === 0) {
-    return { verses: [], characters: [], themes: [], strongs: [], narratives: [] }
+    return { verses: [], characters: [], themes: [], strongs: [], narratives: [], devotionals: [] }
   }
 
   const db = getDb()
@@ -100,6 +101,16 @@ export async function universalSearch(query: string, limit = 10): Promise<Search
       rawNarratives = fallbackNarrativeLike(db, parsed, limit)
     }
 
+    // ── Devotionals: LIKE on title, context_brief, modern_moment ──
+    const rawDevotionals = searchEntities<{ id: string; title: string; book_id: string; chapter: number; verse_start: number; verse_end: number; context_brief: string; modern_moment: string }>(
+      db,
+      `SELECT id, title, book_id, chapter, verse_start, verse_end, COALESCE(context_brief, '') AS context_brief, COALESCE(modern_moment, '') AS modern_moment FROM devotionals`,
+      parsed,
+      ['title', 'context_brief', 'modern_moment'],
+      'title',
+      limit,
+    )
+
     return {
       verses: rawVerses.map((v) => ({
         id: v.id,
@@ -130,6 +141,12 @@ export async function universalSearch(query: string, limit = 10): Promise<Search
         title: n.title,
         summary: n.summary ?? '',
         bookId: n.book_id,
+      })),
+      devotionals: rawDevotionals.map((d) => ({
+        id: d.id,
+        title: d.title,
+        passageRef: `${BOOK_NAMES[d.book_id] ?? d.book_id} ${d.chapter}:${d.verse_start}-${d.verse_end}`,
+        snippet: (d.context_brief || d.modern_moment).slice(0, 200),
       })),
     }
   } finally {

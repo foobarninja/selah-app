@@ -1,3 +1,4 @@
+import Database from 'better-sqlite3'
 import { prisma } from '@/lib/db'
 import { BOOK_NAMES } from '@/lib/constants'
 import type {
@@ -131,6 +132,82 @@ export async function completeDevotional(
       familyNotes: familyNotes || null,
     },
   })
+}
+
+function getDb() {
+  const dbUrl = process.env.DATABASE_URL ?? 'file:./data/selah.db'
+  const dbPath = dbUrl.replace('file:', '')
+  return new Database(dbPath, { readonly: true })
+}
+
+export async function searchDevotionals(opts: {
+  query?: string
+  tagId?: string
+  bookId?: string
+  audience?: string
+  limit?: number
+}): Promise<DevotionalSummary[]> {
+  const db = getDb()
+  try {
+    const where: string[] = []
+    const params: unknown[] = []
+
+    if (opts.query && opts.query.trim().length >= 2) {
+      const q = `%${opts.query.trim()}%`
+      where.push('(d.title LIKE ? OR d.context_brief LIKE ? OR d.modern_moment LIKE ?)')
+      params.push(q, q, q)
+    }
+    if (opts.tagId) {
+      where.push('EXISTS (SELECT 1 FROM devotional_tag_map m WHERE m.devotional_id = d.id AND m.tag_id = ?)')
+      params.push(opts.tagId)
+    }
+    if (opts.bookId) {
+      where.push('d.book_id = ?')
+      params.push(opts.bookId)
+    }
+    if (opts.audience) {
+      where.push('d.audience = ?')
+      params.push(opts.audience)
+    }
+
+    const whereClause = where.length > 0 ? `WHERE ${where.join(' AND ')}` : ''
+    const limit = opts.limit ?? 50
+
+    const rows = db.prepare(`
+      SELECT d.id, d.title, d.book_id, d.chapter, d.verse_start, d.verse_end,
+             d.audience, d.estimated_minutes, d.season,
+             (SELECT t.name FROM devotional_tag_map m JOIN devotional_tags t ON t.id = m.tag_id WHERE m.devotional_id = d.id LIMIT 1) AS situation
+      FROM devotionals d
+      ${whereClause}
+      ORDER BY d.title
+      LIMIT ?
+    `).all(...params, limit) as Array<{
+      id: string; title: string; book_id: string; chapter: number;
+      verse_start: number; verse_end: number; audience: string;
+      estimated_minutes: number; season: string | null; situation: string | null
+    }>
+
+    return rows.map((d) => ({
+      id: d.id,
+      title: d.title,
+      passageRef: `${BOOK_NAMES[d.book_id] ?? d.book_id} ${d.chapter}:${d.verse_start}-${d.verse_end}`,
+      audienceLevel: d.audience as DevotionalSummary['audienceLevel'],
+      estimatedMinutes: d.estimated_minutes,
+      seasonalSet: (d.season ?? 'ordinary') as DevotionalSummary['seasonalSet'],
+      situation: d.situation ?? '',
+    }))
+  } finally {
+    db.close()
+  }
+}
+
+export async function getDevotionalBooks(): Promise<Array<{ id: string; name: string }>> {
+  const books = await prisma.book.findMany({
+    where: { devotionals: { some: {} } },
+    select: { id: true, name: true },
+    orderBy: { bookOrder: 'asc' },
+  })
+  return books.map((b) => ({ id: b.id, name: b.name }))
 }
 
 async function mapDevotional(dev: {

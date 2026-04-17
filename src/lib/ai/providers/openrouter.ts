@@ -29,17 +29,26 @@ export class OpenRouterAdapter implements AiProviderAdapter {
       content: m.content,
     }))
 
+    const modelId = config.model || this.model
+    const isAnthropic = /^anthropic\//i.test(modelId)
+
     // OpenRouter accepts a `reasoning` object that isn't in the OpenAI SDK's
     // typed params. Cast through `unknown` to pass it as an extra body field.
     // `effort: "none"` fully disables reasoning for supported models (DeepSeek
     // V3.1/R1, Qwen3 thinking variants, Claude 3.7+, GPT-5, etc.).
+    //
+    // Anthropic models error on non-default sampling parameters (temperature,
+    // top_p, top_k, frequency_penalty, presence_penalty) as of Claude 4.5/4.6.
+    // When routing through an Anthropic model, omit them entirely.
     const params = {
-      model: config.model || this.model,
+      model: modelId,
       max_tokens: config.maxTokens || 1500,
-      temperature: config.temperature ?? 0.3,
-      top_p: config.topP ?? 0.85,
-      frequency_penalty: config.frequencyPenalty ?? 0,
-      presence_penalty: config.presencePenalty ?? 0,
+      ...(isAnthropic ? {} : {
+        temperature: config.temperature ?? 0.3,
+        top_p: config.topP ?? 0.85,
+        frequency_penalty: config.frequencyPenalty ?? 0,
+        presence_penalty: config.presencePenalty ?? 0,
+      }),
       messages: openaiMessages,
       stream: true as const,
       ...(this.disableThinking ? { reasoning: { effort: 'none' } } : {}),

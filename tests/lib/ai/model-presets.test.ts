@@ -28,7 +28,33 @@ describe('findOpenRouterPreset', () => {
     })
   })
 
-  describe('non-matches (should not apply Qwen Plus preset)', () => {
+  describe('Anthropic Claude matching', () => {
+    it('matches anthropic/claude-sonnet-4', () => {
+      const p = findOpenRouterPreset('anthropic/claude-sonnet-4')
+      expect(p).toBeDefined()
+      expect(p?.label).toBe('Anthropic Claude')
+      expect(p?.params.temperature).toBe(1)
+      expect(p?.params.freqPenalty).toBe(0)
+      expect(p?.params.presPenalty).toBe(0)
+    })
+
+    it('matches anthropic/claude-opus-4-6', () => {
+      const p = findOpenRouterPreset('anthropic/claude-opus-4-6')
+      expect(p?.label).toBe('Anthropic Claude')
+    })
+
+    it('matches anthropic/claude-haiku-4-5-20251001', () => {
+      const p = findOpenRouterPreset('anthropic/claude-haiku-4-5-20251001')
+      expect(p?.label).toBe('Anthropic Claude')
+    })
+
+    it('case-insensitive', () => {
+      const p = findOpenRouterPreset('Anthropic/Claude-Sonnet-4')
+      expect(p?.label).toBe('Anthropic Claude')
+    })
+  })
+
+  describe('non-matches', () => {
     it('does not match qwen/qwen-2.5-72b-instruct (open-weight, not Plus)', () => {
       expect(findOpenRouterPreset('qwen/qwen-2.5-72b-instruct')).toBeUndefined()
     })
@@ -39,10 +65,6 @@ describe('findOpenRouterPreset', () => {
 
     it('does not match qwen/qwen3-30b-a3b (MoE open-weight)', () => {
       expect(findOpenRouterPreset('qwen/qwen3-30b-a3b')).toBeUndefined()
-    })
-
-    it('does not match anthropic/claude-sonnet-4', () => {
-      expect(findOpenRouterPreset('anthropic/claude-sonnet-4')).toBeUndefined()
     })
 
     it('does not match google/gemma-4-36b', () => {

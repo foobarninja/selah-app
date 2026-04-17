@@ -56,6 +56,22 @@ export const OPENROUTER_PRESETS: ModelPreset[] = [
     reason:
       'Dense Qwen models require extremely low temperature for grounding work. Validated at 42/50 across Daniel 5, Exodus 4:24-26, and Judges 6 (mean 42.17, ±0.5 variance).',
   },
+  {
+    // Anthropic Claude models (4.5, 4.6, etc.) error on non-default sampling
+    // parameters. The adapter strips them at request time, so the preset just
+    // documents the constraint and sets params to API defaults.
+    match: /^anthropic\//i,
+    label: 'Anthropic Claude',
+    params: {
+      temperature: 1,
+      topP: 1,
+      maxTokens: 2400,
+      freqPenalty: 0,
+      presPenalty: 0,
+    },
+    reason:
+      'Anthropic models reject non-default sampling parameters. Temperature, top_p, and penalties are locked to defaults.',
+  },
 ]
 
 /**

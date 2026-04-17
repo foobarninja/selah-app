@@ -166,8 +166,13 @@ export async function searchDevotionals(opts: {
       params.push(opts.bookId)
     }
     if (opts.audience) {
-      where.push('d.audience = ?')
-      params.push(opts.audience)
+      if (opts.audience === 'tween') {
+        where.push('EXISTS (SELECT 1 FROM devotional_tag_map m WHERE m.devotional_id = d.id AND m.tag_id = ?)')
+        params.push('tween')
+      } else {
+        where.push('d.audience = ?')
+        params.push(opts.audience)
+      }
     }
 
     const whereClause = where.length > 0 ? `WHERE ${where.join(' AND ')}` : ''

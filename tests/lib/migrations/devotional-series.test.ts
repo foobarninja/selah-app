@@ -145,5 +145,37 @@ describe('devotional series migration', () => {
         db.close()
       }
     })
+
+    it('trigger detaches children correctly for a multi-row series delete', () => {
+      runMigration()
+      const db = new Database(TEST_DB)
+      try {
+        db.pragma('foreign_keys = ON')
+        db.exec(`
+          INSERT INTO devotional_series (id, title, description) VALUES ('m1', 't', 'd');
+          INSERT INTO devotional_series (id, title, description) VALUES ('m2', 't', 'd');
+        `)
+        const existing = db.prepare(`SELECT id FROM devotionals LIMIT 4`).all() as Array<{ id: string }>
+        db.prepare(`UPDATE devotionals SET series_id = 'm1', series_order = 10 WHERE id = ?`).run(existing[0].id)
+        db.prepare(`UPDATE devotionals SET series_id = 'm1', series_order = 20 WHERE id = ?`).run(existing[1].id)
+        db.prepare(`UPDATE devotionals SET series_id = 'm2', series_order = 10 WHERE id = ?`).run(existing[2].id)
+        db.prepare(`UPDATE devotionals SET series_id = 'm2', series_order = 20 WHERE id = ?`).run(existing[3].id)
+
+        // Delete both series in one statement — trigger should fire per row.
+        db.prepare(`DELETE FROM devotional_series WHERE id IN ('m1', 'm2')`).run()
+
+        const rows = db.prepare(
+          `SELECT id, series_id, series_order FROM devotionals WHERE id IN (?, ?, ?, ?)`
+        ).all(existing[0].id, existing[1].id, existing[2].id, existing[3].id) as Array<{ id: string; series_id: string | null; series_order: number | null }>
+
+        expect(rows).toHaveLength(4)
+        for (const row of rows) {
+          expect(row.series_id).toBeNull()
+          expect(row.series_order).toBeNull()
+        }
+      } finally {
+        db.close()
+      }
+    })
   })
 })

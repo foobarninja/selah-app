@@ -79,9 +79,10 @@ function HistoryEntry({ entry, onOpen }: { entry: DevotionalHistory; onOpen?: ()
 
 export function DailyBreadLanding({
   moodTiles, seasonalCard, history, browseDevotionals,
+  browseSeries,
   devotionalBooks,
   activeTab: initialTab,
-  onSelectMood, onBeginSeasonal, onChangeTab, onOpenDevotional,
+  onSelectMood, onBeginSeasonal, onChangeTab, onOpenDevotional, onOpenSeries,
 }: DailyBreadProps) {
   const [activeTab, setActiveTab] = useState<DailyBreadTab>(initialTab || 'tonight')
   const handleTabChange = (tab: DailyBreadTab) => { setActiveTab(tab); onChangeTab?.(tab) }
@@ -112,9 +113,11 @@ export function DailyBreadLanding({
         {activeTab === 'browse' && (
           <DevotionalBrowse
             initialData={browseDevotionals}
+            initialSeries={browseSeries ?? []}
             moodTiles={moodTiles}
             books={devotionalBooks ?? []}
             onOpenDevotional={onOpenDevotional ? (id) => onOpenDevotional(id) : undefined}
+            onOpenSeries={onOpenSeries}
           />
         )}
 

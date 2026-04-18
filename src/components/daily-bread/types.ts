@@ -79,6 +79,8 @@ export interface DailyBreadProps {
   selectedDevotional?: Devotional
   history: DevotionalHistory[]
   browseDevotionals: DevotionalSummary[]
+  browseSeries?: SeriesSummary[]
+  onOpenSeries?: (seriesId: string) => void
   devotionalBooks?: DevotionalBook[]
   activeTab: DailyBreadTab
   completionState: CompletionState | null

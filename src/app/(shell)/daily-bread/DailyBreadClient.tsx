@@ -12,11 +12,13 @@ import type {
   AudienceLevel,
   DailyBreadTab,
   SeasonalCard,
+  SeriesSummary,
 } from '@/components/daily-bread/types'
 
 interface Props {
   moodTiles: MoodTile[]
   browseDevotionals: DevotionalSummary[]
+  browseSeries: SeriesSummary[]
   history: DevotionalHistory[]
   tonightDevotional: Devotional | null
   devotionalBooks: DevotionalBook[]
@@ -25,6 +27,7 @@ interface Props {
 export default function DailyBreadClient({
   moodTiles,
   browseDevotionals,
+  browseSeries,
   history,
   tonightDevotional,
   devotionalBooks,
@@ -114,6 +117,8 @@ export default function DailyBreadClient({
       onOverrideAudience={setAudienceLevel}
       onOpenDevotional={selectById}
       devotionalBooks={devotionalBooks}
+      browseSeries={browseSeries}
+      onOpenSeries={(id) => router.push(`/daily-bread/series/${id}`)}
     />
   )
 }

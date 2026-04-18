@@ -7,6 +7,7 @@ import type {
   DevotionalSummary,
   DevotionalHistory,
   SeriesSummary,
+  SeriesDetail,
 } from '@/components/daily-bread/types'
 
 export async function getMoodTiles(): Promise<MoodTile[]> {
@@ -353,6 +354,62 @@ export async function searchSeries(opts: {
     }
 
     return result
+  } finally {
+    db.close()
+  }
+}
+
+export async function getSeriesById(id: string): Promise<SeriesDetail | null> {
+  const db = getDb()
+  try {
+    const s = db.prepare(`SELECT id, title, description, audience, season FROM devotional_series WHERE id = ?`).get(id) as
+      | { id: string; title: string; description: string; audience: string; season: string | null }
+      | undefined
+    if (!s) return null
+
+    const countRow = db.prepare(`SELECT COUNT(*) n, COALESCE(SUM(estimated_minutes),0) mins FROM devotionals WHERE series_id = ?`).get(id) as { n: number; mins: number }
+
+    const tagRows = db.prepare(`
+      SELECT DISTINCT t.name
+      FROM devotional_tag_map m
+      JOIN devotionals d ON d.id = m.devotional_id
+      JOIN devotional_tags t ON t.id = m.tag_id
+      WHERE d.series_id = ?
+      ORDER BY t.name
+    `).all(id) as Array<{ name: string }>
+
+    const partRows = db.prepare(`
+      SELECT d.id, d.series_order, d.title, d.book_id, d.chapter, d.verse_start, d.verse_end,
+             d.estimated_minutes,
+             (SELECT MAX(h.completed_at) FROM devotional_history h WHERE h.devotional_id = d.id) AS completed_at
+      FROM devotionals d
+      WHERE d.series_id = ?
+      ORDER BY d.series_order ASC NULLS LAST
+    `).all(id) as Array<{
+      id: string; series_order: number; title: string; book_id: string;
+      chapter: number; verse_start: number; verse_end: number;
+      estimated_minutes: number; completed_at: string | null
+    }>
+
+    return {
+      id: s.id,
+      title: s.title,
+      description: s.description,
+      audience: s.audience,
+      season: s.season,
+      partCount: countRow.n,
+      totalEstimatedMinutes: countRow.mins,
+      tags: tagRows.map((r) => r.name),
+      bridgePart: null,
+      parts: partRows.map((p) => ({
+        id: p.id,
+        seriesOrder: p.series_order,
+        title: p.title,
+        passageRef: `${BOOK_NAMES[p.book_id] ?? p.book_id} ${p.chapter}:${p.verse_start}-${p.verse_end}`,
+        estimatedMinutes: p.estimated_minutes,
+        completedAt: p.completed_at,
+      })),
+    }
   } finally {
     db.close()
   }

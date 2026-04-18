@@ -1,5 +1,5 @@
 import { NextRequest, NextResponse } from 'next/server'
-import { searchDevotionals } from '@/lib/daily-bread/queries'
+import { searchDevotionals, searchSeries } from '@/lib/daily-bread/queries'
 
 export async function GET(request: NextRequest) {
   const sp = request.nextUrl.searchParams
@@ -9,6 +9,10 @@ export async function GET(request: NextRequest) {
   const audience = sp.get('audience') ?? undefined
   const limit = parseInt(sp.get('limit') ?? '50', 10)
 
-  const results = await searchDevotionals({ query, tagId, bookId, audience, limit })
-  return NextResponse.json(results)
+  const [devotionals, series] = await Promise.all([
+    searchDevotionals({ query, tagId, bookId, audience, limit }),
+    searchSeries({ query, tagId, bookId, audience, limit }),
+  ])
+
+  return NextResponse.json({ devotionals, series })
 }

@@ -52,14 +52,14 @@ model Devotional {
   seriesId    String? @map("series_id")
   seriesOrder Int?    @map("series_order")
 
-  series DevotionalSeries? @relation(fields: [seriesId], references: [id], onDelete: SetNull)
+  series DevotionalSeries? @relation(fields: [seriesId], references: [id])
 
   @@index([seriesId, seriesOrder])
   // existing indexes retained
 }
 ```
 
-**FK cascade:** `onDelete: SetNull`. Devotionals are the primary entity; deleting a series should decompose it, not cascade-delete its devotionals.
+**FK cascade:** handled by a `BEFORE DELETE` trigger on `devotional_series` that atomically nulls both `series_id` and `series_order` on all child devotionals. `ON DELETE SET NULL` is **not** used because it would only null `series_id`, leaving `series_order` orphaned and violating the pairing CHECK. Devotionals are the primary entity; deleting a series decomposes it, not cascade-deletes its devotionals.
 
 **Compound index** on `[seriesId, seriesOrder]` — covers the dominant query (fetch a series in order).
 
@@ -73,12 +73,11 @@ Two SQL-level constraints, added via raw migration (Prisma schema doesn't model 
 
 1. **Both-or-neither CHECK**:
    ```sql
-   ALTER TABLE devotionals ADD CONSTRAINT series_pairing CHECK (
-     (series_id IS NULL AND series_order IS NULL)
-     OR (series_id IS NOT NULL AND series_order IS NOT NULL)
-   );
+   CHECK ((series_id IS NULL) = (series_order IS NULL))
    ```
    Prevents "in a series but unordered" or "ordered but seriesless" states.
+
+   **SQLite limitation:** `ALTER TABLE ... ADD CHECK` is not supported. The CHECK clause must be baked into the table at creation time. Adding it to an existing `devotionals` table requires the standard SQLite 12-step table-rebuild pattern: `PRAGMA foreign_keys=OFF`, create `devotionals_new` with the constraint, copy data, drop old, rename, recreate indexes, `PRAGMA foreign_keys=ON`. Existing rows all satisfy the constraint (both columns will be NULL after the rebuild copies), so no data fixup is needed.
 
 2. **Unique order within series** (partial unique index):
    ```sql
@@ -89,6 +88,8 @@ Two SQL-level constraints, added via raw migration (Prisma schema doesn't model 
    Prevents duplicate Part 2s. Partial index (only enforced when `series_id` is set) leaves standalone devotionals unaffected.
 
 Both constraints are enforceable in SQLite natively and travel with the xz-packaged DB to production.
+
+**Prisma schema annotations:** Prisma's schema language can't express CHECK constraints or partial unique indexes. To prevent future drift, the `Devotional` model in `prisma/schema.prisma` gets a comment block above the `seriesId` / `seriesOrder` fields pointing to the migration script that owns these constraints. Without the pointer, someone reading `@@index([seriesId, seriesOrder])` alone would not realize there's also a partial-unique variant and a pairing CHECK enforced at the SQL layer.
 
 ## Authoring Surface (MCP)
 
@@ -110,11 +111,10 @@ Three changes to the MCP server — all land in this branch:
 One Prisma migration:
 
 1. `CREATE TABLE devotional_series (...)` with the fields above.
-2. `ALTER TABLE devotionals ADD COLUMN series_id TEXT REFERENCES devotional_series(id) ON DELETE SET NULL`.
-3. `ALTER TABLE devotionals ADD COLUMN series_order INTEGER`.
-4. `CREATE INDEX idx_devotionals_series_order ON devotionals(series_id, series_order)`.
-5. `CREATE UNIQUE INDEX idx_devotional_unique_series_order ON devotionals(series_id, series_order) WHERE series_id IS NOT NULL`.
-6. `ALTER TABLE devotionals ADD CONSTRAINT series_pairing CHECK (...)`.
+2. Rebuild `devotionals` with new columns `series_id TEXT REFERENCES devotional_series(id)` (no cascade action) and `series_order INTEGER`, plus the CHECK constraint and existing FKs, via the SQLite 12-step table rebuild. Recreate existing indexes after the rename.
+3. `CREATE INDEX idx_devotionals_series_order ON devotionals(series_id, series_order)`.
+4. `CREATE UNIQUE INDEX idx_devotional_unique_series_order ON devotionals(series_id, series_order) WHERE series_id IS NOT NULL`.
+5. Create `BEFORE DELETE` trigger `trg_devotional_series_detach` on `devotional_series` that nulls both `series_id` and `series_order` on child devotionals.
 
 No data migration required — all existing devotionals have `series_id = NULL` and `series_order = NULL` (both-or-neither satisfied).
 
@@ -132,7 +132,7 @@ The Prisma schema is updated to reflect the new model + columns (so `prisma gene
    - Attempt to attach a second devotional at `seriesOrder: 10` — expect unique-index error.
    - Attempt to set only `seriesId` without `seriesOrder` — expect CHECK error (or MCP pre-validation error).
    - Detach by passing `seriesId: null` — both fields clear.
-5. **FK SetNull behavior:** delete the test series row manually — child devotionals should have both `series_id` and `series_order` set to NULL (CHECK still satisfied).
+5. **Trigger-based detach:** delete the test series row manually — child devotionals should have both `series_id` and `series_order` set to NULL (CHECK still satisfied, DELETE succeeds because no FK references remain).
 
 ## Open Items (deferred, not blocking)
 

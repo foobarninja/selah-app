@@ -95,6 +95,17 @@ function migrate(db: Database.Database): void {
         WHERE series_id IS NOT NULL;
     `)
 
+    db.exec(`
+      CREATE TRIGGER trg_devotional_series_detach
+      BEFORE DELETE ON devotional_series
+      FOR EACH ROW
+      BEGIN
+        UPDATE devotionals
+        SET series_id = NULL, series_order = NULL
+        WHERE series_id = OLD.id;
+      END;
+    `)
+
     const fkViolations = db.prepare(`PRAGMA foreign_key_check`).all() as unknown[]
     if (fkViolations.length > 0) {
       throw new Error(`foreign_key_check failed after rebuild: ${JSON.stringify(fkViolations)}`)

@@ -73,7 +73,7 @@ describe('searchSeries', () => {
     const testRow = results.find((r) => r.id === 'test-series-1')
     expect(testRow).toBeDefined()
     expect(testRow!.bridgePart).not.toBeNull()
-    expect(testRow!.bridgePart!.seriesOrder).toBe(20)
+    expect(testRow!.bridgePart!.seriesOrder).toBe(2)
     expect(testRow!.bridgePart!.devotionalId).toBe(part2.id)
   })
 
@@ -85,7 +85,7 @@ describe('searchSeries', () => {
 
     const results = await searchSeries({ bookId: common.book_id })
     const testRow = results.find((r) => r.id === 'test-series-1')
-    expect(testRow?.bridgePart?.seriesOrder).toBe(10)
+    expect(testRow?.bridgePart?.seriesOrder).toBe(1)
   })
 
   it('returns null bridgePart when the series itself matches the text query', async () => {

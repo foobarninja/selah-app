@@ -53,7 +53,7 @@ describe('getSeriesById', () => {
     expect(result!.id).toBe('test-detail-1')
     expect(result!.title).toBe('Detail Arc')
     expect(result!.parts).toHaveLength(3)
-    expect(result!.parts.map((p) => p.seriesOrder)).toEqual([10, 20, 30])
+    expect(result!.parts.map((p) => p.seriesOrder)).toEqual([1, 2, 3])
     expect(result!.parts[0].completedAt).toBeNull()
     expect(result!.parts[1].completedAt).toBe('2026-04-16T10:00:00.000Z')
     expect(result!.parts[2].completedAt).toBeNull()

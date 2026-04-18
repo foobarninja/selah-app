@@ -319,20 +319,22 @@ export async function searchSeries(opts: {
         }
 
         const child = db.prepare(`
-          SELECT cd.id, cd.series_order, cd.title, cd.book_id, cd.chapter, cd.verse_start, cd.verse_end
+          SELECT cd.id, cd.series_order, cd.title, cd.book_id, cd.chapter, cd.verse_start, cd.verse_end,
+                 (SELECT COUNT(*) FROM devotionals sib
+                    WHERE sib.series_id = cd.series_id AND sib.series_order <= cd.series_order) AS position
           FROM devotionals cd
           WHERE ${bridgeWhere.join(' AND ')}
           ORDER BY cd.series_order ASC NULLS LAST
           LIMIT 1
         `).get(...bridgeParams) as {
           id: string; series_order: number; title: string; book_id: string;
-          chapter: number; verse_start: number; verse_end: number
+          chapter: number; verse_start: number; verse_end: number; position: number
         } | undefined
 
         if (child) {
           const bookName = BOOK_NAMES[child.book_id] ?? child.book_id
           bridgePart = {
-            seriesOrder: child.series_order,
+            seriesOrder: child.position,
             title: child.title,
             passageRef: `${bookName} ${child.chapter}:${child.verse_start}-${child.verse_end}`,
             devotionalId: child.id,
@@ -401,9 +403,9 @@ export async function getSeriesById(id: string): Promise<SeriesDetail | null> {
       totalEstimatedMinutes: countRow.mins,
       tags: tagRows.map((r) => r.name),
       bridgePart: null,
-      parts: partRows.map((p) => ({
+      parts: partRows.map((p, idx) => ({
         id: p.id,
-        seriesOrder: p.series_order,
+        seriesOrder: idx + 1,
         title: p.title,
         passageRef: `${BOOK_NAMES[p.book_id] ?? p.book_id} ${p.chapter}:${p.verse_start}-${p.verse_end}`,
         estimatedMinutes: p.estimated_minutes,
@@ -464,8 +466,12 @@ async function mapDevotional(dev: {
       select: { title: true, _count: { select: { devotionals: true } } },
     })
     if (seriesRow && dev.seriesOrder != null) {
+      // Convert sparse storage order (e.g. 10, 20, 30) to 1-based display position.
+      const position = await prisma.devotional.count({
+        where: { seriesId: dev.seriesId, seriesOrder: { lte: dev.seriesOrder } },
+      })
       seriesMeta = {
-        seriesOrder: dev.seriesOrder,
+        seriesOrder: position,
         seriesTitle: seriesRow.title,
         partCount: seriesRow._count.devotionals,
       }

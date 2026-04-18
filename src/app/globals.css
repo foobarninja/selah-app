@@ -83,6 +83,12 @@
   --selah-gold-active-text: var(--selah-gold-700);
 }
 
+html, body {
+  overflow-x: hidden;
+  overflow-x: clip;
+  overscroll-behavior-x: none;
+}
+
 body {
   background: var(--selah-bg-page);
   color: var(--selah-text-1);

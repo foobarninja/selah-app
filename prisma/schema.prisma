@@ -442,15 +442,49 @@ model Devotional {
   sourceNotes          String? @map("source_notes")
   createdAt            String  @default("") @map("created_at")
 
-  book          Book               @relation(fields: [bookId], references: [id])
-  narrativeUnit NarrativeUnit?     @relation(fields: [narrativeId], references: [id])
+  // NOTE: seriesId + seriesOrder are bound by CHECK ((series_id IS NULL) = (series_order IS NULL))
+  // and a partial UNIQUE index on (series_id, series_order) WHERE series_id IS NOT NULL.
+  // Both constraints live in scripts/etl/add-devotional-series-schema.ts because Prisma's schema
+  // language cannot express CHECK clauses or partial unique indexes.
+  seriesId    String? @map("series_id")
+  seriesOrder Int?    @map("series_order")
+
+  book          Book                @relation(fields: [bookId], references: [id])
+  narrativeUnit NarrativeUnit?      @relation(fields: [narrativeId], references: [id])
+  series        DevotionalSeries?   @relation(fields: [seriesId], references: [id])
   tagMaps       DevotionalTagMap[]
   history       DevotionalHistory[]
 
   @@index([bookId, chapter, verseStart])
   @@index([season])
   @@index([audience])
+  @@index([seriesId, seriesOrder])
   @@map("devotionals")
+}
+
+// Series detachment is handled by a BEFORE DELETE trigger (trg_devotional_series_detach,
+// defined in scripts/etl/add-devotional-series-schema.ts) that atomically nulls BOTH
+// series_id and series_order on all child devotionals before the series row is deleted.
+// The trigger — not ON DELETE SET NULL — is the correct mechanism because nulling only
+// series_id would violate the pairing CHECK constraint.
+//
+// Additionally, Prisma cannot express:
+//   - the partial unique index UNIQUE(series_id, series_order) WHERE series_id IS NOT NULL
+//   - the CHECK ((series_id IS NULL) = (series_order IS NULL))
+// Both live in the migration script.
+model DevotionalSeries {
+  id          String  @id
+  title       String
+  description String
+  audience    String  @default("family")
+  season      String?
+  sourceTier  String  @default("ai_assisted") @map("source_tier")
+  sourceNotes String? @map("source_notes")
+  createdAt   String  @default("") @map("created_at")
+
+  devotionals Devotional[]
+
+  @@map("devotional_series")
 }
 
 model DevotionalTagMap {

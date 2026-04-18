@@ -431,6 +431,8 @@ async function mapDevotional(dev: {
   goingDeeper: string | null; audience: string;
   estimatedMinutes: number; season: string | null;
   narrativeId: string | null;
+  seriesId?: string | null;
+  seriesOrder?: number | null;
 }): Promise<Devotional> {
   const bookName = BOOK_NAMES[dev.bookId] ?? dev.bookId
   const passageRef = `${bookName} ${dev.chapter}:${dev.verseStart}-${dev.verseEnd}`
@@ -455,6 +457,21 @@ async function mapDevotional(dev: {
     starters = [dev.conversationStarters]
   }
 
+  let seriesMeta: Devotional['seriesMeta'] = null
+  if (dev.seriesId) {
+    const seriesRow = await prisma.devotionalSeries.findUnique({
+      where: { id: dev.seriesId },
+      select: { title: true, _count: { select: { devotionals: true } } },
+    })
+    if (seriesRow && dev.seriesOrder != null) {
+      seriesMeta = {
+        seriesOrder: dev.seriesOrder,
+        seriesTitle: seriesRow.title,
+        partCount: seriesRow._count.devotionals,
+      }
+    }
+  }
+
   return {
     id: dev.id,
     title: dev.title,
@@ -473,5 +490,7 @@ async function mapDevotional(dev: {
       narrativeUnitRef: dev.narrativeId ?? '',
       prompt: dev.goingDeeper ?? '',
     },
+    seriesId: dev.seriesId ?? null,
+    seriesMeta,
   }
 }

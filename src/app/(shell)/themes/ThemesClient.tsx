@@ -1,13 +1,34 @@
 'use client'
 
-import { useState, useMemo } from 'react'
+import { useState, useEffect } from 'react'
 import { useRouter } from 'next/navigation'
 import { ThemeBrowser } from '@/components/themes'
 import type { CategoryGroup, ThreadPrompt } from '@/components/themes/types'
 
+function pickPrompt(categoryGroups: CategoryGroup[], index: number): ThreadPrompt {
+  const allThemes = categoryGroups.flatMap((g) => g.themes)
+  const t = allThemes[index]
+  return {
+    themeId: t?.id ?? '',
+    name: t?.name ?? '',
+    hook: t?.modernFraming?.substring(0, 100) ?? '',
+    category: (categoryGroups.find((g) => g.themes.includes(t))?.id as 'virtue') ?? 'doctrine',
+  }
+}
+
 export default function ThemesClient({ categoryGroups }: { categoryGroups: CategoryGroup[] }) {
   const router = useRouter()
   const [searchQuery, setSearchQuery] = useState('')
+
+  // SSR-safe: initialize with a deterministic prompt (first theme) so server and
+  // client render the same HTML during hydration. The effect below randomizes
+  // post-mount, which avoids the Math.random() hydration mismatch.
+  const [threadPrompt, setThreadPrompt] = useState<ThreadPrompt>(() => pickPrompt(categoryGroups, 0))
+
+  useEffect(() => {
+    const total = categoryGroups.flatMap((g) => g.themes).length
+    if (total > 0) setThreadPrompt(pickPrompt(categoryGroups, Math.floor(Math.random() * total)))
+  }, [categoryGroups])
 
   const filtered = searchQuery
     ? categoryGroups
@@ -22,18 +43,6 @@ export default function ThemesClient({ categoryGroups }: { categoryGroups: Categ
         .filter((g) => g.themes.length > 0)
     : categoryGroups
 
-  // Pick a random theme for the thread prompt
-  const threadPrompt: ThreadPrompt = useMemo(() => {
-    const allThemes = categoryGroups.flatMap((g) => g.themes)
-    const t = allThemes[Math.floor(Math.random() * allThemes.length)]
-    return {
-      themeId: t?.id ?? '',
-      name: t?.name ?? '',
-      hook: t?.modernFraming?.substring(0, 100) ?? '',
-      category: categoryGroups.find((g) => g.themes.includes(t))?.id as 'virtue' ?? 'doctrine',
-    }
-  }, [categoryGroups])
-
   return (
     <ThemeBrowser
       threadPrompt={threadPrompt}
@@ -42,7 +51,10 @@ export default function ThemesClient({ categoryGroups }: { categoryGroups: Categ
       searchQuery={searchQuery}
       onSearch={setSearchQuery}
       onOpenProfile={(id) => router.push(`/themes/${id}`)}
-      onRefreshThread={() => {}}
+      onRefreshThread={() => {
+        const total = categoryGroups.flatMap((g) => g.themes).length
+        if (total > 0) setThreadPrompt(pickPrompt(categoryGroups, Math.floor(Math.random() * total)))
+      }}
     />
   )
 }

@@ -229,6 +229,10 @@ function migrate(db: Database.Database): void {
         source_tier TEXT NOT NULL DEFAULT 'ai_assisted',
         source_notes TEXT,
         created_at TEXT NOT NULL DEFAULT '',
+        -- series_id / series_order are detached on series delete by the
+        -- trg_devotional_series_detach trigger (created below). NOT by
+        -- ON DELETE SET NULL — that would null only series_id, violating
+        -- the pairing CHECK on the line below.
         series_id TEXT,
         series_order INTEGER,
         FOREIGN KEY (book_id) REFERENCES books(id),
@@ -727,6 +731,26 @@ sqlite3 data/selah.db "SELECT id, title, source_tier FROM devotional_series WHER
 
 Expected: one row with those values.
 
+Now verify upsert semantics on the same id — it should update in place, preserving `created_at` and appending a revision marker to `source_notes`:
+
+```
+upsert_devotional_series({
+  id: "test-series-1",
+  title: "Test Series (revised)",
+  description: "Scratch row, second call — should UPDATE not conflict.",
+  audience: "family",
+  model: "claude-opus-4-7"
+})
+```
+
+Expected: JSON response with `created: false`, `id: "test-series-1"`. Then verify in SQL:
+
+```bash
+sqlite3 data/selah.db "SELECT id, title, created_at, source_notes FROM devotional_series WHERE id = 'test-series-1';"
+```
+
+Expected: `title` reflects the revised value, `created_at` is unchanged from the first call, `source_notes` contains both the original provenance string and a revision marker.
+
 Clean up:
 
 ```bash
@@ -911,7 +935,7 @@ with:
     args.sortBy === "weakness" ? `weaknessScore DESC` :
     args.sortBy === "created" ? `d.created_at DESC` :
     args.sortBy === "coverage" ? `tagCount ASC, weaknessScore DESC` :
-    args.seriesId ? `d.series_order ASC` :
+    args.seriesId ? `d.series_order ASC NULLS LAST` :
     `d.book_id, d.chapter, d.verse_start`;
 ```
 

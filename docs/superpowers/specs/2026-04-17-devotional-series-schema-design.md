@@ -61,6 +61,8 @@ model Devotional {
 
 **FK cascade:** handled by a `BEFORE DELETE` trigger on `devotional_series` that atomically nulls both `series_id` and `series_order` on all child devotionals. `ON DELETE SET NULL` is **not** used because it would only null `series_id`, leaving `series_order` orphaned and violating the pairing CHECK. Devotionals are the primary entity; deleting a series decomposes it, not cascade-deletes its devotionals.
 
+The trigger fires for **any** deletion of a `devotional_series` row — direct DELETE, future cascades from hypothetical parent tables, `TRUNCATE`-equivalent recreations, anything. It's the only pathway by which a child devotional's `series_id` can be nulled, making the detach semantics robust against future schema additions that might route deletions through other paths.
+
 **Compound index** on `[seriesId, seriesOrder]` — covers the dominant query (fetch a series in order).
 
 ### Ordering convention
@@ -102,7 +104,7 @@ Three changes to the MCP server — all land in this branch:
    - `seriesId` exists in `devotional_series` (FK guard with friendly error)
    - `seriesOrder` doesn't collide with another devotional in the same series (unless updating the same devotional)
 
-3. **`query_devotionals`** (existing, extended) — add `seriesId` filter. Returns results ordered by `seriesOrder` when the filter is set. No new tool needed for `query_series` — that's deferred until a UI actually needs it.
+3. **`query_devotionals`** (existing, extended) — add `seriesId` filter. Returns results ordered by `series_order ASC NULLS LAST` when the filter is set. The CHECK constraint makes null-order-within-a-series impossible in normal operation, but `NULLS LAST` is used (instead of relying on SQLite's default `NULLS FIRST`) so that if a broken row ever slips through a future migration or bug, it surfaces visibly at the end of the series rather than silently corrupting the reading order at position 1. No new tool needed for `query_series` — that's deferred until a UI actually needs it.
 
 **Authoring order:** create series first, then attach devotionals. The tools enforce this via FK validation.
 

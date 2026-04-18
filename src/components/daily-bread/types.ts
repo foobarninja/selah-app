@@ -23,6 +23,8 @@ export interface Devotional {
   estimatedMinutes: number; seasonalSet: SeasonalSet; moodMatch: string
   passage: string; contextBrief: string; modernMoment: string
   conversationStarters: string[]; goingDeeper: GoingDeeper
+  seriesId?: string | null
+  seriesMeta?: { seriesOrder: number; seriesTitle: string; partCount: number } | null
 }
 
 export interface DevotionalSummary {
@@ -37,6 +39,36 @@ export interface DevotionalHistory {
 
 export interface CompletionState { devotionalId: string; familyNotes: string; rating: number | null }
 export interface DevotionalBook { id: string; name: string }
+
+export interface SeriesPart {
+  id: string
+  seriesOrder: number
+  title: string
+  passageRef: string
+  estimatedMinutes: number
+  completedAt: string | null
+}
+
+export interface SeriesSummary {
+  id: string
+  title: string
+  description: string
+  audience: string
+  season: string | null
+  partCount: number
+  totalEstimatedMinutes: number
+  tags: string[]
+  bridgePart: {
+    seriesOrder: number
+    title: string
+    passageRef: string
+    devotionalId: string
+  } | null
+}
+
+export interface SeriesDetail extends SeriesSummary {
+  parts: SeriesPart[]
+}
 
 // ── Component props ──
 

@@ -1,7 +1,7 @@
 'use client'
 
-import { useState, useCallback } from 'react'
-import { useRouter } from 'next/navigation'
+import { useState, useCallback, useEffect } from 'react'
+import { useRouter, useSearchParams } from 'next/navigation'
 import { DailyBreadLanding, DailyBreadReading } from '@/components/daily-bread'
 import type {
   Devotional,
@@ -86,6 +86,16 @@ export default function DailyBreadClient({
     message: '',
     devotionalId: '',
   }
+
+  const searchParams = useSearchParams()
+  useEffect(() => {
+    const id = searchParams.get('devotional')
+    if (id) {
+      selectById(id)
+      // Clean the URL so reloads don't re-trigger the fetch indefinitely.
+      router.replace('/daily-bread')
+    }
+  }, [searchParams, selectById, router])
 
   if (selectedDevotional) {
     return (

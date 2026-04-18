@@ -6,6 +6,7 @@ import type {
   Devotional,
   DevotionalSummary,
   DevotionalHistory,
+  SeriesSummary,
 } from '@/components/daily-bread/types'
 
 export async function getMoodTiles(): Promise<MoodTile[]> {
@@ -135,6 +136,8 @@ export async function completeDevotional(
 }
 
 function getDb() {
+  const override = process.env.SELAH_DB_PATH_OVERRIDE
+  if (override) return new Database(override, { readonly: true })
   const dbUrl = process.env.DATABASE_URL ?? 'file:./data/selah.db'
   const dbPath = dbUrl.replace('file:', '')
   return new Database(dbPath, { readonly: true })
@@ -201,6 +204,155 @@ export async function searchDevotionals(opts: {
       seasonalSet: (d.season ?? 'ordinary') as DevotionalSummary['seasonalSet'],
       situation: d.situation ?? '',
     }))
+  } finally {
+    db.close()
+  }
+}
+
+export async function searchSeries(opts: {
+  query?: string
+  tagId?: string
+  bookId?: string
+  audience?: string
+  limit?: number
+}): Promise<SeriesSummary[]> {
+  const db = getDb()
+  try {
+    // ── Stage 1: find matching series ids (title + filter pre-pass) ──
+    const where: string[] = []
+    const params: unknown[] = []
+
+    if (opts.query && opts.query.trim().length >= 2) {
+      const q = `%${opts.query.trim()}%`
+      // Match series title/description OR any child's title/context_brief/modern_moment.
+      where.push(`(
+        s.title LIKE ? OR s.description LIKE ?
+        OR EXISTS (
+          SELECT 1 FROM devotionals cd WHERE cd.series_id = s.id
+          AND (cd.title LIKE ? OR cd.context_brief LIKE ? OR cd.modern_moment LIKE ?)
+        )
+      )`)
+      params.push(q, q, q, q, q)
+    }
+    if (opts.audience) {
+      if (opts.audience === 'tween') {
+        where.push(`(
+          s.audience = 'tween'
+          OR EXISTS (SELECT 1 FROM devotionals cd JOIN devotional_tag_map m ON m.devotional_id = cd.id
+                     WHERE cd.series_id = s.id AND m.tag_id = 'tween')
+        )`)
+      } else {
+        where.push(`s.audience = ?`)
+        params.push(opts.audience)
+      }
+    }
+    if (opts.bookId) {
+      where.push(`EXISTS (SELECT 1 FROM devotionals cd WHERE cd.series_id = s.id AND cd.book_id = ?)`)
+      params.push(opts.bookId)
+    }
+    if (opts.tagId) {
+      where.push(`EXISTS (
+        SELECT 1 FROM devotionals cd JOIN devotional_tag_map m ON m.devotional_id = cd.id
+        WHERE cd.series_id = s.id AND m.tag_id = ?
+      )`)
+      params.push(opts.tagId)
+    }
+
+    const whereClause = where.length > 0 ? `WHERE ${where.join(' AND ')}` : ''
+    const limit = opts.limit ?? 50
+
+    const seriesRows = db.prepare(`
+      SELECT s.id, s.title, s.description, s.audience, s.season
+      FROM devotional_series s
+      ${whereClause}
+      ORDER BY s.created_at DESC
+      LIMIT ?
+    `).all(...params, limit) as Array<{
+      id: string; title: string; description: string; audience: string; season: string | null
+    }>
+
+    if (seriesRows.length === 0) return []
+
+    // ── Stage 2: per-series enrich (partCount, totalMinutes, tags, bridgePart) ──
+    const result: SeriesSummary[] = []
+
+    for (const s of seriesRows) {
+      const countRow = db.prepare(`SELECT COUNT(*) n, COALESCE(SUM(estimated_minutes),0) mins FROM devotionals WHERE series_id = ?`).get(s.id) as { n: number; mins: number }
+
+      const tagRows = db.prepare(`
+        SELECT DISTINCT t.name
+        FROM devotional_tag_map m
+        JOIN devotionals d ON d.id = m.devotional_id
+        JOIN devotional_tags t ON t.id = m.tag_id
+        WHERE d.series_id = ?
+        ORDER BY t.name
+      `).all(s.id) as Array<{ name: string }>
+
+      // ── Bridge logic: determine which (if any) child caused the match. ──
+      let bridgePart: SeriesSummary['bridgePart'] = null
+
+      // Does the series itself match the text query? If so, no bridge — series is the match.
+      const seriesSelfMatches =
+        !opts.query || opts.query.trim().length < 2 ||
+        s.title.toLowerCase().includes(opts.query.trim().toLowerCase()) ||
+        s.description.toLowerCase().includes(opts.query.trim().toLowerCase())
+
+      const needsBridge = Boolean(opts.bookId || opts.tagId || (opts.query && opts.query.trim().length >= 2 && !seriesSelfMatches))
+
+      if (needsBridge) {
+        const bridgeWhere: string[] = ['cd.series_id = ?']
+        const bridgeParams: unknown[] = [s.id]
+
+        if (opts.bookId) {
+          bridgeWhere.push('cd.book_id = ?')
+          bridgeParams.push(opts.bookId)
+        }
+        if (opts.tagId) {
+          bridgeWhere.push(`EXISTS (SELECT 1 FROM devotional_tag_map m WHERE m.devotional_id = cd.id AND m.tag_id = ?)`)
+          bridgeParams.push(opts.tagId)
+        }
+        if (opts.query && opts.query.trim().length >= 2 && !seriesSelfMatches) {
+          const q = `%${opts.query.trim()}%`
+          bridgeWhere.push(`(cd.title LIKE ? OR cd.context_brief LIKE ? OR cd.modern_moment LIKE ?)`)
+          bridgeParams.push(q, q, q)
+        }
+
+        const child = db.prepare(`
+          SELECT cd.id, cd.series_order, cd.title, cd.book_id, cd.chapter, cd.verse_start, cd.verse_end
+          FROM devotionals cd
+          WHERE ${bridgeWhere.join(' AND ')}
+          ORDER BY cd.series_order ASC NULLS LAST
+          LIMIT 1
+        `).get(...bridgeParams) as {
+          id: string; series_order: number; title: string; book_id: string;
+          chapter: number; verse_start: number; verse_end: number
+        } | undefined
+
+        if (child) {
+          const bookName = BOOK_NAMES[child.book_id] ?? child.book_id
+          bridgePart = {
+            seriesOrder: child.series_order,
+            title: child.title,
+            passageRef: `${bookName} ${child.chapter}:${child.verse_start}-${child.verse_end}`,
+            devotionalId: child.id,
+          }
+        }
+      }
+
+      result.push({
+        id: s.id,
+        title: s.title,
+        description: s.description,
+        audience: s.audience,
+        season: s.season,
+        partCount: countRow.n,
+        totalEstimatedMinutes: countRow.mins,
+        tags: tagRows.map((r) => r.name),
+        bridgePart,
+      })
+    }
+
+    return result
   } finally {
     db.close()
   }

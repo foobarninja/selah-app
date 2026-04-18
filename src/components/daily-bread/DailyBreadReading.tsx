@@ -2,6 +2,7 @@
 
 import { useState } from 'react'
 import { ArrowLeft, Clock, ChevronRight } from 'lucide-react'
+import { SeriesBadge } from './SeriesBadge'
 import type { Devotional, AudienceLevel } from './types'
 
 /* ── Fonts ── */
@@ -51,9 +52,10 @@ interface DailyBreadReadingProps {
   onNavigatePassage?: (bookId: string, chapter: number) => void
   onComplete?: (notes: string, rating: number | null) => void
   onDismissCloseOut?: () => void
+  onOpenSeries?: (seriesId: string) => void
 }
 
-export function DailyBreadReading({ devotional, currentAudienceLevel, onBack, onOverrideAudience, onNavigatePassage, onComplete, onDismissCloseOut }: DailyBreadReadingProps) {
+export function DailyBreadReading({ devotional, currentAudienceLevel, onBack, onOverrideAudience, onNavigatePassage, onComplete, onDismissCloseOut, onOpenSeries }: DailyBreadReadingProps) {
   const [showAudiencePopover, setShowAudiencePopover] = useState(false)
   const [notes, setNotes] = useState('')
   const [rating, setRating] = useState<number | null>(null)
@@ -66,6 +68,11 @@ export function DailyBreadReading({ devotional, currentAudienceLevel, onBack, on
       <div className="h-full flex items-center justify-center" style={{ padding: '40px 32px' }}>
         <div className="text-center" style={{ maxWidth: '400px' }}>
           <p style={{ fontFamily: font.display, fontSize: '28px', fontWeight: 300, fontStyle: 'italic', color: 'var(--selah-text-1, #E8E2D9)', lineHeight: 1.5, marginBottom: '24px' }}>Today&rsquo;s bread was broken.</p>
+          {devotional.seriesId && devotional.seriesMeta && (
+            <p style={{ fontFamily: font.body, fontSize: '14px', color: 'var(--selah-text-3, #6E695F)', lineHeight: 1.6, marginBottom: '24px' }}>
+              Part {devotional.seriesMeta.seriesOrder} of {devotional.seriesMeta.partCount}. The next one will be here when you&rsquo;re ready.
+            </p>
+          )}
           <button onClick={onBack} style={{ fontFamily: font.body, fontSize: '14px', fontWeight: 500, color: 'var(--selah-text-3, #6E695F)', background: 'none', border: 'none', cursor: 'pointer', textDecoration: 'underline', textUnderlineOffset: '3px' }}>Back to Daily Bread</button>
         </div>
       </div>
@@ -88,6 +95,15 @@ export function DailyBreadReading({ devotional, currentAudienceLevel, onBack, on
           </div>
         </div>
 
+        {devotional.seriesId && devotional.seriesMeta && onOpenSeries && (
+          <SeriesBadge
+            seriesId={devotional.seriesId}
+            seriesOrder={devotional.seriesMeta.seriesOrder}
+            seriesTitle={devotional.seriesMeta.seriesTitle}
+            partCount={devotional.seriesMeta.partCount}
+            onOpenSeries={onOpenSeries}
+          />
+        )}
         <h1 style={{ fontFamily: font.display, fontWeight: 300, fontSize: '32px', lineHeight: 1.3, color: 'var(--selah-text-1, #E8E2D9)', marginBottom: '6px' }}>{devotional.title}</h1>
         <p style={{ fontFamily: font.display, fontSize: '16px', fontWeight: 400, fontStyle: 'italic', letterSpacing: '1px', color: 'var(--selah-text-3, #6E695F)', marginBottom: '36px' }}>{devotional.passageRef}</p>
 

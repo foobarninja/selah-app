@@ -96,6 +96,7 @@ export default function DailyBreadClient({
         onComplete={onComplete}
         onOverrideAudience={setAudienceLevel}
         onNavigatePassage={(bookId, chapter) => router.push(`/reader/${bookId}/${chapter}`)}
+        onOpenSeries={(id) => router.push(`/daily-bread/series/${id}`)}
       />
     )
   }

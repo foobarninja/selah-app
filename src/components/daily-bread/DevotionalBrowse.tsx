@@ -1,8 +1,10 @@
+// src/components/daily-bread/DevotionalBrowse.tsx
 'use client'
 
 import { useState, useEffect, useRef, useCallback } from 'react'
 import { Search, X, Clock } from 'lucide-react'
-import type { DevotionalSummary, MoodTile, DevotionalBook, AudienceLevel } from './types'
+import { SeriesCard } from './SeriesCard'
+import type { DevotionalSummary, MoodTile, DevotionalBook, AudienceLevel, SeriesSummary } from './types'
 
 const font = {
   display: "var(--selah-font-display, 'Cormorant Garamond', serif)",
@@ -13,17 +15,20 @@ const audiences: AudienceLevel[] = ['family', 'tween' as AudienceLevel, 'teens',
 
 interface Props {
   initialData: DevotionalSummary[]
+  initialSeries?: SeriesSummary[]
   moodTiles: MoodTile[]
   books: DevotionalBook[]
   onOpenDevotional?: (id: string) => void
+  onOpenSeries?: (id: string) => void
 }
 
-export function DevotionalBrowse({ initialData, moodTiles, books, onOpenDevotional }: Props) {
+export function DevotionalBrowse({ initialData, initialSeries, moodTiles, books, onOpenDevotional, onOpenSeries }: Props) {
   const [query, setQuery] = useState('')
   const [tagId, setTagId] = useState('')
   const [bookId, setBookId] = useState('')
   const [audience, setAudience] = useState('')
-  const [results, setResults] = useState<DevotionalSummary[]>(initialData)
+  const [devotionalResults, setDevotionalResults] = useState<DevotionalSummary[]>(initialData)
+  const [seriesResults, setSeriesResults] = useState<SeriesSummary[]>(initialSeries ?? [])
   const [loading, setLoading] = useState(false)
   const debounceRef = useRef<ReturnType<typeof setTimeout> | null>(null)
 
@@ -31,7 +36,8 @@ export function DevotionalBrowse({ initialData, moodTiles, books, onOpenDevotion
 
   const fetchResults = useCallback(async (q: string, tag: string, book: string, aud: string) => {
     if (!q && !tag && !book && !aud) {
-      setResults(initialData)
+      setDevotionalResults(initialData)
+      setSeriesResults(initialSeries ?? [])
       return
     }
     setLoading(true)
@@ -43,13 +49,14 @@ export function DevotionalBrowse({ initialData, moodTiles, books, onOpenDevotion
       if (aud) params.set('audience', aud)
       const resp = await fetch(`/api/devotionals/search?${params.toString()}`)
       const data = await resp.json()
-      setResults(data)
+      setDevotionalResults(data.devotionals ?? [])
+      setSeriesResults(data.series ?? [])
     } catch (e) {
       console.error('[DevotionalBrowse] search failed:', e)
     } finally {
       setLoading(false)
     }
-  }, [initialData])
+  }, [initialData, initialSeries])
 
   useEffect(() => {
     if (debounceRef.current) clearTimeout(debounceRef.current)
@@ -60,6 +67,8 @@ export function DevotionalBrowse({ initialData, moodTiles, books, onOpenDevotion
   }, [query, tagId, bookId, audience, fetchResults])
 
   const clearAll = () => { setQuery(''); setTagId(''); setBookId(''); setAudience('') }
+
+  const showSeriesSection = seriesResults.length > 0
 
   return (
     <div className="space-y-4">
@@ -145,17 +154,38 @@ export function DevotionalBrowse({ initialData, moodTiles, books, onOpenDevotion
       </div>
 
       <p style={{ fontFamily: font.body, fontSize: '12px', color: 'var(--selah-text-3, #6E695F)' }}>
-        {loading ? 'Searching...' : `${results.length} devotional${results.length === 1 ? '' : 's'}`}
+        {loading ? 'Searching...' : `${devotionalResults.length} devotional${devotionalResults.length === 1 ? '' : 's'}${showSeriesSection ? ` · ${seriesResults.length} series` : ''}`}
       </p>
 
+      {showSeriesSection && (
+        <>
+          <p style={{ fontFamily: font.body, fontSize: '10px', fontWeight: 500, textTransform: 'uppercase', letterSpacing: '1.5px', color: 'var(--selah-teal-400, #4A9E88)', marginTop: '16px', marginBottom: '8px' }}>
+            Series
+          </p>
+          <div className="space-y-3">
+            {seriesResults.map((s) => (
+              <SeriesCard
+                key={s.id}
+                series={s}
+                onOpenSeries={(id) => onOpenSeries?.(id)}
+                onOpenPart={(id) => onOpenDevotional?.(id)}
+              />
+            ))}
+          </div>
+          <p style={{ fontFamily: font.body, fontSize: '10px', fontWeight: 500, textTransform: 'uppercase', letterSpacing: '1.5px', color: 'var(--selah-text-3, #6E695F)', marginTop: '20px', marginBottom: '8px' }}>
+            All Devotionals
+          </p>
+        </>
+      )}
+
       <div className="space-y-3">
-        {results.length === 0 && !loading && (
+        {devotionalResults.length === 0 && !loading && (
           <div className="text-center py-12">
             <p style={{ fontFamily: font.display, fontSize: '18px', fontWeight: 400, color: 'var(--selah-text-2, #A39E93)', marginBottom: '8px' }}>No devotionals match your filters</p>
             <p style={{ fontFamily: font.body, fontSize: '14px', color: 'var(--selah-text-3, #6E695F)' }}>Try adjusting your search or clearing filters.</p>
           </div>
         )}
-        {results.map((dev) => (
+        {devotionalResults.map((dev) => (
           <button
             key={dev.id}
             onClick={() => onOpenDevotional?.(dev.id)}

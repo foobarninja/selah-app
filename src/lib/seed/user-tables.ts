@@ -22,6 +22,8 @@
  */
 export const USER_LOCAL_TABLES: readonly string[] = [
   'app_settings',
+  'user_profiles',
+  'user_settings',
   'ai_providers',
   'ai_models',
   'journals',

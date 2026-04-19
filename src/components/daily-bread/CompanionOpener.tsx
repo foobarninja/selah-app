@@ -12,25 +12,30 @@ interface CompanionOpenerProps {
 
 export function CompanionOpener({ opener }: CompanionOpenerProps) {
   const text = opener && opener.trim().length > 0 ? opener : FALLBACK_OPENER
+  // Rendered as an assistant-style message bubble so the first interaction
+  // reads as "the companion speaking" rather than a section banner. The
+  // section header ("COMPANION" uppercase) above identifies the feature;
+  // this just presents the opening beat.
   return (
-    <div
-      role="note"
-      aria-label="Companion"
-      style={{
-        padding: '14px 16px',
-        borderRadius: '12px',
-        backgroundColor: 'var(--selah-sky-50, #EEF2F7)',
-        border: '1px solid var(--selah-sky-400, #6B91B5)',
-        fontFamily: font.body,
-        fontSize: '14px',
-        lineHeight: 1.55,
-        color: 'var(--selah-text-1, #2A2522)',
-      }}
-    >
-      <div style={{ fontSize: '10px', fontWeight: 600, textTransform: 'uppercase', letterSpacing: '1px', color: 'var(--selah-sky-700, #4A6380)', marginBottom: '6px' }}>
-        Companion
+    <div style={{ display: 'flex', justifyContent: 'flex-start', marginBottom: '12px' }}>
+      <div
+        role="note"
+        aria-label="Companion opening"
+        style={{
+          maxWidth: '85%',
+          padding: '10px 14px',
+          borderRadius: '14px',
+          backgroundColor: 'var(--selah-bg-elevated, #292524)',
+          borderLeft: '3px solid var(--selah-sky-400, #6B91B5)',
+          color: 'var(--selah-text-1, #E8E2D9)',
+          fontFamily: font.body,
+          fontSize: '14px',
+          lineHeight: 1.55,
+          fontStyle: 'italic',
+        }}
+      >
+        {text}
       </div>
-      {text}
     </div>
   )
 }

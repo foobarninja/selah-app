@@ -165,7 +165,7 @@ export function CompanionChat({ devotional, isAIConfigured }: CompanionChatProps
 
   if (!isAIConfigured) {
     return (
-      <section style={{ marginTop: '32px', padding: '14px 16px', borderRadius: '12px', backgroundColor: 'var(--selah-bg-elevated, #292524)', border: '1px dashed var(--selah-border-color, #3D3835)' }}>
+      <section style={{ marginTop: '32px', marginBottom: '32px', padding: '14px 16px', borderRadius: '12px', backgroundColor: 'var(--selah-bg-elevated, #292524)', border: '1px dashed var(--selah-border-color, #3D3835)' }}>
         <p style={{ fontFamily: font.body, fontSize: '13px', color: 'var(--selah-text-3, #6E695F)' }}>
           Configure an AI provider in{' '}
           <a href="/settings" style={{ color: 'var(--selah-sky-400, #6B91B5)' }}>Settings</a>{' '}
@@ -176,7 +176,7 @@ export function CompanionChat({ devotional, isAIConfigured }: CompanionChatProps
   }
 
   return (
-    <section style={{ marginTop: '32px' }}>
+    <section style={{ marginTop: '32px', marginBottom: '32px' }}>
       <header style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '12px' }}>
         <h3 style={{ fontFamily: font.body, fontSize: '12px', fontWeight: 600, textTransform: 'uppercase', letterSpacing: '1px', color: 'var(--selah-text-3, #6E695F)' }}>
           Companion

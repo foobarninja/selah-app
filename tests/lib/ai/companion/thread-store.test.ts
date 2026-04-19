@@ -114,4 +114,15 @@ describe('thread-store', () => {
     const list = await listThreads('rom-8-28')
     expect(list[0].messageCount).toBe(2)
   })
+
+  it('getThreadMessages throws if a message has an unexpected role', async () => {
+    const { createThread, getThreadMessages } = await import('@/lib/ai/companion/thread-store')
+    const t = await createThread({ devotionalId: 'rom-8-28', title: 'x' })
+    // Inject a rogue row directly through sqlite (bypassing Prisma) to simulate DB corruption.
+    const db = new Database(dbPath)
+    db.prepare(`INSERT INTO ai_messages (conversation_id, role, content, created_at) VALUES (?, 'system', 'rogue', ?)`)
+      .run(t.id, new Date().toISOString())
+    db.close()
+    await expect(getThreadMessages(t.id)).rejects.toThrow(/unexpected role/)
+  })
 })

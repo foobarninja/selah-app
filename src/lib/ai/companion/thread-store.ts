@@ -65,6 +65,13 @@ export async function listThreads(devotionalId: string): Promise<CompanionThread
   }))
 }
 
+function narrowRole(role: string, messageId: number): 'user' | 'assistant' {
+  if (role !== 'user' && role !== 'assistant') {
+    throw new Error(`thread-store: unexpected role '${role}' on message ${messageId}`)
+  }
+  return role
+}
+
 export async function getThreadMessages(conversationId: number): Promise<CompanionMessage[]> {
   const rows = await prisma.aiMessage.findMany({
     where: { conversationId },
@@ -72,7 +79,7 @@ export async function getThreadMessages(conversationId: number): Promise<Compani
   })
   return rows.map((r) => ({
     id: r.id,
-    role: r.role as 'user' | 'assistant',
+    role: narrowRole(r.role, r.id),
     content: r.content,
     createdAt: r.createdAt,
   }))
@@ -95,7 +102,7 @@ export async function appendMessage(conversationId: number, input: AppendMessage
   ])
   return {
     id: message.id,
-    role: message.role as 'user' | 'assistant',
+    role: narrowRole(message.role, message.id),
     content: message.content,
     createdAt: message.createdAt,
   }

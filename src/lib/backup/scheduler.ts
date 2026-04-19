@@ -79,14 +79,11 @@ async function checkAndRunAutoBackup(): Promise<void> {
     const { getBackupInfo, createBackup } = await import('@/lib/settings/queries')
 
     const info = await getBackupInfo()
-    if (!info.autoBackupEnabled) {
-      console.log('[auto-backup] Skipped — auto-backup is disabled')
-      return
-    }
-    if (!shouldRunBackupToday(info.lastBackup)) {
-      console.log(`[auto-backup] Skipped — already backed up today (${info.lastBackup.slice(0, 10)})`)
-      return
-    }
+    // Disabled is the common case for users who turned it off — stay silent
+    // instead of logging every hour.
+    if (!info.autoBackupEnabled) return
+    // Already backed up today is normal; log once at startup, skip quietly thereafter.
+    if (!shouldRunBackupToday(info.lastBackup)) return
 
     console.log('[auto-backup] Starting daily backup...')
     const buffer = await createBackup()
@@ -101,14 +98,24 @@ async function checkAndRunAutoBackup(): Promise<void> {
   }
 }
 
-let schedulerInterval: ReturnType<typeof setInterval> | null = null
+/**
+ * HMR-safe: store the interval on globalThis so dev-server module reloads
+ * don't stack multiple intervals. Without this guard, each HMR reload
+ * would create a new interval while the old one kept firing.
+ */
+interface GlobalScheduler {
+  selahBackupSchedulerInterval?: ReturnType<typeof setInterval> | null
+}
+const globalScheduler = globalThis as unknown as GlobalScheduler
 
 /**
  * Start the auto-backup scheduler. Runs an immediate check, then every hour.
  * Safe to call multiple times — subsequent calls are no-ops.
+ * HMR-safe in dev: the interval handle lives on globalThis so module
+ * reloads don't spawn duplicate intervals.
  */
 export function startAutoBackupScheduler(): void {
-  if (schedulerInterval) return // already running
+  if (globalScheduler.selahBackupSchedulerInterval) return // already running
 
   console.log('[auto-backup] Scheduler started (checking every hour)')
 
@@ -117,12 +124,12 @@ export function startAutoBackupScheduler(): void {
     checkAndRunAutoBackup()
   }, 3_000)
 
-  schedulerInterval = setInterval(() => {
+  const interval = setInterval(() => {
     checkAndRunAutoBackup()
   }, CHECK_INTERVAL_MS)
 
   // Don't block process exit
-  if (schedulerInterval.unref) {
-    schedulerInterval.unref()
-  }
+  if (interval.unref) interval.unref()
+
+  globalScheduler.selahBackupSchedulerInterval = interval
 }

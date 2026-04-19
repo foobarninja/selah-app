@@ -74,10 +74,11 @@ export default function DailyBreadClient({
     }
   }, [selectedDevotional])
 
-  // When returning from reading view after completion, refresh to get updated history
+  // Back from reading returns to Browse — where users typically came from.
+  // History is a tab they opt into explicitly.
   const handleBackFromReading = useCallback(() => {
     setSelectedDevotional(null)
-    setActiveTab('history')
+    setActiveTab('browse')
     router.refresh()
   }, [router])
 

@@ -87,6 +87,55 @@ Open [http://localhost:4610](http://localhost:4610)
 
 > **Manual download:** If `curl` fails, download `selah-seed.db.xz` from the [Hugging Face dataset page](https://huggingface.co/datasets/foooobear/selah-db/blob/main/selah-seed.db.xz) directly, save it as `data/selah.db.xz`, then run `xz -d data/selah.db.xz`.
 
+## Updating the Content Database
+
+Selah's pre-baked content (verses, commentary, characters, themes, devotionals) occasionally gets refreshed on Hugging Face. Your local progress — notes, bookmarks, study projects, completion history, AI chats, settings — lives in the same SQLite file, so updating has to *merge*, not just overwrite.
+
+**What's preserved on update:** `user_notes`, `user_bookmarks`, `user_collections`, `journals`, `reading_history`, `devotional_history`, `ai_conversations`, `ai_messages`, `study_projects`, `app_settings`, and your custom AI providers/models. The full list lives in [`src/lib/seed/user-tables.ts`](src/lib/seed/user-tables.ts).
+
+**What gets refreshed:** everything else — verses, commentary, characters, themes, devotionals, series.
+
+### Check if an update is available
+
+`npm run dev` / `npm run start` run a check automatically on boot. You'll see one of:
+
+```
+[seed-check] local seed v2026.04.19 is current
+[seed-check] update available: v2026.04.19 → v2026.05.10 (71.2 MB download). Run `npm run seed:update` to apply.
+```
+
+To check manually any time: `npm run seed:check`.
+
+For Docker users, the entrypoint runs the same check on `docker compose up` and logs to the container stdout.
+
+### Apply an update (manual)
+
+```bash
+npm run seed:update
+```
+
+This downloads the new seed, verifies sha256, merges your local user tables in, timestamps a backup of the current DB, and atomically swaps. The previous DB is preserved at `data/selah.pre-update-<timestamp>.db.bak` — delete it once you're satisfied with the update.
+
+**Docker users:**
+```bash
+docker compose run --rm selah npm run seed:update
+```
+
+### Apply automatically on startup (opt-in)
+
+Set `SELAH_AUTO_UPDATE_SEED=1` in your `.env` (or docker-compose environment). The startup check will apply any available update before booting the app. Off by default — we prefer explicit updates.
+
+### If something goes wrong
+
+The update is atomic: either it completes or it leaves your existing DB untouched. If the app misbehaves after an update:
+
+1. Stop the app
+2. `mv data/selah.db data/selah.bad.db && mv data/selah.pre-update-*.db.bak data/selah.db`
+3. Delete `data/.seed-version` so the next check doesn't think you're still on the new version
+4. Restart
+
+Orphan rows (e.g., a completion record pointing to a devotional that was renamed) are preserved but logged during the merge. They don't break anything.
+
 ## AI Provider Setup
 
 Selah works fully without AI. The AI assistant is optional — configure it in Settings when you're ready.

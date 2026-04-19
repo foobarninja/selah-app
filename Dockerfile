@@ -29,8 +29,11 @@ COPY --from=builder /app/.next/static ./.next/static
 # Copy seed database (will be copied to volume on first run)
 COPY --from=builder /app/data/selah.db /app/seed/selah.db
 
+# Copy the plain-JS seed-update check script used by the entrypoint.
+COPY --from=builder /app/scripts/ops/docker-check-seed.cjs /app/scripts/ops/docker-check-seed.cjs
+
 # Create data and backup directories
-RUN mkdir -p /app/data /app/backups && chown -R nextjs:nodejs /app/data /app/backups /app/seed
+RUN mkdir -p /app/data /app/backups && chown -R nextjs:nodejs /app/data /app/backups /app/seed /app/scripts
 
 # Copy entrypoint
 COPY docker-entrypoint.sh /app/docker-entrypoint.sh

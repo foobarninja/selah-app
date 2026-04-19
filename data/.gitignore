@@ -4,5 +4,17 @@ sources/strongs/
 sources/*.json
 sources/*.txt
 
+# Seed-update artifacts
+selah-seed.db
+selah-seed.db.xz
+selah-seed.db-*
+selah-seed-prev.db
+selah.incoming.db
+selah.incoming.db.xz
+selah.pre-update-*.db.bak
+selah.pre-series-*.db.bak
+manifest.json
+.seed-version
+
 # Keep the directory structure
 !sources/.gitkeep

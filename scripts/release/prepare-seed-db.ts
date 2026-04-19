@@ -1,25 +1,36 @@
 // scripts/release/prepare-seed-db.ts
 //
-// Prepares data/selah-seed.db.xz for upload to Hugging Face.
+// Prepares data/selah-seed.db.xz and manifest.json for upload to
+// Hugging Face.
 //
 // Steps:
 //   1. Online-backup data/selah.db -> data/selah-seed.db (consistent snapshot,
 //      safe even with concurrent writers; pulls in any WAL-pending pages).
 //   2. VACUUM the backup to reclaim free pages.
-//   3. xz -9 -T 0 --keep -> data/selah-seed.db.xz.
-//   4. Print sizes and sha256 for upload verification.
+//   3. Preflight: verify user-local tables are additive-only relative to
+//      the previous published seed (checked against data/selah-seed-prev.db
+//      if present; skipped otherwise).
+//   4. xz -9 -T 0 --keep -> data/selah-seed.db.xz.
+//   5. Write data/manifest.json with version, sha256, sizes, URL.
 //
-// Usage: npx tsx scripts/release/prepare-seed-db.ts
+// Usage:
+//   npx tsx scripts/release/prepare-seed-db.ts [seedVersion]
+// Defaults seedVersion to today's date (YYYY.MM.DD) if omitted.
 
 import Database from 'better-sqlite3'
 import { createHash } from 'crypto'
-import { existsSync, rmSync, statSync, readFileSync } from 'fs'
+import { existsSync, rmSync, statSync, readFileSync, writeFileSync } from 'fs'
 import { resolve } from 'path'
 import { spawnSync } from 'child_process'
+import { APP_SCHEMA_VERSION } from '../../src/lib/seed/manifest'
+import { USER_LOCAL_TABLES } from '../../src/lib/seed/user-tables'
 
 const SRC = resolve(process.cwd(), 'data/selah.db')
 const DEST = resolve(process.cwd(), 'data/selah-seed.db')
 const DEST_XZ = `${DEST}.xz`
+const PREV = resolve(process.cwd(), 'data/selah-seed-prev.db')
+const MANIFEST_PATH = resolve(process.cwd(), 'data/manifest.json')
+const DOWNLOAD_URL = 'https://huggingface.co/datasets/foooobear/selah-db/resolve/main/selah-seed.db.xz'
 
 function fmtMB(bytes: number): string {
   return `${(bytes / 1024 / 1024).toFixed(1)} MB`
@@ -31,14 +42,72 @@ function sha256(path: string): string {
   return h.digest('hex')
 }
 
+function todayVersion(): string {
+  const d = new Date()
+  const y = d.getUTCFullYear()
+  const m = String(d.getUTCMonth() + 1).padStart(2, '0')
+  const day = String(d.getUTCDate()).padStart(2, '0')
+  return `${y}.${m}.${day}`
+}
+
+function preflightAdditiveOnly(): string[] {
+  // Verify user-local tables have not had columns removed relative to
+  // the previously published seed. Skipped if no prev snapshot is present.
+  if (!existsSync(PREV)) {
+    console.log(`[release] preflight: no ${PREV} baseline found — skipping additive-only check`)
+    return []
+  }
+  const violations: string[] = []
+  const db = new Database(DEST)
+  try {
+    db.prepare(`ATTACH DATABASE ? AS prev`).run(PREV)
+    try {
+      const oldTables = new Set(
+        (db.prepare(`SELECT name FROM prev.sqlite_master WHERE type='table'`).all() as Array<{ name: string }>)
+          .map((r) => r.name),
+      )
+      const newTables = new Set(
+        (db.prepare(`SELECT name FROM main.sqlite_master WHERE type='table'`).all() as Array<{ name: string }>)
+          .map((r) => r.name),
+      )
+      for (const t of USER_LOCAL_TABLES) {
+        if (!oldTables.has(t)) continue
+        if (!newTables.has(t)) {
+          violations.push(`table "${t}" was removed`)
+          continue
+        }
+        const prevCols = new Set(
+          (db.prepare(`SELECT name FROM pragma_table_info(?, 'prev')`).all(t) as Array<{ name: string }>)
+            .map((r) => r.name),
+        )
+        const currCols = new Set(
+          (db.prepare(`SELECT name FROM pragma_table_info(?, 'main')`).all(t) as Array<{ name: string }>)
+            .map((r) => r.name),
+        )
+        for (const c of prevCols) {
+          if (!currCols.has(c)) violations.push(`column "${t}.${c}" was removed`)
+        }
+      }
+    } finally {
+      db.prepare(`DETACH DATABASE prev`).run()
+    }
+  } finally {
+    db.close()
+  }
+  return violations
+}
+
 async function main() {
   if (!existsSync(SRC)) {
     console.error(`[release] source not found: ${SRC}`)
     process.exit(1)
   }
 
+  const seedVersion = process.argv[2] ?? todayVersion()
+  console.log(`[release] seedVersion: ${seedVersion} (schemaVersion: ${APP_SCHEMA_VERSION})`)
+
   // Clean stale artifacts.
-  for (const p of [DEST, `${DEST}-wal`, `${DEST}-shm`, DEST_XZ]) {
+  for (const p of [DEST, `${DEST}-wal`, `${DEST}-shm`, DEST_XZ, MANIFEST_PATH]) {
     if (existsSync(p)) {
       console.log(`[release] removing stale ${p}`)
       rmSync(p)
@@ -46,7 +115,7 @@ async function main() {
   }
 
   console.log(`[release] source: ${SRC} (${fmtMB(statSync(SRC).size)})`)
-  console.log(`[release] step 1/4: online backup -> ${DEST}`)
+  console.log(`[release] step 1/5: online backup -> ${DEST}`)
 
   const src = new Database(SRC, { readonly: true, fileMustExist: true })
   try {
@@ -55,7 +124,7 @@ async function main() {
     src.close()
   }
 
-  console.log(`[release] step 2/4: VACUUM`)
+  console.log(`[release] step 2/5: VACUUM`)
   const dst = new Database(DEST)
   try {
     dst.pragma('journal_mode = DELETE')
@@ -66,7 +135,16 @@ async function main() {
   const rawSize = statSync(DEST).size
   console.log(`[release]   uncompressed: ${fmtMB(rawSize)}`)
 
-  console.log(`[release] step 3/4: xz -9 -T 0 --keep`)
+  console.log(`[release] step 3/5: preflight (additive-only check)`)
+  const violations = preflightAdditiveOnly()
+  if (violations.length > 0) {
+    console.error(`[release] PREFLIGHT FAILED — user-local tables must be additive-only:`)
+    for (const v of violations) console.error(`  - ${v}`)
+    console.error(`[release] Add columns/tables in a new seed, never remove. Aborting.`)
+    process.exit(1)
+  }
+
+  console.log(`[release] step 4/5: xz -9 -T 0 --keep`)
   const xz = spawnSync('xz', ['-9', '-T', '0', '--keep', '--force', DEST], {
     stdio: 'inherit',
   })
@@ -75,10 +153,21 @@ async function main() {
     process.exit(1)
   }
 
-  console.log(`[release] step 4/4: sha256`)
+  console.log(`[release] step 5/5: sha256 + manifest.json`)
   const xzSize = statSync(DEST_XZ).size
   const xzHash = sha256(DEST_XZ)
   const rawHash = sha256(DEST)
+
+  const manifest = {
+    seedVersion,
+    schemaVersion: APP_SCHEMA_VERSION,
+    sha256: xzHash,
+    sizeXz: xzSize,
+    sizeRaw: rawSize,
+    releasedAt: new Date().toISOString(),
+    downloadUrl: DOWNLOAD_URL,
+  }
+  writeFileSync(MANIFEST_PATH, JSON.stringify(manifest, null, 2) + '\n', 'utf8')
 
   console.log('')
   console.log('── Release artifacts ──')
@@ -88,9 +177,15 @@ async function main() {
   console.log(`  ${DEST_XZ}`)
   console.log(`    size:   ${fmtMB(xzSize)} (${xzSize} bytes)`)
   console.log(`    sha256: ${xzHash}`)
+  console.log(`  ${MANIFEST_PATH}`)
   console.log('')
-  console.log('Next: upload data/selah-seed.db.xz to')
+  console.log('Next: upload BOTH files to')
   console.log('  https://huggingface.co/datasets/foooobear/selah-db')
+  console.log('    - selah-seed.db.xz (the DB)')
+  console.log('    - manifest.json    (the version pointer existing installs fetch)')
+  console.log('')
+  console.log(`Tip: keep a copy of this seed as ${PREV} before the next release —`)
+  console.log(`     the preflight uses it to catch accidental column removals.`)
 }
 
 main().catch((err) => {

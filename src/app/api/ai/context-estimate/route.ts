@@ -1,13 +1,15 @@
 import { NextRequest, NextResponse } from 'next/server'
 import { buildGroundingContext } from '@/lib/ai/grounding/context-builder'
 import { getSetting } from '@/lib/settings/queries'
+import { requireActiveProfileId } from '@/lib/profiles/active-profile'
 import type { GroundingRequest } from '@/lib/ai/types'
 
 export const dynamic = 'force-dynamic'
 
 export async function POST(request: NextRequest) {
+  const userId = await requireActiveProfileId()
   const grounding: GroundingRequest = await request.json()
-  const { sections } = await buildGroundingContext(grounding)
+  const { sections } = await buildGroundingContext(grounding, userId)
 
   const estimate = sections.map((s) => ({
     id: s.id,

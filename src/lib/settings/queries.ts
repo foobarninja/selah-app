@@ -1,6 +1,7 @@
 import { prisma } from '@/lib/db'
 import { encryptValue } from '@/lib/crypto'
 import Database from 'better-sqlite3'
+import { getUserSetting } from './user-settings'
 import type {
   TranslationConfig,
   AIConfig,
@@ -53,15 +54,15 @@ async function getSettingFloat(key: string, defaultVal = 0): Promise<number> {
 
 // ── Translation config ───────────────────────────────────────────────────────
 
-export async function getTranslationConfig(): Promise<TranslationConfig> {
+export async function getTranslationConfig(userId: string): Promise<TranslationConfig> {
   const translations = await prisma.translation.findMany({
     where: { language: 'eng' },
     orderBy: { sortOrder: 'asc' },
     select: { id: true, englishName: true, shortName: true },
   })
 
-  const primaryId = (await getSetting('primary_translation')) || 'BSB'
-  const parallelJson = (await getSetting('parallel_translations')) || '[]'
+  const primaryId = (await getUserSetting(userId, 'primary_translation')) || 'BSB'
+  const parallelJson = (await getUserSetting(userId, 'parallel_translations')) || '[]'
   let parallelIds: string[] = []
   try { parallelIds = JSON.parse(parallelJson) } catch { /* empty */ }
 
@@ -85,10 +86,6 @@ export async function getDisplaySettings(): Promise<{ showStrongs: boolean; show
     showCrossReferences: await getSettingBool('show_cross_references', true),
     showFootnotes: await getSettingBool('show_footnotes', true),
   }
-}
-
-export async function updateTranslationSetting(key: string, value: string): Promise<void> {
-  await setSetting(key, value)
 }
 
 // ── AI config ────────────────────────────────────────────────────────────────
@@ -211,9 +208,9 @@ export async function saveOllamaUrl(url: string): Promise<void> {
 
 // ── Study preferences ────────────────────────────────────────────────────────
 
-export async function getStudyPreferences(): Promise<StudyPreferences> {
+export async function getStudyPreferences(userId: string): Promise<StudyPreferences> {
   return {
-    commentaryDisplay: ((await getSetting('commentary_display')) || 'curated') as CommentaryDisplay,
+    commentaryDisplay: ((await getUserSetting(userId, 'commentary_display')) || 'curated') as CommentaryDisplay,
     sourceTierVisibility: {
       canon: await getSettingBool('source_tier_canon', true),
       scholarship: await getSettingBool('source_tier_scholarship', true),
@@ -221,10 +218,10 @@ export async function getStudyPreferences(): Promise<StudyPreferences> {
       aiAssisted: await getSettingBool('source_tier_ai_assisted', true),
       conjecture: await getSettingBool('source_tier_conjecture', false),
     },
-    dailyBreadAudience: ((await getSetting('daily_bread_audience')) || 'adults') as AudienceLevel,
+    dailyBreadAudience: ((await getUserSetting(userId, 'daily_bread_audience')) || 'adults') as AudienceLevel,
     dailyBreadSeason: '',
     readingFontSize: await getSettingNum('reading_font_size', 16),
-    theme: ((await getSetting('theme')) || 'dark') as ThemeMode,
+    theme: ((await getUserSetting(userId, 'theme')) || 'dark') as ThemeMode,
   }
 }
 

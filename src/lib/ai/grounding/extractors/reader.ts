@@ -4,12 +4,12 @@ import { prisma } from '@/lib/db'
 import { getStudyPreferences } from '@/lib/settings/queries'
 import type { ReaderContext, ContextSection } from '../../types'
 
-export async function extractReaderContext(ctx: ReaderContext): Promise<ContextSection[]> {
+export async function extractReaderContext(ctx: ReaderContext, userId: string): Promise<ContextSection[]> {
   const { bookId, chapter, verse, translationId = 'BSB' } = ctx
   const bookName = BOOK_NAMES[bookId] ?? bookId
 
   // Build visible tiers set from study preferences
-  const studyPrefs = await getStudyPreferences()
+  const studyPrefs = await getStudyPreferences(userId)
   const vis = studyPrefs.sourceTierVisibility
   const visibleTiers = new Set<number>()
   if (vis.canon) visibleTiers.add(1)

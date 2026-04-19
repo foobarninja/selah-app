@@ -20,6 +20,7 @@ const MAX_CONTEXT_CHARS = 90000
 
 export async function buildGroundingContext(
   grounding: GroundingRequest,
+  userId: string,
   toggles?: ContextToggles
 ): Promise<{ sections: ContextSection[]; assembled: string }> {
 
@@ -28,7 +29,7 @@ export async function buildGroundingContext(
 
   switch (grounding.page) {
     case 'reader': {
-      sections = await extractReaderContext(grounding.context as ReaderContext)
+      sections = await extractReaderContext(grounding.context as ReaderContext, userId)
       // Also fetch collection items for this page
       const collectionSection = await extractCollectionContext(grounding.context as ReaderContext)
       if (collectionSection) sections.push(collectionSection)

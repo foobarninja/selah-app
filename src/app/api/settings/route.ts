@@ -9,13 +9,16 @@ import {
   saveAIConfig,
   saveOllamaUrl,
 } from '@/lib/settings/queries'
+import { setUserSetting, isUserSettingKey } from '@/lib/settings/user-settings'
+import { requireActiveProfileId } from '@/lib/profiles/active-profile'
 
 export async function GET() {
+  const userId = await requireActiveProfileId()
   const [translations, aiConfig, aiProviders, studyPreferences, backupInfo] = await Promise.all([
-    getTranslationConfig(),
+    getTranslationConfig(userId),
     getAIConfig(),
     getAIProviders(),
-    getStudyPreferences(),
+    getStudyPreferences(userId),
     getBackupInfo(),
   ])
 
@@ -29,6 +32,7 @@ export async function GET() {
 }
 
 export async function PATCH(request: NextRequest) {
+  const userId = await requireActiveProfileId()
   const updates = await request.json() as Record<string, string>
 
   for (const [key, value] of Object.entries(updates)) {
@@ -38,6 +42,8 @@ export async function PATCH(request: NextRequest) {
       if (provider === 'ollama' && ollamaUrl) {
         await saveOllamaUrl(ollamaUrl)
       }
+    } else if (isUserSettingKey(key)) {
+      await setUserSetting(userId, key, value)
     } else {
       await setSetting(key, value)
     }

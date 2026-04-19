@@ -1,7 +1,7 @@
 import { getStudyPreferences } from '@/lib/settings/queries'
 
-export async function buildSystemPrompt(groundingContext: string): Promise<string> {
-  const prefs = await getStudyPreferences()
+export async function buildSystemPrompt(groundingContext: string, userId: string): Promise<string> {
+  const prefs = await getStudyPreferences(userId)
 
   // ── Audience guides (pitched by study preference) ─────────────────────────
   const audienceGuide: Record<string, string> = {

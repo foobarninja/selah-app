@@ -2,6 +2,7 @@ import { notFound } from 'next/navigation'
 import { BOOK_NAMES, BOOK_CHAPTERS } from '@/lib/constants'
 import { getChapterText, getNarrativeContext, getPassageContext, getTranslations } from '@/lib/reader/queries'
 import { getDisplaySettings, getStudyPreferences, getTranslationConfig } from '@/lib/settings/queries'
+import { requireActiveProfileId } from '@/lib/profiles/active-profile'
 import { recordReading } from '@/lib/reader/history'
 import { surfaceNotes } from '@/lib/resurfacing'
 import ReaderClient from './ReaderClient'
@@ -26,12 +27,14 @@ export default async function ReaderPage({ params, searchParams }: Props) {
     notFound()
   }
 
+  const userId = await requireActiveProfileId()
+
   const [narrativeCtx, translations, displaySettings, translationConfig, studyPrefs] = await Promise.all([
     getNarrativeContext(bookId, chapter),
     getTranslations(),
     getDisplaySettings(),
-    getTranslationConfig(),
-    getStudyPreferences(),
+    getTranslationConfig(userId),
+    getStudyPreferences(userId),
   ])
 
   const parallelIds = translationConfig.parallelIds

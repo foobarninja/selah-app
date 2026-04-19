@@ -4,6 +4,7 @@ import { getSetting } from '@/lib/settings/queries'
 import { buildGroundingContext } from '@/lib/ai/grounding/context-builder'
 import { buildSystemPrompt } from '@/lib/ai/grounding/system-prompt'
 import { extractCitations } from '@/lib/ai/post-processing/citation-extractor'
+import { requireActiveProfileId } from '@/lib/profiles/active-profile'
 import type { AiSendRequest, ChatMessage, ModelConfig, StreamEvent } from '@/lib/ai/types'
 
 const MAX_HISTORY_MESSAGES = 20
@@ -26,6 +27,8 @@ export async function POST(request: NextRequest) {
     return new Response(JSON.stringify({ error: 'Missing messages or grounding' }), { status: 400 })
   }
 
+  const userId = await requireActiveProfileId()
+
   const provider = await getProvider()
   if (!provider) {
     return new Response(JSON.stringify({ error: 'No AI provider configured' }), { status: 400 })
@@ -34,11 +37,11 @@ export async function POST(request: NextRequest) {
   // Build grounding context and system prompt
   let systemPrompt: string
   try {
-    const { assembled: groundingContext } = await buildGroundingContext(grounding, body.contextToggles)
-    systemPrompt = await buildSystemPrompt(groundingContext)
+    const { assembled: groundingContext } = await buildGroundingContext(grounding, userId, body.contextToggles)
+    systemPrompt = await buildSystemPrompt(groundingContext, userId)
   } catch {
     // Fallback: general prompt without grounding
-    systemPrompt = await buildSystemPrompt('')
+    systemPrompt = await buildSystemPrompt('', userId)
   }
 
   // Assemble messages with system prompt, truncate history

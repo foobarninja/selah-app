@@ -507,6 +507,7 @@ model DevotionalHistory {
   completedAt  String  @default("") @map("completed_at")
   familyNotes  String? @map("family_notes")
   rating       Int?
+  userId       String? @map("user_id")
 
   devotional Devotional @relation(fields: [devotionalId], references: [id])
 
@@ -562,6 +563,28 @@ model AppSetting {
   @@map("app_settings")
 }
 
+model UserProfile {
+  id           String   @id
+  name         String
+  avatarColor  String   @map("avatar_color")
+  pinHash      String?  @map("pin_hash")
+  isDefault    Boolean  @default(false) @map("is_default")
+  createdAt    String   @default("") @map("created_at")
+  updatedAt    String   @default("") @map("updated_at")
+
+  @@map("user_profiles")
+}
+
+model UserSetting {
+  userId    String  @map("user_id")
+  key       String
+  value     String
+  updatedAt String  @default("") @map("updated_at")
+
+  @@id([userId, key])
+  @@map("user_settings")
+}
+
 model Journal {
   id          String  @id @default(cuid())
   name        String
@@ -575,6 +598,7 @@ model Journal {
   journalType String  @default("study") @map("journal_type")
   sortOrder   Int     @default(0) @map("sort_order")
   isDefault   Boolean @default(false) @map("is_default")
+  userId      String? @map("user_id")
   createdAt   String  @default("") @map("created_at")
   updatedAt   String  @default("") @map("updated_at")
 
@@ -593,6 +617,7 @@ model UserNote {
   studyContext     String? @map("study_context")
   aiConversationId Int?    @map("ai_conversation_id")
   journalId        String? @map("journal_id")
+  userId           String? @map("user_id")
   createdAt        String  @default("") @map("created_at")
   updatedAt        String  @default("") @map("updated_at")
 
@@ -614,6 +639,7 @@ model UserNoteAnchor {
   verseEnd   Int?    @map("verse_end")
   refId      String? @map("ref_id")
   isPrimary  Boolean @default(false) @map("is_primary")
+  userId     String? @map("user_id")
 
   note UserNote @relation(fields: [noteId], references: [id], onDelete: Cascade)
   book Book?    @relation(fields: [bookId], references: [id])
@@ -628,6 +654,7 @@ model UserNoteTheme {
   id      Int    @id @default(autoincrement())
   noteId  Int    @map("note_id")
   themeId String @map("theme_id")
+  userId  String? @map("user_id")
 
   note UserNote @relation(fields: [noteId], references: [id], onDelete: Cascade)
 
@@ -640,6 +667,7 @@ model UserTag {
   id        String @id
   name      String
   color     String @default("default")
+  userId    String? @map("user_id")
   createdAt String @default("") @map("created_at")
 
   noteTags UserNoteTag[]
@@ -651,6 +679,7 @@ model UserNoteTag {
   id     Int    @id @default(autoincrement())
   noteId Int    @map("note_id")
   tagId  String @map("tag_id")
+  userId String? @map("user_id")
 
   note UserNote @relation(fields: [noteId], references: [id], onDelete: Cascade)
   tag  UserTag  @relation(fields: [tagId], references: [id])
@@ -667,6 +696,7 @@ model UserBookmark {
   verse     Int?
   color     String  @default("default")
   noteId    Int?    @map("note_id")
+  userId    String? @map("user_id")
   createdAt String  @default("") @map("created_at")
 
   book Book @relation(fields: [bookId], references: [id])
@@ -680,6 +710,7 @@ model UserCollection {
   title          String
   description    String?
   collectionType String  @default("study") @map("collection_type")
+  userId         String? @map("user_id")
   createdAt      String  @default("") @map("created_at")
   updatedAt      String  @default("") @map("updated_at")
 
@@ -695,6 +726,7 @@ model UserCollectionItem {
   itemRef      String  @map("item_ref")
   note         String?
   sortOrder    Int     @default(0) @map("sort_order")
+  userId       String? @map("user_id")
   createdAt    String  @default("") @map("created_at")
 
   collection UserCollection @relation(fields: [collectionId], references: [id], onDelete: Cascade)
@@ -708,6 +740,7 @@ model ReadingHistory {
   bookId    String @map("book_id")
   chapter   Int
   verse     Int?
+  userId    String? @map("user_id")
   visitedAt String @default("") @map("visited_at")
 
   book Book @relation(fields: [bookId], references: [id])
@@ -719,6 +752,7 @@ model AiConversation {
   id         Int     @id @default(autoincrement())
   title      String?
   contextRef String? @map("context_ref")
+  userId     String? @map("user_id")
   createdAt  String  @default("") @map("created_at")
   updatedAt  String  @default("") @map("updated_at")
 
@@ -734,6 +768,7 @@ model AiMessage {
   content        String
   providerId     String? @map("provider_id")
   modelId        String? @map("model_id")
+  userId         String? @map("user_id")
   createdAt      String  @default("") @map("created_at")
 
   conversation AiConversation @relation(fields: [conversationId], references: [id], onDelete: Cascade)
@@ -747,6 +782,7 @@ model StudyProject {
   topic     String
   format    String  @default("sermon")
   status    String  @default("in-progress")
+  userId    String? @map("user_id")
   createdAt String  @default("") @map("created_at")
   updatedAt String  @default("") @map("updated_at")
 
@@ -765,6 +801,7 @@ model StudyAssemblyItem {
   sourceTier Int     @default(2) @map("source_tier")
   annotation String  @default("")
   sortOrder  Int     @default(0) @map("sort_order")
+  userId     String? @map("user_id")
   createdAt  String  @default("") @map("created_at")
 
   project StudyProject @relation(fields: [projectId], references: [id], onDelete: Cascade)

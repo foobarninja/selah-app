@@ -28,6 +28,7 @@ describe('thread-store', () => {
         id INTEGER PRIMARY KEY AUTOINCREMENT,
         title TEXT,
         context_ref TEXT,
+        user_id TEXT,
         created_at TEXT NOT NULL DEFAULT '',
         updated_at TEXT NOT NULL DEFAULT ''
       );
@@ -38,6 +39,7 @@ describe('thread-store', () => {
         content TEXT NOT NULL,
         provider_id TEXT,
         model_id TEXT,
+        user_id TEXT,
         created_at TEXT NOT NULL DEFAULT ''
       );
     `)

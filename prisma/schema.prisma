@@ -438,6 +438,7 @@ model Devotional {
   season               String?
   dayOfYear            Int?    @map("day_of_year")
   narrativeId          String? @map("narrative_id")
+  companionOpener      String? @map("companion_opener")
   sourceTier           String  @default("ai_assisted") @map("source_tier")
   sourceNotes          String? @map("source_notes")
   createdAt            String  @default("") @map("created_at")

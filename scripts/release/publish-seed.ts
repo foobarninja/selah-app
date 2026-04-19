@@ -16,11 +16,17 @@
 // Usage:  HF_TOKEN=... npm run seed:publish
 // Repo:   hardcoded below to foooobear/selah-db
 
-import { existsSync, readFileSync, statSync, createReadStream } from 'fs'
+import { existsSync, readFileSync, statSync } from 'fs'
 import { createHash } from 'crypto'
 import { resolve, join } from 'path'
 import { homedir } from 'os'
 import { uploadFiles } from '@huggingface/hub'
+import { config as loadDotenv } from 'dotenv'
+
+// Load .env BEFORE reading process.env.HF_TOKEN. Windows npm shims don't
+// reliably forward exported shell env vars to child Node processes, so
+// `.env` is the most portable way to make the token available.
+loadDotenv({ path: resolve(process.cwd(), '.env'), quiet: true })
 
 const REPO_ID = 'foooobear/selah-db'
 const XZ_PATH = resolve(process.cwd(), 'data/selah-seed.db.xz')
@@ -39,6 +45,9 @@ function sha256(path: string): string {
 }
 
 function findHfToken(): string | null {
+  // Priority: CLI flag > env > ~/.cache/huggingface/token
+  const argvIdx = process.argv.indexOf('--token')
+  if (argvIdx !== -1 && process.argv[argvIdx + 1]) return process.argv[argvIdx + 1]
   if (process.env.HF_TOKEN) return process.env.HF_TOKEN
   for (const p of [
     join(homedir(), '.cache', 'huggingface', 'token'),
@@ -94,8 +103,9 @@ async function main() {
   const accessToken = findHfToken()
   if (!accessToken) {
     bail(
-      `no Hugging Face token found. Either:\n` +
-      `  - set HF_TOKEN env var before running, or\n` +
+      `no Hugging Face token found. Use any of:\n` +
+      `  - npm run seed:publish -- --token hf_xxx   (most reliable on Windows)\n` +
+      `  - HF_TOKEN=hf_xxx in a .env file at the repo root\n` +
       `  - save a token to ~/.cache/huggingface/token\n` +
       `Get a WRITE-scoped token at https://huggingface.co/settings/tokens`,
     )

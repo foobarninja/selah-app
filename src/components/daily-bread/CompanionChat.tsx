@@ -29,6 +29,7 @@ export function CompanionChat({ devotional, isAIConfigured }: CompanionChatProps
   const [showPast, setShowPast] = useState(false)
   const [pendingNewThread, setPendingNewThread] = useState(false)
   const streamingRef = useRef('')
+  const abortRef = useRef<AbortController | null>(null)
 
   useEffect(() => {
     if (!isAIConfigured) return
@@ -44,7 +45,10 @@ export function CompanionChat({ devotional, isAIConfigured }: CompanionChatProps
         setPast(data.past)
       })
       .catch(() => { /* fail-open: render opener only */ })
-    return () => { cancelled = true }
+    return () => {
+      cancelled = true
+      abortRef.current?.abort()
+    }
   }, [devotional.id, isAIConfigured])
 
   const send = async () => {
@@ -54,6 +58,9 @@ export function CompanionChat({ devotional, isAIConfigured }: CompanionChatProps
     if (!text || isStreaming) return
     setError(null)
     setInput('')
+    abortRef.current?.abort()
+    const controller = new AbortController()
+    abortRef.current = controller
     const userMsg: CompanionMessage = {
       id: -Date.now(),
       role: 'user',
@@ -81,6 +88,7 @@ export function CompanionChat({ devotional, isAIConfigured }: CompanionChatProps
           conversationId: startNew ? undefined : conversationId ?? undefined,
           startNew,
         }),
+        signal: controller.signal,
       })
       if (!res.ok || !res.body) {
         const msg = (await res.json().catch(() => ({ error: `HTTP ${res.status}` }))).error
@@ -98,22 +106,28 @@ export function CompanionChat({ devotional, isAIConfigured }: CompanionChatProps
         for (const frame of frames) {
           const data = frame.replace(/^data: /, '').trim()
           if (!data) continue
+          let evt: { type: string; content?: string; message?: string; conversationId?: number }
           try {
-            const evt = JSON.parse(data) as { type: string; content?: string; message?: string; conversationId?: number }
-            if (evt.type === 'token' && evt.content) {
-              streamingRef.current += evt.content
-              setMessages((m) => m.map((msg) => (msg.id === placeholderId ? { ...msg, content: streamingRef.current } : msg)))
-            } else if (evt.type === 'done') {
-              if (evt.conversationId) setConversationId(evt.conversationId)
-            } else if (evt.type === 'error' && evt.message) {
-              throw new Error(evt.message)
-            }
+            evt = JSON.parse(data)
           } catch {
-            // skip malformed frame
+            // malformed JSON frame — skip
+            continue
+          }
+          if (evt.type === 'token' && evt.content) {
+            streamingRef.current += evt.content
+            setMessages((m) => m.map((msg) => (msg.id === placeholderId ? { ...msg, content: streamingRef.current } : msg)))
+          } else if (evt.type === 'done') {
+            if (evt.conversationId) setConversationId(evt.conversationId)
+          } else if (evt.type === 'error' && evt.message) {
+            throw new Error(evt.message)
           }
         }
       }
     } catch (err) {
+      if (err instanceof DOMException && err.name === 'AbortError') {
+        // unmount or user-triggered cancel — don't show an error bubble
+        return
+      }
       setError(err instanceof Error ? err.message : 'Something went wrong')
       // Remove the empty placeholder.
       setMessages((m) => m.filter((msg) => msg.id !== placeholderId || msg.content.length > 0))
@@ -131,7 +145,21 @@ export function CompanionChat({ devotional, isAIConfigured }: CompanionChatProps
     // Refresh past list so the thread we just left appears there.
     fetch(`/api/ai/companion/thread?devotionalId=${encodeURIComponent(devotional.id)}`)
       .then((r) => r.json())
-      .then((d: { past: CompanionThreadSummary[] }) => setPast(d.past))
+      .then((d: { active: CompanionThreadDetail | null; past: CompanionThreadSummary[] }) => {
+        const combined: CompanionThreadSummary[] = d.active
+          ? [
+              {
+                id: d.active.id,
+                title: d.active.title,
+                createdAt: d.active.createdAt,
+                updatedAt: d.active.updatedAt,
+                messageCount: d.active.messages.length,
+              },
+              ...d.past,
+            ]
+          : d.past
+        setPast(combined)
+      })
       .catch(() => {})
   }
 

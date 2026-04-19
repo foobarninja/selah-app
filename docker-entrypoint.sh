@@ -23,4 +23,9 @@ if [ -f /app/scripts/ops/check-seed-update.ts ]; then
     echo "[entrypoint] seed check/apply failed; booting on current DB"
 fi
 
+# If the caller passed a command (e.g. `docker compose run --rm selah npm run
+# seed:update`), exec that. Otherwise start the Next server as the default.
+if [ $# -gt 0 ]; then
+  exec "$@"
+fi
 exec node server.js

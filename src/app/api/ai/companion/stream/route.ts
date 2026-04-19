@@ -26,6 +26,7 @@ import {
   appendMessage,
   getThreadMessages,
 } from '@/lib/ai/companion/thread-store'
+import { requireActiveProfileId } from '@/lib/profiles/active-profile'
 import type { ModelConfig } from '@/lib/ai/types'
 
 const MAX_HISTORY_MESSAGES = 20
@@ -44,6 +45,13 @@ function encodeSSE(event: object): string {
 }
 
 export async function POST(request: NextRequest) {
+  let userId: string
+  try {
+    userId = await requireActiveProfileId()
+  } catch {
+    return jsonError('no active profile', 401)
+  }
+
   const body = (await request.json()) as Body
   if (!body.devotionalId || !body.userMessage) {
     return jsonError('devotionalId and userMessage required', 400)
@@ -60,25 +68,25 @@ export async function POST(request: NextRequest) {
   // Resolve / create the conversation.
   let conversationId: number
   if (body.startNew) {
-    const t = await createThread({ devotionalId: body.devotionalId, title: devotional.title })
+    const t = await createThread({ devotionalId: body.devotionalId, title: devotional.title, userId })
     conversationId = t.id
   } else if (body.conversationId != null) {
     conversationId = body.conversationId
   } else {
-    const active = await findActiveThread(body.devotionalId)
+    const active = await findActiveThread(body.devotionalId, userId)
     if (active) {
       conversationId = active.id
     } else {
-      const t = await createThread({ devotionalId: body.devotionalId, title: devotional.title })
+      const t = await createThread({ devotionalId: body.devotionalId, title: devotional.title, userId })
       conversationId = t.id
     }
   }
 
-  await appendMessage(conversationId, { role: 'user', content: body.userMessage })
+  await appendMessage(conversationId, { role: 'user', content: body.userMessage, userId })
 
   const grounding = buildCompanionGrounding(devotional)
   const systemPrompt = buildCompanionSystemPrompt(grounding)
-  const history = await getThreadMessages(conversationId)
+  const history = await getThreadMessages(conversationId, userId)
   const recentHistory = history.slice(-MAX_HISTORY_MESSAGES)
 
   // Build ModelConfig matching per-provider settings — same pattern as /api/ai/send.
@@ -136,6 +144,7 @@ export async function POST(request: NextRequest) {
           content: assistantText,
           providerId,
           modelId,
+          userId,
         })
         emit({ type: 'done', citations: [], conversationId })
       } catch (err) {

@@ -68,41 +68,41 @@ describe('thread-store', () => {
 
   it('createThread stamps contextRef and title', async () => {
     const { createThread } = await import('@/lib/ai/companion/thread-store')
-    const t = await createThread({ devotionalId: 'rom-8-28', title: 'On good' })
+    const t = await createThread({ devotionalId: 'rom-8-28', title: 'On good', userId: 'u1' })
     expect(t.id).toBeGreaterThan(0)
     expect(t.title).toBe('On good')
   })
 
   it('findActiveThread returns the most-recent thread for a devotional', async () => {
     const { createThread, findActiveThread } = await import('@/lib/ai/companion/thread-store')
-    const a = await createThread({ devotionalId: 'rom-8-28', title: 'first' })
-    const b = await createThread({ devotionalId: 'rom-8-28', title: 'second' })
-    const active = await findActiveThread('rom-8-28')
+    const a = await createThread({ devotionalId: 'rom-8-28', title: 'first', userId: 'u1' })
+    const b = await createThread({ devotionalId: 'rom-8-28', title: 'second', userId: 'u1' })
+    const active = await findActiveThread('rom-8-28', 'u1')
     expect(active?.id).toBe(b.id)
   })
 
   it('findActiveThread returns null for a devotional with no thread', async () => {
     const { findActiveThread } = await import('@/lib/ai/companion/thread-store')
-    const active = await findActiveThread('never-touched')
+    const active = await findActiveThread('never-touched', 'u1')
     expect(active).toBeNull()
   })
 
   it('listThreads returns all threads for a devotional, most-recent first', async () => {
     const { createThread, listThreads } = await import('@/lib/ai/companion/thread-store')
-    const a = await createThread({ devotionalId: 'rom-8-28', title: 'a' })
-    const b = await createThread({ devotionalId: 'rom-8-28', title: 'b' })
-    const list = await listThreads('rom-8-28')
+    const a = await createThread({ devotionalId: 'rom-8-28', title: 'a', userId: 'u1' })
+    const b = await createThread({ devotionalId: 'rom-8-28', title: 'b', userId: 'u1' })
+    const list = await listThreads('rom-8-28', 'u1')
     expect(list.map((t) => t.id)).toEqual([b.id, a.id])
   })
 
   it('appendMessage persists + updates the thread updatedAt', async () => {
     const { createThread, appendMessage, getThreadMessages } = await import('@/lib/ai/companion/thread-store')
-    const t = await createThread({ devotionalId: 'rom-8-28', title: 'x' })
-    const userMsg = await appendMessage(t.id, { role: 'user', content: 'hello' })
-    const asstMsg = await appendMessage(t.id, { role: 'assistant', content: 'hi' })
+    const t = await createThread({ devotionalId: 'rom-8-28', title: 'x', userId: 'u1' })
+    const userMsg = await appendMessage(t.id, { role: 'user', content: 'hello', userId: 'u1' })
+    const asstMsg = await appendMessage(t.id, { role: 'assistant', content: 'hi', userId: 'u1' })
     expect(userMsg.id).toBeGreaterThan(0)
     expect(asstMsg.id).toBeGreaterThan(userMsg.id)
-    const messages = await getThreadMessages(t.id)
+    const messages = await getThreadMessages(t.id, 'u1')
     expect(messages).toHaveLength(2)
     expect(messages[0].role).toBe('user')
     expect(messages[1].role).toBe('assistant')
@@ -110,21 +110,31 @@ describe('thread-store', () => {
 
   it('listThreads includes messageCount', async () => {
     const { createThread, appendMessage, listThreads } = await import('@/lib/ai/companion/thread-store')
-    const t = await createThread({ devotionalId: 'rom-8-28', title: 'x' })
-    await appendMessage(t.id, { role: 'user', content: 'hi' })
-    await appendMessage(t.id, { role: 'assistant', content: 'hi back' })
-    const list = await listThreads('rom-8-28')
+    const t = await createThread({ devotionalId: 'rom-8-28', title: 'x', userId: 'u1' })
+    await appendMessage(t.id, { role: 'user', content: 'hi', userId: 'u1' })
+    await appendMessage(t.id, { role: 'assistant', content: 'hi back', userId: 'u1' })
+    const list = await listThreads('rom-8-28', 'u1')
     expect(list[0].messageCount).toBe(2)
   })
 
   it('getThreadMessages throws if a message has an unexpected role', async () => {
     const { createThread, getThreadMessages } = await import('@/lib/ai/companion/thread-store')
-    const t = await createThread({ devotionalId: 'rom-8-28', title: 'x' })
+    const t = await createThread({ devotionalId: 'rom-8-28', title: 'x', userId: 'u1' })
     // Inject a rogue row directly through sqlite (bypassing Prisma) to simulate DB corruption.
     const db = new Database(dbPath)
-    db.prepare(`INSERT INTO ai_messages (conversation_id, role, content, created_at) VALUES (?, 'system', 'rogue', ?)`)
+    db.prepare(`INSERT INTO ai_messages (conversation_id, role, content, user_id, created_at) VALUES (?, 'system', 'rogue', 'u1', ?)`)
       .run(t.id, new Date().toISOString())
     db.close()
-    await expect(getThreadMessages(t.id)).rejects.toThrow(/unexpected role/)
+    await expect(getThreadMessages(t.id, 'u1')).rejects.toThrow(/unexpected role/)
+  })
+
+  it('findActiveThread isolates users — u1 does not see u2 threads', async () => {
+    const { createThread, findActiveThread } = await import('@/lib/ai/companion/thread-store')
+    await createThread({ devotionalId: 'rom-8-28', title: 'a', userId: 'u1' })
+    await createThread({ devotionalId: 'rom-8-28', title: 'b', userId: 'u2' })
+    const a = await findActiveThread('rom-8-28', 'u1')
+    const b = await findActiveThread('rom-8-28', 'u2')
+    expect(a?.title).toBe('a')
+    expect(b?.title).toBe('b')
   })
 })

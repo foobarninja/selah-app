@@ -12,6 +12,7 @@ import type { CompanionMessage, CompanionThreadSummary } from './types'
 interface CreateThreadInput {
   devotionalId: string
   title: string
+  userId: string
 }
 
 interface AppendMessageInput {
@@ -19,6 +20,7 @@ interface AppendMessageInput {
   content: string
   providerId?: string | null
   modelId?: string | null
+  userId: string
 }
 
 export async function createThread(input: CreateThreadInput): Promise<CompanionThreadSummary> {
@@ -27,6 +29,7 @@ export async function createThread(input: CreateThreadInput): Promise<CompanionT
     data: {
       title: input.title,
       contextRef: toContextRef(input.devotionalId),
+      userId: input.userId,
       createdAt: now,
       updatedAt: now,
     },
@@ -34,9 +37,9 @@ export async function createThread(input: CreateThreadInput): Promise<CompanionT
   return { id: row.id, title: row.title ?? '', createdAt: row.createdAt, updatedAt: row.updatedAt, messageCount: 0 }
 }
 
-export async function findActiveThread(devotionalId: string): Promise<CompanionThreadSummary | null> {
+export async function findActiveThread(devotionalId: string, userId: string): Promise<CompanionThreadSummary | null> {
   const row = await prisma.aiConversation.findFirst({
-    where: { contextRef: toContextRef(devotionalId) },
+    where: { contextRef: toContextRef(devotionalId), userId },
     orderBy: { updatedAt: 'desc' },
     include: { _count: { select: { messages: true } } },
   })
@@ -50,9 +53,9 @@ export async function findActiveThread(devotionalId: string): Promise<CompanionT
   }
 }
 
-export async function listThreads(devotionalId: string): Promise<CompanionThreadSummary[]> {
+export async function listThreads(devotionalId: string, userId: string): Promise<CompanionThreadSummary[]> {
   const rows = await prisma.aiConversation.findMany({
-    where: { contextRef: toContextRef(devotionalId) },
+    where: { contextRef: toContextRef(devotionalId), userId },
     orderBy: { updatedAt: 'desc' },
     include: { _count: { select: { messages: true } } },
   })
@@ -72,9 +75,9 @@ function narrowRole(role: string, messageId: number): 'user' | 'assistant' {
   return role
 }
 
-export async function getThreadMessages(conversationId: number): Promise<CompanionMessage[]> {
+export async function getThreadMessages(conversationId: number, userId: string): Promise<CompanionMessage[]> {
   const rows = await prisma.aiMessage.findMany({
-    where: { conversationId },
+    where: { conversationId, userId },
     orderBy: { createdAt: 'asc' },
   })
   return rows.map((r) => ({
@@ -95,6 +98,7 @@ export async function appendMessage(conversationId: number, input: AppendMessage
         content: input.content,
         providerId: input.providerId ?? null,
         modelId: input.modelId ?? null,
+        userId: input.userId,
         createdAt: now,
       },
     }),

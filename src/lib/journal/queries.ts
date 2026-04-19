@@ -28,14 +28,14 @@ function timeAgo(dateStr: string): string {
 
 // ── Notes ─────────────────────────────────────────────────────────────────────
 
-export async function getJournalEntries(opts?: {
+export async function getJournalEntries(userId: string, opts?: {
   search?: string
   noteType?: string
   limit?: number
   journalId?: string
 }): Promise<JournalEntry[]> {
   const notes = await prisma.userNote.findMany({
-    where: opts?.journalId ? { journalId: opts.journalId } : undefined,
+    where: opts?.journalId ? { userId, journalId: opts.journalId } : { userId },
     orderBy: { createdAt: 'desc' },
     take: opts?.limit ?? 100,
     include: {
@@ -64,9 +64,9 @@ export async function getJournalEntries(opts?: {
   return entries
 }
 
-export async function getJournalEntry(id: number): Promise<JournalEntry | null> {
-  const note = await prisma.userNote.findUnique({
-    where: { id },
+export async function getJournalEntry(userId: string, id: number): Promise<JournalEntry | null> {
+  const note = await prisma.userNote.findFirst({
+    where: { id, userId },
     include: {
       anchors: true,
       noteThemes: true,
@@ -120,7 +120,7 @@ function mapEntry(n: {
   }
 }
 
-export async function createNote(data: {
+export async function createNote(userId: string, data: {
   content: string
   noteType: string
   studyContext?: string
@@ -137,6 +137,7 @@ export async function createNote(data: {
       noteType: data.noteType,
       studyContext: data.studyContext ?? 'freestanding',
       journalId,
+      userId,
       createdAt: now,
       updatedAt: now,
     },
@@ -155,6 +156,7 @@ export async function createNote(data: {
           verseEnd: a.verseEnd ?? null,
           refId: a.refId ?? null,
           isPrimary: false,
+          userId,
         },
       })
     }
@@ -164,7 +166,7 @@ export async function createNote(data: {
   if (data.themeIds?.length) {
     for (const themeId of data.themeIds) {
       await prisma.userNoteTheme.create({
-        data: { noteId: note.id, themeId },
+        data: { noteId: note.id, themeId, userId },
       })
     }
   }
@@ -175,11 +177,11 @@ export async function createNote(data: {
       const tagId = tagName.toLowerCase().replace(/\s+/g, '-')
       await prisma.userTag.upsert({
         where: { id: tagId },
-        create: { id: tagId, name: tagName, createdAt: now },
+        create: { id: tagId, name: tagName, userId, createdAt: now },
         update: {},
       })
       await prisma.userNoteTag.create({
-        data: { noteId: note.id, tagId },
+        data: { noteId: note.id, tagId, userId },
       })
     }
   }
@@ -193,7 +195,7 @@ export async function createNote(data: {
   return note.id
 }
 
-export async function updateNote(id: number, data: {
+export async function updateNote(userId: string, id: number, data: {
   content?: string
   noteType?: string
   anchors?: Array<{ type: string; bookId?: string; chapter?: number; verseStart?: number; verseEnd?: number; refId?: string }>
@@ -202,6 +204,13 @@ export async function updateNote(id: number, data: {
 }): Promise<void> {
   const now = new Date().toISOString()
   const { anchors, themeIds, userTags, ...coreFields } = data
+
+  // Ownership probe — ensures the caller owns this note before any writes.
+  const existing = await prisma.userNote.findFirst({
+    where: { id, userId },
+    select: { id: true },
+  })
+  if (!existing) throw new Error('note not found')
 
   const note = await prisma.userNote.update({
     where: { id },
@@ -226,6 +235,7 @@ export async function updateNote(id: number, data: {
           verseEnd: a.verseEnd ?? null,
           refId: a.refId ?? null,
           isPrimary: false,
+          userId,
         },
       })
     }
@@ -236,7 +246,7 @@ export async function updateNote(id: number, data: {
     await prisma.userNoteTheme.deleteMany({ where: { noteId: id } })
     for (const themeId of themeIds) {
       await prisma.userNoteTheme.create({
-        data: { noteId: id, themeId },
+        data: { noteId: id, themeId, userId },
       })
     }
   }
@@ -248,11 +258,11 @@ export async function updateNote(id: number, data: {
       const tagId = tagName.toLowerCase().replace(/\s+/g, '-')
       await prisma.userTag.upsert({
         where: { id: tagId },
-        create: { id: tagId, name: tagName, createdAt: now },
+        create: { id: tagId, name: tagName, userId, createdAt: now },
         update: {},
       })
       await prisma.userNoteTag.create({
-        data: { noteId: id, tagId },
+        data: { noteId: id, tagId, userId },
       })
     }
   }
@@ -265,14 +275,18 @@ export async function updateNote(id: number, data: {
   }
 }
 
-export async function deleteNote(id: number): Promise<void> {
-  await prisma.userNote.delete({ where: { id } })
+export async function deleteNote(userId: string, id: number): Promise<void> {
+  const { count } = await prisma.userNote.deleteMany({ where: { id, userId } })
+  if (count === 0) throw new Error('note not found')
 }
 
 // ── User Tags ─────────────────────────────────────────────────────────────────
 
-export async function getUserTags(): Promise<string[]> {
-  const tags = await prisma.userTag.findMany({ orderBy: { name: 'asc' } })
+export async function getUserTags(userId: string): Promise<string[]> {
+  const tags = await prisma.userTag.findMany({
+    where: { userId },
+    orderBy: { name: 'asc' },
+  })
   return tags.map((t) => t.name)
 }
 
@@ -410,8 +424,9 @@ export async function deleteBookmark(id: number): Promise<void> {
 
 // ── Journals ──────────────────────────────────────────────────────────────────
 
-export async function getJournals(): Promise<JournalSummary[]> {
+export async function getJournals(userId: string): Promise<JournalSummary[]> {
   const journals = await prisma.journal.findMany({
+    where: { userId },
     orderBy: [{ isDefault: 'desc' }, { updatedAt: 'desc' }],
     include: {
       _count: { select: { notes: true } },
@@ -443,8 +458,8 @@ export async function getJournals(): Promise<JournalSummary[]> {
   })
 }
 
-export async function getJournalDetail(id: string): Promise<JournalDetail | null> {
-  const j = await prisma.journal.findUnique({ where: { id } })
+export async function getJournalDetail(userId: string, id: string): Promise<JournalDetail | null> {
+  const j = await prisma.journal.findFirst({ where: { id, userId } })
   if (!j) return null
   return {
     id: j.id,
@@ -460,7 +475,7 @@ export async function getJournalDetail(id: string): Promise<JournalDetail | null
   }
 }
 
-export async function createJournal(data: {
+export async function createJournal(userId: string, data: {
   name: string
   description?: string
   coverColor?: string
@@ -485,6 +500,7 @@ export async function createJournal(data: {
       anchorThemeId: data.anchorThemeId ?? null,
       isDefault: false,
       sortOrder: 0,
+      userId,
       createdAt: now,
       updatedAt: now,
     },
@@ -493,6 +509,7 @@ export async function createJournal(data: {
 }
 
 export async function updateJournal(
+  userId: string,
   id: string,
   data: {
     name?: string
@@ -507,30 +524,35 @@ export async function updateJournal(
     sortOrder?: number
   },
 ): Promise<void> {
-  await prisma.journal.update({
-    where: { id },
+  const { count } = await prisma.journal.updateMany({
+    where: { id, userId },
     data: {
       ...data,
       updatedAt: new Date().toISOString(),
     },
   })
+  if (count === 0) throw new Error('journal not found')
 }
 
-export async function deleteJournal(id: string): Promise<void> {
-  const journal = await prisma.journal.findUnique({ where: { id }, select: { isDefault: true } })
+export async function deleteJournal(userId: string, id: string): Promise<void> {
+  const journal = await prisma.journal.findFirst({
+    where: { id, userId },
+    select: { isDefault: true },
+  })
   if (!journal) return
   if (journal.isDefault) throw new Error('Cannot delete the default journal')
 
-  // Move all notes to the default journal before deleting
+  // Move all notes to the default journal before deleting (scoped to this user)
   await prisma.userNote.updateMany({
-    where: { journalId: id },
+    where: { journalId: id, userId },
     data: { journalId: 'default' },
   })
   await prisma.journal.delete({ where: { id } })
 }
 
-export async function getJournalPickerList(): Promise<JournalPickerItem[]> {
+export async function getJournalPickerList(userId: string): Promise<JournalPickerItem[]> {
   const journals = await prisma.journal.findMany({
+    where: { userId },
     orderBy: [{ isDefault: 'desc' }, { name: 'asc' }],
     include: { _count: { select: { notes: true } } },
   })

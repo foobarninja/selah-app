@@ -283,8 +283,9 @@ export async function restoreBackup(data: Buffer): Promise<void> {
 
 // ── Export operations ────────────────────────────────────────────────────────
 
-export async function exportJournal(): Promise<string> {
+export async function exportJournal(userId: string): Promise<string> {
   const notes = await prisma.userNote.findMany({
+    where: { userId },
     include: {
       anchors: true,
       noteThemes: true,

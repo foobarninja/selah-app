@@ -1,5 +1,6 @@
 import { notFound } from 'next/navigation'
 import { getJournalDetail, getJournalEntries, getUserTags } from '@/lib/journal/queries'
+import { requireActiveProfileId } from '@/lib/profiles/active-profile'
 import JournalDetailClient from './JournalDetailClient'
 import type { JournalDetail } from '@/components/journal/types'
 
@@ -9,12 +10,13 @@ export default async function JournalDetailPage({
   params: Promise<{ id: string }>
 }) {
   const { id } = await params
+  const userId = await requireActiveProfileId()
 
   if (id === 'all') {
     // Synthetic "All Notes" journal
     const [entries, availableTags] = await Promise.all([
-      getJournalEntries({ limit: 500 }),
-      getUserTags(),
+      getJournalEntries(userId, { limit: 500 }),
+      getUserTags(userId),
     ])
     const allJournal: JournalDetail = {
       id: 'all',
@@ -32,9 +34,9 @@ export default async function JournalDetailPage({
   }
 
   const [journal, entries, availableTags] = await Promise.all([
-    getJournalDetail(id),
-    getJournalEntries({ journalId: id }),
-    getUserTags(),
+    getJournalDetail(userId, id),
+    getJournalEntries(userId, { journalId: id }),
+    getUserTags(userId),
   ])
 
   if (!journal) notFound()

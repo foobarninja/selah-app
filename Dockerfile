@@ -32,11 +32,9 @@ COPY --from=builder /app/.next/static ./.next/static
 # Copy seed database (will be copied to volume on first run)
 COPY --from=builder /app/data/selah.db /app/seed/selah.db
 
-# Copy the plain-JS seed-update check script used by the entrypoint.
-COPY --from=builder /app/scripts/ops/docker-check-seed.cjs /app/scripts/ops/docker-check-seed.cjs
-
-# Seed-update TS scripts + the library they import. Lets containerized
-# users run `docker compose run --rm selah npm run seed:update`.
+# Seed-update TS scripts + the library they import. Entrypoint runs the
+# check (and auto-apply when SELAH_AUTO_UPDATE_SEED=1, default for Docker);
+# users can also run `docker compose run --rm selah npm run seed:update`.
 COPY --from=builder /app/scripts /app/scripts
 COPY --from=builder /app/src/lib/seed /app/src/lib/seed
 COPY --from=builder /app/package.json /app/package.json

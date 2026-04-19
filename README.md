@@ -95,43 +95,48 @@ Selah's pre-baked content (verses, commentary, characters, themes, devotionals) 
 
 **What gets refreshed:** everything else — verses, commentary, characters, themes, devotionals, series.
 
-### Check if an update is available
+### Docker: auto-update on startup (default)
 
-**npm users** — `npm run dev` / `npm run start` run a check automatically on boot. To check manually any time: `npm run seed:check`.
+For Docker deployments, `docker compose up -d --build` is all you need. The entrypoint:
 
-**Docker users** — `docker compose up -d` runs the same check on the container's entrypoint. Tail the logs to see it:
+1. Checks Hugging Face for a newer seed
+2. If newer, downloads it, verifies sha256, merges your local user tables in, and atomically swaps — creating a timestamped backup first
+3. Boots Selah
+
+You'll see the whole flow in the container log:
 
 ```bash
-docker compose logs --tail=20 selah
+docker compose logs --tail=30 selah
 ```
 
-Either way you'll see one of:
+The pipeline is **fail-open**: any network, download, or merge failure logs the error and boots on the existing DB. Your app never gets stuck behind a Hugging Face outage.
+
+> **After `git pull` on an existing Docker install:** run `docker compose up -d --build` the first time — without `--build`, Compose reuses the old image and the new entrypoint isn't applied.
+
+**To pin the seed** (skip auto-updates, e.g. for reproducible deployments), set `SELAH_AUTO_UPDATE_SEED=0` in your compose env. The container will still log when an update is available but won't apply it.
+
+### npm: check-only by default
+
+`npm run dev` / `npm run start` run a check and log the result. They do **not** auto-apply — local dev shouldn't have surprise downloads mid-workflow.
 
 ```
 [seed-check] local seed v2026.04.19 is current
-[seed-check] update available: v2026.04.19 -> v2026.05.10 (71.2 MB download).
-[seed-check] run: docker compose run --rm selah npm run seed:update
+[seed-check] update available: v2026.04.19 -> v2026.05.10 (71.2 MB download). Run `npm run seed:update` to apply.
 ```
 
-> **After `git pull` on an existing Docker install:** run `docker compose up -d --build` the first time — without `--build`, Compose reuses the old image and the new entrypoint check won't be present.
+Check manually any time: `npm run seed:check`. To apply: `npm run seed:update`. To opt into auto-apply on npm boots, set `SELAH_AUTO_UPDATE_SEED=1`.
 
-### Apply an update (manual)
+### Manual apply (both)
 
-**npm users:**
 ```bash
+# npm
 npm run seed:update
-```
 
-**Docker users:**
-```bash
+# Docker
 docker compose run --rm selah npm run seed:update
 ```
 
-Both variants do the same thing: download the new seed, verify sha256, merge your local user tables into it, timestamp a backup of the current DB, and atomically swap. The previous DB is preserved at `data/selah.pre-update-<timestamp>.db.bak` — delete it once you're satisfied with the update.
-
-### Apply automatically on startup (opt-in)
-
-Set `SELAH_AUTO_UPDATE_SEED=1` in your `.env` (or docker-compose environment). The startup check will apply any available update before booting the app. Off by default — we prefer explicit updates.
+Either variant downloads, verifies, merges, backs up, swaps. The previous DB is preserved at `data/selah.pre-update-<timestamp>.db.bak` — delete it once you're satisfied.
 
 ### If something goes wrong
 

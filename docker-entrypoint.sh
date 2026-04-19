@@ -11,11 +11,16 @@ fi
 # Ensure backups directory exists
 mkdir -p /app/backups
 
-# Non-blocking check for a newer seed on Hugging Face. Log-only;
-# applying updates happens via `docker compose run --rm selah ...`
-# or from outside the container. Failures are swallowed.
-if [ -f /app/scripts/ops/docker-check-seed.cjs ]; then
-  node /app/scripts/ops/docker-check-seed.cjs || true
+# Default auto-update ON for Docker deployments. Operators can pin the
+# seed by setting SELAH_AUTO_UPDATE_SEED=0 in their compose env.
+# The check+apply pipeline is fail-open: any network/download/merge
+# failure logs the error and proceeds to boot on the existing DB.
+export SELAH_AUTO_UPDATE_SEED="${SELAH_AUTO_UPDATE_SEED:-1}"
+
+if [ -f /app/scripts/ops/check-seed-update.ts ]; then
+  echo "[entrypoint] checking seed status (auto-apply: $SELAH_AUTO_UPDATE_SEED)"
+  /app/node_modules/.bin/tsx /app/scripts/ops/check-seed-update.ts || \
+    echo "[entrypoint] seed check/apply failed; booting on current DB"
 fi
 
 exec node server.js

@@ -56,9 +56,21 @@ async function main() {
   }
 
   if (process.env.SELAH_AUTO_UPDATE_SEED === '1') {
+    // Only apply when there's actually work to do. The earlier branches
+    // return on "current" and fall through on "update available" / "unversioned".
+    const shouldApply = localVersion === null || compareSeedVersions(localVersion, remote.seedVersion) < 0
+    if (!shouldApply) return
+
     console.log('[seed-check] SELAH_AUTO_UPDATE_SEED=1 — applying now...')
-    const { applySeedUpdate } = await import('./apply-seed-update')
-    await applySeedUpdate({ manifest: remote })
+    try {
+      const { applySeedUpdate } = await import('./apply-seed-update')
+      await applySeedUpdate({ manifest: remote })
+      console.log('[seed-check] auto-apply complete')
+    } catch (err) {
+      const msg = err instanceof Error ? err.message : String(err)
+      console.error(`[seed-check] AUTO-APPLY FAILED: ${msg}`)
+      console.error(`[seed-check] Your live DB was not modified. Boot will continue on the existing seed.`)
+    }
   }
 }
 

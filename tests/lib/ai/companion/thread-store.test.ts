@@ -29,6 +29,7 @@ describe('thread-store', () => {
         title TEXT,
         context_ref TEXT,
         user_id TEXT,
+        has_flagged_messages INTEGER NOT NULL DEFAULT 0,
         created_at TEXT NOT NULL DEFAULT '',
         updated_at TEXT NOT NULL DEFAULT ''
       );
@@ -40,6 +41,9 @@ describe('thread-store', () => {
         provider_id TEXT,
         model_id TEXT,
         user_id TEXT,
+        flag_level TEXT,
+        flag_source TEXT,
+        flag_reviewed_at TEXT,
         created_at TEXT NOT NULL DEFAULT ''
       );
     `)

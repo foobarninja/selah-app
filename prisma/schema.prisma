@@ -569,6 +569,10 @@ model UserProfile {
   avatarColor  String   @map("avatar_color")
   pinHash      String?  @map("pin_hash")
   isDefault    Boolean  @default(false) @map("is_default")
+  childLock       Boolean  @default(false) @map("child_lock")
+  lockedProvider  String?  @map("locked_provider")
+  lockedModel     String?  @map("locked_model")
+  auditPolicy     String   @default("none") @map("audit_policy")
   createdAt    String   @default("") @map("created_at")
   updatedAt    String   @default("") @map("updated_at")
 
@@ -749,12 +753,13 @@ model ReadingHistory {
 }
 
 model AiConversation {
-  id         Int     @id @default(autoincrement())
-  title      String?
-  contextRef String? @map("context_ref")
-  userId     String? @map("user_id")
-  createdAt  String  @default("") @map("created_at")
-  updatedAt  String  @default("") @map("updated_at")
+  id                  Int     @id @default(autoincrement())
+  title               String?
+  contextRef          String? @map("context_ref")
+  userId              String? @map("user_id")
+  hasFlaggedMessages  Boolean @default(false) @map("has_flagged_messages")
+  createdAt           String  @default("") @map("created_at")
+  updatedAt           String  @default("") @map("updated_at")
 
   messages AiMessage[]
 
@@ -762,14 +767,17 @@ model AiConversation {
 }
 
 model AiMessage {
-  id             Int     @id @default(autoincrement())
-  conversationId Int     @map("conversation_id")
-  role           String
-  content        String
-  providerId     String? @map("provider_id")
-  modelId        String? @map("model_id")
-  userId         String? @map("user_id")
-  createdAt      String  @default("") @map("created_at")
+  id              Int      @id @default(autoincrement())
+  conversationId  Int      @map("conversation_id")
+  role            String
+  content         String
+  providerId      String?  @map("provider_id")
+  modelId         String?  @map("model_id")
+  userId          String?  @map("user_id")
+  flagLevel       String?  @map("flag_level")
+  flagSource      String?  @map("flag_source")
+  flagReviewedAt  String?  @map("flag_reviewed_at")
+  createdAt       String   @default("") @map("created_at")
 
   conversation AiConversation @relation(fields: [conversationId], references: [id], onDelete: Cascade)
 

@@ -35,6 +35,10 @@ export interface ProfileRecord {
   avatarColor: string
   pinHash: string | null
   isDefault: boolean
+  childLock: boolean
+  lockedProvider: string | null
+  lockedModel: string | null
+  auditPolicy: 'none' | 'flagged-only' | 'full'
   createdAt: string
   updatedAt: string
 }
@@ -45,10 +49,14 @@ function toRecord(row: {
   avatarColor: string
   pinHash: string | null
   isDefault: boolean
+  childLock: boolean
+  lockedProvider: string | null
+  lockedModel: string | null
+  auditPolicy: string
   createdAt: string
   updatedAt: string
 }): ProfileRecord {
-  return { ...row }
+  return { ...row, auditPolicy: row.auditPolicy as ProfileRecord['auditPolicy'] }
 }
 
 export async function listProfiles(): Promise<ProfileRecord[]> {

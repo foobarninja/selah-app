@@ -14,6 +14,7 @@
     "seed:check": "tsx scripts/ops/check-seed-update.ts",
     "seed:update": "tsx scripts/ops/apply-seed-update.ts",
     "seed:prepare": "tsx scripts/release/prepare-seed-db.ts",
+    "seed:publish": "tsx scripts/release/publish-seed.ts",
     "app:check": "tsx scripts/ops/check-app-update.ts"
   },
   "dependencies": {

@@ -76,9 +76,10 @@ describe('applySeedUpdate (local fresh seed)', () => {
 
     await applySeedUpdate({ manifest, localFreshSeedPath: freshPath })
 
-    // Marker written
-    const version = readFileSync(join(dir, 'data/.seed-version'), 'utf8').trim()
-    expect(version).toBe('2099.01.01')
+    // Marker written as JSON with both version fields
+    const marker = JSON.parse(readFileSync(join(dir, 'data/.seed-version'), 'utf8'))
+    expect(marker.seedVersion).toBe('2099.01.01')
+    expect(marker.schemaVersion).toBe(1)
 
     // DB now has the new seed content + preserved user rows
     const db = new Database(join(dir, 'data/selah.db'), { readonly: true })

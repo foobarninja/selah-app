@@ -14,7 +14,7 @@ import { resolve } from 'path'
 import { spawnSync } from 'child_process'
 import { Readable } from 'stream'
 import { pipeline } from 'stream/promises'
-import { LOCAL_VERSION_FILE, MANIFEST_URL, type SeedManifest } from '../../src/lib/seed/manifest'
+import { LOCAL_VERSION_FILE, MANIFEST_URL, writeLocalSeedState, type SeedManifest } from '../../src/lib/seed/manifest'
 import { mergeUserData } from '../../src/lib/seed/merge-engine'
 
 interface ApplyOptions {
@@ -100,7 +100,10 @@ export async function applySeedUpdate(opts: ApplyOptions = {}): Promise<void> {
   }
   renameSync(dbPath, backupPath)
   renameSync(stagedRawPath, dbPath)
-  writeFileSync(versionPath, manifest.seedVersion + '\n', 'utf8')
+  writeLocalSeedState(versionPath, {
+    seedVersion: manifest.seedVersion,
+    schemaVersion: manifest.schemaVersion,
+  })
 
   console.log(`[seed-update] done. local version now v${manifest.seedVersion}`)
   console.log(`[seed-update] previous DB preserved at ${backupPath} — delete when you're happy`)

@@ -1,0 +1,8 @@
+# Shell scripts must be LF so they run on Linux/Alpine containers.
+*.sh text eol=lf
+docker-entrypoint.sh text eol=lf
+
+# CommonJS scripts and TS files are safe either way; keep LF for
+# consistency with the Linux runtime where they end up executing.
+*.cjs text eol=lf
+*.mjs text eol=lf

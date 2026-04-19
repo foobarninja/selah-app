@@ -48,9 +48,10 @@ RUN npm install --no-save --production tsx@4.21.0
 RUN mkdir -p /app/data /app/backups && \
     chown -R nextjs:nodejs /app/data /app/backups /app/seed /app/scripts /app/src
 
-# Copy entrypoint
+# Copy entrypoint. Strip any CRLF that snuck in from a Windows checkout —
+# Alpine's /bin/sh won't tolerate \r in the shebang.
 COPY docker-entrypoint.sh /app/docker-entrypoint.sh
-RUN chmod +x /app/docker-entrypoint.sh
+RUN sed -i 's/\r$//' /app/docker-entrypoint.sh && chmod +x /app/docker-entrypoint.sh
 
 USER nextjs
 EXPOSE 4610

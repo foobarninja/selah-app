@@ -6,6 +6,7 @@ node_modules
 pipeline/
 eval/
 scripts/
+!scripts/ops/
 data/sources/
 data/bible.eng.db
 .env.local

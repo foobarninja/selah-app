@@ -4,13 +4,24 @@ import { useState, useEffect } from 'react'
 import { Menu, X } from 'lucide-react'
 import { MainNav } from './MainNav'
 import { UserMenu } from './UserMenu'
+import { ProfileSwitcher } from './ProfileSwitcher'
 import { navigationItems } from './navigation'
+
+interface ProfileSummary {
+  id: string
+  name: string
+  avatarColor: string
+  hasPin: boolean
+  isDefault: boolean
+}
 
 interface AppShellProps {
   children: React.ReactNode
   user?: { name: string; avatarUrl?: string }
   isAIConfigured?: boolean
   onLogout?: () => void
+  activeProfile: ProfileSummary
+  otherProfiles: ProfileSummary[]
 }
 
 const COLLAPSE_KEY = 'selah-sidebar-collapsed'
@@ -22,6 +33,8 @@ export default function AppShell({
   user,
   isAIConfigured = false,
   onLogout,
+  activeProfile,
+  otherProfiles,
 }: AppShellProps) {
   const [isCollapsed, setIsCollapsed] = useState(false)
   const [hydrated, setHydrated] = useState(false)
@@ -76,7 +89,9 @@ export default function AppShell({
         >
           S
         </span>
-        <div className="w-12" /> {/* Balance the hamburger */}
+        <div className="w-12 flex items-center justify-center">
+          <ProfileSwitcher current={activeProfile} others={otherProfiles} />
+        </div>
       </div>
 
       {/* Mobile overlay backdrop */}
@@ -114,13 +129,13 @@ export default function AppShell({
           </button>
         </div>
 
-        {/* Brand */}
+        {/* Brand + profile switcher */}
         <div
           className="flex items-center shrink-0"
           style={{
             height: '64px',
             padding: isCollapsed && !isMobileOpen ? '0' : '0 20px',
-            justifyContent: isCollapsed && !isMobileOpen ? 'center' : 'flex-start',
+            justifyContent: isCollapsed && !isMobileOpen ? 'center' : 'space-between',
           }}
         >
           <span
@@ -135,6 +150,9 @@ export default function AppShell({
           >
             {isCollapsed && !isMobileOpen ? 'S' : 'Selah'}
           </span>
+          {!(isCollapsed && !isMobileOpen) && (
+            <ProfileSwitcher current={activeProfile} others={otherProfiles} />
+          )}
         </div>
 
         {/* Navigation */}

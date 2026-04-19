@@ -5,6 +5,7 @@ import { Eye, EyeOff, Check, X, Download, Upload, Minus, Plus, Sun, Moon, Monito
 import type { SettingsProps, AIProvider, ThemeMode, AudienceLevel, RetentionDays } from './types'
 import { ConfirmDialog } from '@/components/ui/ConfirmDialog'
 import { findOpenRouterPreset } from '@/lib/ai/model-presets'
+import { ManageProfiles } from './ManageProfiles'
 
 const font = {
   display: "var(--selah-font-display, 'Cormorant Garamond', serif)",
@@ -229,6 +230,13 @@ export function SettingsView({ translations, aiConfig, aiProviders, studyPrefere
     <div className="h-full overflow-y-auto" style={{ padding: '40px 32px' }}>
       <div style={{ maxWidth: '640px', margin: '0 auto' }}>
         <h1 style={{ fontFamily: font.display, fontWeight: 300, fontSize: '36px', letterSpacing: '0.5px', color: 'var(--selah-text-1, #E8E2D9)', marginBottom: '36px' }}>Settings</h1>
+
+        {/* 0. PROFILES */}
+        <section id="profiles" className="mb-12">
+          <h2 style={{ fontFamily: font.display, fontSize: '24px', fontWeight: 400, color: 'var(--selah-text-1, #E8E2D9)', marginBottom: '4px' }}>Profiles</h2>
+          <p style={{ fontFamily: font.body, fontSize: '13px', color: 'var(--selah-text-3, #6E695F)', marginBottom: '20px' }}>Manage who uses this Selah installation. Each profile keeps its own notes, journal, and reading history.</p>
+          <ManageProfiles />
+        </section>
 
         {/* 1. TRANSLATIONS */}
         <SettingsSection title="Translations" description="Choose your reading translations and display preferences.">

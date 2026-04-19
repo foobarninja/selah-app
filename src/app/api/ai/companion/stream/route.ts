@@ -28,6 +28,8 @@ import {
 } from '@/lib/ai/companion/thread-store'
 import type { ModelConfig } from '@/lib/ai/types'
 
+const MAX_HISTORY_MESSAGES = 20
+
 export const dynamic = 'force-dynamic'
 
 interface Body {
@@ -77,6 +79,7 @@ export async function POST(request: NextRequest) {
   const grounding = buildCompanionGrounding(devotional)
   const systemPrompt = buildCompanionSystemPrompt(grounding)
   const history = await getThreadMessages(conversationId)
+  const recentHistory = history.slice(-MAX_HISTORY_MESSAGES)
 
   // Build ModelConfig matching per-provider settings — same pattern as /api/ai/send.
   const providerSetting = await getSetting('ai_provider')
@@ -122,7 +125,7 @@ export async function POST(request: NextRequest) {
       try {
         const chatMessages = [
           { role: 'system' as const, content: systemPrompt },
-          ...history.map((m) => ({ role: m.role as 'user' | 'assistant' | 'system', content: m.content })),
+          ...recentHistory.map((m) => ({ role: m.role as 'user' | 'assistant' | 'system', content: m.content })),
         ]
         for await (const token of provider.stream(chatMessages, modelConfig)) {
           assistantText += token

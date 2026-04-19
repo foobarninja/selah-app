@@ -14,7 +14,7 @@ const globalForPrisma = globalThis as unknown as {
 }
 
 // Bump this version when the schema changes to invalidate cached clients
-const SCHEMA_VERSION = 2
+const SCHEMA_VERSION = 3
 
 const needsRefresh = globalForPrisma.prismaVersion !== SCHEMA_VERSION
 

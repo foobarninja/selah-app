@@ -3,12 +3,17 @@
   "version": "0.1.0",
   "private": true,
   "scripts": {
+    "predev": "tsx scripts/ops/check-seed-update.ts",
     "dev": "next dev",
     "build": "next build",
+    "prestart": "tsx scripts/ops/check-seed-update.ts",
     "start": "next start",
     "lint": "eslint",
     "test": "vitest run",
-    "test:watch": "vitest"
+    "test:watch": "vitest",
+    "seed:check": "tsx scripts/ops/check-seed-update.ts",
+    "seed:update": "tsx scripts/ops/apply-seed-update.ts",
+    "seed:prepare": "tsx scripts/release/prepare-seed-db.ts"
   },
   "dependencies": {
     "@anthropic-ai/sdk": "^0.82.0",

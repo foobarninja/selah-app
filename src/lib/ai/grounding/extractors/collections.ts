@@ -7,21 +7,23 @@ import type { ContextSection, ReaderContext } from '../../types'
  * Returns a single ContextSection (or null if no items found).
  */
 export async function extractCollectionContext(
+  userId: string,
   ctx: ReaderContext
 ): Promise<ContextSection | null> {
   const bookName = BOOK_NAMES[ctx.bookId] ?? ctx.bookId
   const chapterPrefix = `${bookName} ${ctx.chapter}:`
 
-  // 1. Collection items matching this chapter
+  // 1. Collection items matching this chapter (scoped to the active profile)
   const collectionItems = await prisma.userCollectionItem.findMany({
-    where: { itemRef: { startsWith: chapterPrefix } },
+    where: { userId, itemRef: { startsWith: chapterPrefix } },
     include: { collection: { select: { title: true } } },
     take: 20,
   })
 
-  // 2. Study builder items matching this chapter
+  // 2. Study builder items matching this chapter (scoped to the active profile)
   const studyItems = await prisma.studyAssemblyItem.findMany({
     where: {
+      userId,
       entityType: 'verse',
       entityId: { startsWith: chapterPrefix },
     },

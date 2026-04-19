@@ -21,12 +21,12 @@ function parseVerseRef(ref: string): { bookId: string; chapter: number; verse: n
   return { bookId, chapter: parseInt(match[2], 10), verse: parseInt(match[3], 10) }
 }
 
-export async function extractStudyBuilderContext(ctx: StudyBuilderContext): Promise<string> {
+export async function extractStudyBuilderContext(userId: string, ctx: StudyBuilderContext): Promise<string> {
   const { projectId } = ctx
 
   const [project, rawItems] = await Promise.all([
-    getProject(projectId),
-    getProjectItems(projectId),
+    getProject(userId, projectId),
+    getProjectItems(userId, projectId),
   ])
 
   if (!project) return ''

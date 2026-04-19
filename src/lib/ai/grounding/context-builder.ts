@@ -31,7 +31,7 @@ export async function buildGroundingContext(
     case 'reader': {
       sections = await extractReaderContext(grounding.context as ReaderContext, userId)
       // Also fetch collection items for this page
-      const collectionSection = await extractCollectionContext(grounding.context as ReaderContext)
+      const collectionSection = await extractCollectionContext(userId, grounding.context as ReaderContext)
       if (collectionSection) sections.push(collectionSection)
       break
     }
@@ -51,7 +51,7 @@ export async function buildGroundingContext(
       break
     }
     case 'study-builder': {
-      const content = await extractStudyBuilderContext(grounding.context as StudyBuilderContext)
+      const content = await extractStudyBuilderContext(userId, grounding.context as StudyBuilderContext)
       sections = content ? [{ id: 'study-builder', label: 'Study Project', content, estimatedTokens: Math.ceil(content.length / 4), defaultEnabled: true }] : []
       break
     }

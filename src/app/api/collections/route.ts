@@ -1,13 +1,21 @@
 import { NextRequest, NextResponse } from 'next/server'
 import { getCollections, createCollection } from '@/lib/journal/queries'
 import { listProjects } from '@/lib/study-builder/queries'
+import { requireActiveProfileId } from '@/lib/profiles/active-profile'
 
 export const dynamic = 'force-dynamic'
 
 export async function GET() {
+  let userId: string
+  try {
+    userId = await requireActiveProfileId()
+  } catch {
+    return NextResponse.json({ error: 'no active profile' }, { status: 401 })
+  }
+
   const [collections, projects] = await Promise.all([
     getCollections(),
-    listProjects(),
+    listProjects(userId),
   ])
 
   const unified = [

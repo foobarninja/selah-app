@@ -34,8 +34,8 @@ const formatLabels: Record<string, string> = {
   personal: 'Personal Study',
 }
 
-export async function generateDocx(projectId: number): Promise<Buffer> {
-  const project = await prisma.studyProject.findUnique({ where: { id: projectId } })
+export async function generateDocx(userId: string, projectId: number): Promise<Buffer> {
+  const project = await prisma.studyProject.findFirst({ where: { id: projectId, userId } })
   if (!project) throw new Error('Project not found')
 
   const items = await prisma.studyAssemblyItem.findMany({
@@ -358,8 +358,8 @@ function entityTypeLabel(type: string): string {
   }
 }
 
-export async function generateMarkdown(projectId: number): Promise<string> {
-  const project = await prisma.studyProject.findUnique({ where: { id: projectId } })
+export async function generateMarkdown(userId: string, projectId: number): Promise<string> {
+  const project = await prisma.studyProject.findFirst({ where: { id: projectId, userId } })
   if (!project) throw new Error('Project not found')
 
   const items = await prisma.studyAssemblyItem.findMany({

@@ -1,6 +1,7 @@
 import { NextRequest, NextResponse } from 'next/server'
 import { addAssemblyItem, listProjects } from '@/lib/study-builder/queries'
 import { prisma } from '@/lib/db'
+import { requireActiveProfileId } from '@/lib/profiles/active-profile'
 
 /**
  * Save an AI chat message (question + answer) to the user's most-recently-updated
@@ -11,6 +12,13 @@ import { prisma } from '@/lib/db'
  * for user reference and export but never fed back into AI requests.
  */
 export async function POST(request: NextRequest) {
+  let userId: string
+  try {
+    userId = await requireActiveProfileId()
+  } catch {
+    return NextResponse.json({ error: 'no active profile' }, { status: 401 })
+  }
+
   const body = await request.json() as {
     messageId: string
     question: string
@@ -21,8 +29,8 @@ export async function POST(request: NextRequest) {
     return NextResponse.json({ error: 'Missing answer' }, { status: 400 })
   }
 
-  // Pick the most-recently-updated project as the "active" target.
-  const projects = await listProjects()
+  // Pick the most-recently-updated project as the "active" target (scoped to userId).
+  const projects = await listProjects(userId)
   if (projects.length === 0) {
     return NextResponse.json({ error: 'No study projects exist. Create one first.' }, { status: 400 })
   }
@@ -35,6 +43,7 @@ export async function POST(request: NextRequest) {
   const fullContent = `Q: ${body.question}\n\nA: ${body.answer}`
 
   const itemId = await addAssemblyItem(
+    userId,
     parseInt(activeProject.id, 10),
     'ai-chat',
     `msg:${body.messageId}`,
@@ -43,11 +52,14 @@ export async function POST(request: NextRequest) {
     4, // Tier 4 — AI-Assisted
   )
 
-  // Write the full Q&A content into the annotation field.
-  await prisma.studyAssemblyItem.update({
-    where: { id: itemId },
+  // Write the full Q&A content into the annotation field — scoped to the active profile.
+  const { count } = await prisma.studyAssemblyItem.updateMany({
+    where: { id: itemId, userId },
     data: { annotation: fullContent },
   })
+  if (count === 0) {
+    return NextResponse.json({ error: 'Not found' }, { status: 404 })
+  }
 
   return NextResponse.json({
     itemId,

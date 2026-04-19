@@ -1,13 +1,24 @@
 import { prisma } from '@/lib/db'
 import { NextRequest, NextResponse } from 'next/server'
+import { requireActiveProfileId } from '@/lib/profiles/active-profile'
 
 export async function GET(_request: NextRequest, { params }: { params: Promise<{ id: string }> }) {
+  let userId: string
+  try {
+    userId = await requireActiveProfileId()
+  } catch {
+    return NextResponse.json({ error: 'no active profile' }, { status: 401 })
+  }
+
   const { id } = await params
-  const conversation = await prisma.aiConversation.findUnique({
-    where: { id: parseInt(id, 10) },
-    include: {
-      messages: { orderBy: { createdAt: 'asc' } },
-    },
+  const conversationId = parseInt(id, 10)
+  if (isNaN(conversationId)) {
+    return NextResponse.json({ error: 'Invalid conversation id' }, { status: 400 })
+  }
+
+  const conversation = await prisma.aiConversation.findFirst({
+    where: { id: conversationId, userId },
+    include: { messages: { orderBy: { createdAt: 'asc' } } },
   })
 
   if (!conversation) {
@@ -28,9 +39,24 @@ export async function GET(_request: NextRequest, { params }: { params: Promise<{
 }
 
 export async function DELETE(_request: NextRequest, { params }: { params: Promise<{ id: string }> }) {
+  let userId: string
+  try {
+    userId = await requireActiveProfileId()
+  } catch {
+    return NextResponse.json({ error: 'no active profile' }, { status: 401 })
+  }
+
   const { id } = await params
-  await prisma.aiConversation.delete({
-    where: { id: parseInt(id, 10) },
+  const conversationId = parseInt(id, 10)
+  if (isNaN(conversationId)) {
+    return NextResponse.json({ error: 'Invalid conversation id' }, { status: 400 })
+  }
+
+  const { count } = await prisma.aiConversation.deleteMany({
+    where: { id: conversationId, userId },
   })
+  if (count === 0) {
+    return NextResponse.json({ error: 'Not found' }, { status: 404 })
+  }
   return NextResponse.json({ ok: true })
 }

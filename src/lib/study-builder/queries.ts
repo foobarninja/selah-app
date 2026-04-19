@@ -30,8 +30,9 @@ function now() {
 
 // ── Project CRUD ─────────────────────────────────────────────────────────────
 
-export async function listProjects(): Promise<ProjectSummary[]> {
+export async function listProjects(userId: string): Promise<ProjectSummary[]> {
   const projects = await prisma.studyProject.findMany({
+    where: { userId },
     orderBy: { updatedAt: 'desc' },
     include: { items: { select: { id: true } } },
   })
@@ -46,8 +47,8 @@ export async function listProjects(): Promise<ProjectSummary[]> {
   }))
 }
 
-export async function getProject(id: number): Promise<ActiveProject | null> {
-  const p = await prisma.studyProject.findUnique({ where: { id } })
+export async function getProject(userId: string, id: number): Promise<ActiveProject | null> {
+  const p = await prisma.studyProject.findFirst({ where: { id, userId } })
   if (!p) return null
   return {
     id: String(p.id),
@@ -57,9 +58,9 @@ export async function getProject(id: number): Promise<ActiveProject | null> {
   }
 }
 
-export async function getProjectItems(projectId: number): Promise<AssemblyItem[]> {
+export async function getProjectItems(userId: string, projectId: number): Promise<AssemblyItem[]> {
   const items = await prisma.studyAssemblyItem.findMany({
-    where: { projectId },
+    where: { projectId, userId },
     orderBy: { sortOrder: 'asc' },
   })
 
@@ -74,25 +75,31 @@ export async function getProjectItems(projectId: number): Promise<AssemblyItem[]
   }))
 }
 
-export async function createProject(topic: string, format: string): Promise<number> {
+export async function createProject(userId: string, topic: string, format: string): Promise<number> {
   const ts = now()
   const project = await prisma.studyProject.create({
-    data: { topic, format, createdAt: ts, updatedAt: ts },
+    data: { topic, format, userId, createdAt: ts, updatedAt: ts },
   })
   return project.id
 }
 
-export async function deleteProject(id: number): Promise<void> {
-  await prisma.studyProject.delete({ where: { id } })
+export async function deleteProject(userId: string, id: number): Promise<boolean> {
+  const { count } = await prisma.studyProject.deleteMany({ where: { id, userId } })
+  return count > 0
 }
 
-export async function updateProjectTimestamp(id: number): Promise<void> {
-  await prisma.studyProject.update({ where: { id }, data: { updatedAt: now() } })
+export async function updateProjectTimestamp(userId: string, id: number): Promise<boolean> {
+  const { count } = await prisma.studyProject.updateMany({
+    where: { id, userId },
+    data: { updatedAt: now() },
+  })
+  return count > 0
 }
 
 // ── Assembly Item CRUD ───────────────────────────────────────────────────────
 
 export async function addAssemblyItem(
+  userId: string,
   projectId: number,
   entityType: string,
   entityId: string,
@@ -102,7 +109,7 @@ export async function addAssemblyItem(
 ): Promise<number> {
   // Get max sort order
   const maxItem = await prisma.studyAssemblyItem.findFirst({
-    where: { projectId },
+    where: { projectId, userId },
     orderBy: { sortOrder: 'desc' },
     select: { sortOrder: true },
   })
@@ -117,41 +124,55 @@ export async function addAssemblyItem(
       preview,
       sourceTier,
       sortOrder: nextOrder,
+      userId,
       createdAt: now(),
     },
   })
 
-  await updateProjectTimestamp(projectId)
+  await updateProjectTimestamp(userId, projectId)
   return item.id
 }
 
-export async function removeAssemblyItem(itemId: number): Promise<void> {
-  const item = await prisma.studyAssemblyItem.findUnique({ where: { id: itemId }, select: { projectId: true } })
-  await prisma.studyAssemblyItem.delete({ where: { id: itemId } })
-  if (item) await updateProjectTimestamp(item.projectId)
+export async function removeAssemblyItem(userId: string, itemId: number): Promise<void> {
+  const item = await prisma.studyAssemblyItem.findFirst({
+    where: { id: itemId, userId },
+    select: { projectId: true },
+  })
+  if (!item) return
+  await prisma.studyAssemblyItem.deleteMany({ where: { id: itemId, userId } })
+  await updateProjectTimestamp(userId, item.projectId)
 }
 
-export async function updateAnnotation(itemId: number, annotation: string): Promise<void> {
-  const item = await prisma.studyAssemblyItem.findUnique({ where: { id: itemId }, select: { projectId: true } })
-  await prisma.studyAssemblyItem.update({ where: { id: itemId }, data: { annotation } })
-  if (item) await updateProjectTimestamp(item.projectId)
+export async function updateAnnotation(userId: string, itemId: number, annotation: string): Promise<void> {
+  const item = await prisma.studyAssemblyItem.findFirst({
+    where: { id: itemId, userId },
+    select: { projectId: true },
+  })
+  if (!item) return
+  await prisma.studyAssemblyItem.updateMany({
+    where: { id: itemId, userId },
+    data: { annotation },
+  })
+  await updateProjectTimestamp(userId, item.projectId)
 }
 
-export async function reorderItems(projectId: number, itemIds: number[]): Promise<void> {
+export async function reorderItems(userId: string, projectId: number, itemIds: number[]): Promise<void> {
   // Use raw SQL for batch update efficiency
   const db = getWriteDb()
   try {
-    const stmt = db.prepare('UPDATE study_assembly_items SET sort_order = ? WHERE id = ? AND project_id = ?')
+    const stmt = db.prepare(
+      'UPDATE study_assembly_items SET sort_order = ? WHERE id = ? AND project_id = ? AND user_id = ?',
+    )
     const tx = db.transaction(() => {
       for (let i = 0; i < itemIds.length; i++) {
-        stmt.run(i, itemIds[i], projectId)
+        stmt.run(i, itemIds[i], projectId, userId)
       }
     })
     tx()
   } finally {
     db.close()
   }
-  await updateProjectTimestamp(projectId)
+  await updateProjectTimestamp(userId, projectId)
 }
 
 // ── Assembly Engine — topic-based search ─────────────────────────────────────
@@ -160,7 +181,7 @@ function sanitizeFtsQuery(query: string): string {
   return query.replace(/[^\w\s]/g, '').trim().split(/\s+/).filter(Boolean).join(' AND ')
 }
 
-export async function assembleMaterial(topic: string): Promise<SourceSection[]> {
+export async function assembleMaterial(userId: string, topic: string): Promise<SourceSection[]> {
   const db = getDb()
   const ftsQuery = sanitizeFtsQuery(topic)
   const likeQuery = `%${topic}%`
@@ -495,13 +516,14 @@ export async function assembleMaterial(topic: string): Promise<SourceSection[]> 
       if (crossRefItems.length >= 12) break
     }
 
-    // 9. User notes matching the topic
+    // 9. User notes matching the topic (scoped to the active profile)
     const notes = db.prepare(`
       SELECT id, title, content, note_type FROM user_notes
-      WHERE content LIKE ? OR title LIKE ?
+      WHERE (content LIKE ? OR title LIKE ?)
+        AND user_id = ?
       ORDER BY updated_at DESC
       LIMIT 6
-    `).all(likeQuery, likeQuery) as Array<{ id: number; title: string | null; content: string; note_type: string }>
+    `).all(likeQuery, likeQuery, userId) as Array<{ id: number; title: string | null; content: string; note_type: string }>
 
     const noteItems: SourceItem[] = notes.map((n) => ({
       id: `journal:${n.id}`,

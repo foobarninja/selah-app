@@ -2,11 +2,19 @@ import { NextRequest, NextResponse } from 'next/server'
 import { generateConversationDocx } from '@/lib/export/targets/ai-conversation'
 import { renderConversationToMarkdown } from '@/lib/export/markdown/renderers'
 import { prisma } from '@/lib/db'
+import { requireActiveProfileId } from '@/lib/profiles/active-profile'
 
 export async function GET(
   request: NextRequest,
   { params }: { params: Promise<{ id: string }> },
 ) {
+  let userId: string
+  try {
+    userId = await requireActiveProfileId()
+  } catch {
+    return NextResponse.json({ error: 'no active profile' }, { status: 401 })
+  }
+
   const { id } = await params
   const conversationId = parseInt(id, 10)
   if (isNaN(conversationId)) {
@@ -18,8 +26,8 @@ export async function GET(
 
   try {
     if (format === 'markdown' || format === 'md') {
-      const conv = await prisma.aiConversation.findUnique({
-        where: { id: conversationId },
+      const conv = await prisma.aiConversation.findFirst({
+        where: { id: conversationId, userId },
         include: { messages: { orderBy: { createdAt: 'asc' } } },
       })
       if (!conv) {
@@ -34,8 +42,8 @@ export async function GET(
       })
     }
 
-    const exists = await prisma.aiConversation.findUnique({
-      where: { id: conversationId },
+    const exists = await prisma.aiConversation.findFirst({
+      where: { id: conversationId, userId },
       select: { id: true },
     })
     if (!exists) {

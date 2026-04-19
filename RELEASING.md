@@ -26,11 +26,14 @@ Database" for the user-facing flow. Maintainer flow:
 2. `npm run seed:prepare` → writes `data/selah-seed.db.xz` and
    `data/manifest.json`. Also runs the additive-only preflight against
    `data/selah-seed-prev.db` if present.
-3. `HF_TOKEN=hf_xxx npm run seed:publish` → uploads both artifacts in
+3. `npm run seed:publish -- --token hf_xxx` → uploads both artifacts in
    a single commit (atomic on HF's side — users can never see a
    manifest referencing a stale `.xz`). Uses the `@huggingface/hub` JS
-   SDK so no Python / `huggingface-cli` is required. Get a write-scoped
+   SDK so no Python / `huggingface-cli` is required. Get a **write**-scoped
    token at <https://huggingface.co/settings/tokens>.
+   Token sources checked in order: `--token` flag, `HF_TOKEN` env var,
+   `.env` file at repo root, `~/.cache/huggingface/token`. `--token`
+   is the most reliable path on Windows (npm shims strip env vars).
 4. Copy the new seed over the preflight baseline:
    `cp data/selah-seed.db data/selah-seed-prev.db`.
 

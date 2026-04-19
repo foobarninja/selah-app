@@ -23,16 +23,11 @@ A self-hosted Bible study app with pre-baked contextual knowledge. Everything ru
 
 ### Prerequisites
 
-**Docker + Docker Compose:**
+**Docker + Docker Compose** is the only requirement for the default install. Decompression and database setup happen inside the container.
 
 - **macOS** — Install [Docker Desktop for Mac](https://docs.docker.com/desktop/install/mac-install/) (includes Compose). Apple Silicon and Intel supported.
 - **Windows** — Install [Docker Desktop for Windows](https://docs.docker.com/desktop/install/windows-install/) (includes Compose). Requires WSL 2.
 - **Linux** — Install [Docker Engine](https://docs.docker.com/engine/install/) plus the [Compose plugin](https://docs.docker.com/compose/install/linux/) via your distro's package manager. Example (Ubuntu/Debian): `sudo apt install docker.io docker-compose-v2`.
-
-**xz** to decompress the database:
-
-- **macOS/Linux** — Usually pre-installed. If not: `brew install xz` (macOS) or `sudo apt install xz-utils` (Debian/Ubuntu).
-- **Windows** — Install [7-Zip](https://www.7-zip.org/) (recommended) or [XZ Utils for Windows](https://tukaani.org/xz/).
 
 ### Install
 
@@ -121,13 +116,17 @@ The override tells Compose to build locally from the working tree
 instead of pulling the published image. Delete the override to switch
 back to pulling.
 
-## Manual Install
+## Manual Install (npm)
+
+For development or running without Docker.
 
 ### Prerequisites
 
 - Node.js 22+
 - npm 10+
-- [xz](https://tukaani.org/xz/) to decompress the database (see Quick Start prerequisites above)
+- **xz** to decompress the database
+  - **macOS/Linux** — usually pre-installed. If not: `brew install xz` or `sudo apt install xz-utils`
+  - **Windows** — [7-Zip](https://www.7-zip.org/) or [XZ Utils for Windows](https://tukaani.org/xz/)
 
 ### Steps
 
@@ -142,9 +141,11 @@ xz -d data/selah.db.xz
 npm run dev -- -p 4610
 ```
 
-Open [http://localhost:4610](http://localhost:4610)
+Open [http://localhost:4610](http://localhost:4610).
 
-> **Manual download:** If `curl` fails, download `selah-seed.db.xz` from the [Hugging Face dataset page](https://huggingface.co/datasets/foooobear/selah-db/blob/main/selah-seed.db.xz) directly, save it as `data/selah.db.xz`, then run `xz -d data/selah.db.xz`.
+> **Manual download fallback:** if `curl` fails, download `selah-seed.db.xz` from the [Hugging Face dataset page](https://huggingface.co/datasets/foooobear/selah-db/blob/main/selah-seed.db.xz) directly, save as `data/selah.db.xz`, then run `xz -d data/selah.db.xz`.
+
+On npm, seed updates are **check-only by default** (startup logs a nudge when a newer seed is available). To actually pull one, run `npm run seed:update`. To auto-apply on every boot, set `SELAH_AUTO_UPDATE_SEED=1` in your `.env`.
 
 ## Updating the Content Database
 
@@ -283,10 +284,31 @@ See [docs/models_recommendations.md](docs/models_recommendations.md) for detaile
 - Restore from backup: Settings → Backup & Data → upload a `.db` file
 - The database is stored at `data/selah.db`
 
+### Seed auto-apply keeps failing
+
+If the container log shows `[seed-check] AUTO-APPLY FAILED` on every boot but the app still runs:
+
+- **sha256 mismatch** — Hugging Face has inconsistent artifacts (shouldn't happen now that uploads are atomic, but would recover on the next publish). App continues on your current seed; no action needed.
+- **Network / 404** — intermittent HF outage. Retries on next boot.
+- **Schema too new** — log says `remote seed ... requires app schemaVersion N, this app supports M`. Upgrade the app (`docker compose pull && docker compose up -d`) before the seed will apply.
+
+All of the above are fail-open — the app boots on your current DB.
+
+### Rolling back a seed update
+
+If the app misbehaves after a successful seed update:
+
+1. `docker compose down` (or stop the npm process)
+2. `mv data/selah.db data/selah.bad.db && mv data/selah.pre-update-*.db.bak data/selah.db`
+3. `rm data/.seed-version` so the next check doesn't think you're still on the new version
+4. `docker compose up -d`
+
+Your DB is now back to whatever it was before the update, with all user data intact.
+
 ### Docker volume issues
 
 - Data persists in Docker volumes `selah-data` and `selah-backups`
-- To reset everything: `docker compose down -v` (this deletes all data)
+- To reset everything: `docker compose down -v` (this deletes all data — grab a backup first)
 - Always download a backup from Settings before removing volumes
 
 ## Tech Stack

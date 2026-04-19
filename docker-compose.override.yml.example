@@ -1,0 +1,10 @@
+# Contributor override — copy to docker-compose.override.yml (gitignored)
+# to build the image from local source instead of pulling ghcr.io.
+# Compose auto-loads docker-compose.override.yml if present, so after
+# the copy, normal commands (`docker compose up -d --build`) use the
+# local build automatically. Delete the override file to go back to the
+# published image.
+
+services:
+  selah:
+    build: .

@@ -1,6 +1,11 @@
 services:
   selah:
-    build: .
+    # Published multi-arch image (linux/amd64, linux/arm64). Pull with:
+    #   docker compose pull && docker compose up -d
+    # Contributors who want to build from local source instead: copy
+    # docker-compose.override.yml.example to docker-compose.override.yml
+    # and Compose will pick it up automatically.
+    image: ghcr.io/foobarninja/selah-app:latest
     ports:
       - "4610:4610"
     volumes:
@@ -9,6 +14,9 @@ services:
     environment:
       - DATABASE_URL=file:/app/data/selah.db
       - NODE_ENV=production
+      # Docker deployments auto-apply seed updates by default. Set to 0
+      # to pin your content DB to whatever's currently installed.
+      - SELAH_AUTO_UPDATE_SEED=1
 volumes:
   selah-data:
   selah-backups:

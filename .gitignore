@@ -112,3 +112,6 @@ next-env.d.ts
 
 # MCP server (private tooling, not shared)
 /mcp/
+
+# Contributor Docker overrides (copy .example to activate local build)
+/docker-compose.override.yml

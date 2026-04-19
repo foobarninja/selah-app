@@ -72,6 +72,15 @@ function migrate(db: Database.Database): void {
     console.log('[migration] user_profiles exists — skipping')
   }
 
+  // 1b. Enforce "at most one default profile" at the schema level.
+  // Partial unique index: only the row with is_default=1 is unique; all
+  // is_default=0 rows are free to coexist.
+  db.exec(`
+    CREATE UNIQUE INDEX IF NOT EXISTS idx_user_profiles_default
+    ON user_profiles(is_default) WHERE is_default = 1
+  `)
+  console.log('[migration] ensured idx_user_profiles_default')
+
   // 2. Create user_settings
   if (!tableExists(db, 'user_settings')) {
     console.log('[migration] creating user_settings...')
@@ -120,6 +129,8 @@ function migrate(db: Database.Database): void {
     if (updated.changes > 0) {
       console.log(`[migration]   backfilled ${updated.changes} rows in ${table}`)
     }
+    // Index user_id for the per-profile WHERE filter scoping added in Tasks 6-10.
+    db.exec(`CREATE INDEX IF NOT EXISTS idx_${table}_user_id ON ${table}(user_id)`)
   }
 
   // 5. Move the 5 frozen keys from app_settings to user_settings

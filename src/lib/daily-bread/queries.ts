@@ -433,6 +433,7 @@ async function mapDevotional(dev: {
   goingDeeper: string | null; audience: string;
   estimatedMinutes: number; season: string | null;
   narrativeId: string | null;
+  companionOpener?: string | null;
   seriesId?: string | null;
   seriesOrder?: number | null;
 }): Promise<Devotional> {
@@ -496,6 +497,7 @@ async function mapDevotional(dev: {
       narrativeUnitRef: dev.narrativeId ?? '',
       prompt: dev.goingDeeper ?? '',
     },
+    companionOpener: dev.companionOpener ?? null,
     seriesId: dev.seriesId ?? null,
     seriesMeta,
   }

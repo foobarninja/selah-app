@@ -7,7 +7,10 @@ import { resolve } from 'path'
 const SOURCE_DB = resolve(process.cwd(), 'data/selah.db')
 const TEST_DB = resolve(process.cwd(), 'data/selah-get-series-test.db')
 
+const describeIfDb = existsSync(SOURCE_DB) ? describe : describe.skip
+
 beforeAll(() => {
+  if (!existsSync(SOURCE_DB)) return
   copyFileSync(SOURCE_DB, TEST_DB)
   process.env.SELAH_DB_PATH_OVERRIDE = TEST_DB
 
@@ -39,7 +42,7 @@ afterAll(() => {
   delete process.env.SELAH_DB_PATH_OVERRIDE
 })
 
-describe('getSeriesById', () => {
+describeIfDb('getSeriesById', () => {
   it('returns null for a missing id', async () => {
     const { getSeriesById } = await import('@/lib/daily-bread/queries')
     const result = await getSeriesById('no-such-series')

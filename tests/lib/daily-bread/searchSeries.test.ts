@@ -7,8 +7,12 @@ import { resolve } from 'path'
 const SOURCE_DB = resolve(process.cwd(), 'data/selah.db')
 const TEST_DB = resolve(process.cwd(), 'data/selah-search-series-test.db')
 
+// These tests exercise real-data behavior and need the full seed DB.
+// In CI (and fresh clones), the DB isn't present — skip rather than fail.
+const describeIfDb = existsSync(SOURCE_DB) ? describe : describe.skip
+
 beforeAll(() => {
-  if (!existsSync(SOURCE_DB)) throw new Error('data/selah.db missing; test requires it')
+  if (!existsSync(SOURCE_DB)) return // describe.skip will short-circuit actual runs
   copyFileSync(SOURCE_DB, TEST_DB)
   process.env.SELAH_DB_PATH_OVERRIDE = TEST_DB
 
@@ -50,7 +54,7 @@ afterAll(() => {
   delete process.env.SELAH_DB_PATH_OVERRIDE
 })
 
-describe('searchSeries', () => {
+describeIfDb('searchSeries', () => {
   it('returns all series with no filters', async () => {
     const { searchSeries } = await import('@/lib/daily-bread/queries')
     const results = await searchSeries({})

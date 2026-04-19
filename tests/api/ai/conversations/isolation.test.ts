@@ -17,6 +17,7 @@ describe('ai_conversations cross-profile isolation', () => {
         user_id TEXT,
         title TEXT,
         context_ref TEXT,
+        has_flagged_messages INTEGER NOT NULL DEFAULT 0,
         created_at TEXT NOT NULL DEFAULT '',
         updated_at TEXT NOT NULL DEFAULT ''
       );

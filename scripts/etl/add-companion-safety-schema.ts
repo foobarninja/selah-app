@@ -56,7 +56,7 @@ function migrate(db: Database.Database): void {
   addColumn(db, 'ai_conversations', 'has_flagged_messages', `INTEGER NOT NULL DEFAULT 0`)
 
   // Partial indexes for audit dashboard queries
-  db.exec(`CREATE INDEX IF NOT EXISTS idx_ai_messages_flag_level ON ai_messages(flag_level) WHERE flag_level IS NOT NULL`)
+  db.exec(`CREATE INDEX IF NOT EXISTS idx_ai_messages_flag_level ON ai_messages(conversation_id, flag_level) WHERE flag_level IS NOT NULL`)
   console.log('[migration] ensured idx_ai_messages_flag_level')
   db.exec(`CREATE INDEX IF NOT EXISTS idx_ai_conversations_flagged ON ai_conversations(user_id, has_flagged_messages) WHERE has_flagged_messages = 1`)
   console.log('[migration] ensured idx_ai_conversations_flagged')
@@ -65,6 +65,7 @@ function migrate(db: Database.Database): void {
 function main(): void {
   const db = new Database(DB_PATH)
   try {
+    db.pragma('journal_mode = WAL')
     db.pragma('foreign_keys = OFF')
     db.transaction(() => migrate(db))()
     console.log('[migration] committed.')

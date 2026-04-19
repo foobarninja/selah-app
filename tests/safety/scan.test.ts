@@ -143,3 +143,32 @@ describe('scanMessage — false-positive regression (MUST stay null)', () => {
     expect(scanMessage('His speech really touched me deeply about art')).toBeNull()
   })
 })
+
+// ─────────────────────────────────────────────────────────────────────
+// Taxonomy structural invariants.
+//
+// Rules from src/lib/safety/README.md that aren't implied by semantic
+// tests above. If a contributor accidentally violates one of these,
+// CI fails before the pattern can ship.
+// ─────────────────────────────────────────────────────────────────────
+
+describe('KEYWORD_TAXONOMY structural invariants', () => {
+  it('every pattern is at least 2 words', async () => {
+    const { KEYWORD_TAXONOMY } = await import('@/lib/safety/keyword-taxonomy')
+    for (const category of KEYWORD_TAXONOMY) {
+      for (const pattern of category.patterns) {
+        const wordCount = pattern.trim().split(/\s+/).length
+        expect(wordCount, `pattern "${pattern}" in ${category.level} is ${wordCount} word(s)`).toBeGreaterThanOrEqual(2)
+      }
+    }
+  })
+
+  it('no pattern contains brackets, parens, or editorial annotations', async () => {
+    const { KEYWORD_TAXONOMY } = await import('@/lib/safety/keyword-taxonomy')
+    for (const category of KEYWORD_TAXONOMY) {
+      for (const pattern of category.patterns) {
+        expect(pattern, `pattern "${pattern}" looks like it has an accidental annotation`).not.toMatch(/[\[\]()<>]/)
+      }
+    }
+  })
+})

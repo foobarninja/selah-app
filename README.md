@@ -36,12 +36,13 @@ A self-hosted Bible study app with pre-baked contextual knowledge. Everything ru
 
 ### Install
 
+Grab the compose file and start the container — the image pulls
+multi-arch from ghcr.io, so Apple Silicon, Intel, and ARM servers all
+just work. The initial seed downloads automatically on first boot.
+
 ```bash
-git clone https://github.com/foobarninja/selah-app.git
-cd selah-app
-cp .env.example .env
-curl -L -o data/selah.db.xz https://huggingface.co/datasets/foooobear/selah-db/resolve/main/selah-seed.db.xz
-xz -d data/selah.db.xz
+mkdir selah && cd selah
+curl -L -o docker-compose.yml https://raw.githubusercontent.com/foobarninja/selah-app/master/docker-compose.yml
 docker compose up -d
 ```
 
@@ -50,17 +51,43 @@ Open [http://localhost:4610](http://localhost:4610)
 **Managing the container:**
 
 ```bash
-docker compose logs -f   # follow logs
-docker compose stop      # stop the app (keeps data)
-docker compose down      # stop and remove the container (keeps data volume)
-docker compose up -d     # start again
+docker compose logs -f           # follow logs (watch the startup checks)
+docker compose stop              # stop the app (keeps data)
+docker compose down              # stop and remove the container (keeps data volume)
+docker compose up -d             # start again
+docker compose pull              # pull the latest image (then `up -d` to apply)
 ```
 
-> **First build:** Expect ~15 minutes the first time you run `docker compose up -d` — `better-sqlite3` compiles native bindings from source and the dependency tree is large. Subsequent builds use the Docker layer cache and finish in seconds. The `-d` flag runs it detached so your terminal stays free.
+> **Note:** The content database is hosted on [Hugging Face Datasets](https://huggingface.co/datasets/foooobear/selah-db) (~71MB compressed). No account required. On first boot the entrypoint downloads it automatically.
 
-> **Windows PowerShell:** For decompression, right-click `selah.db.xz` in File Explorer and use 7-Zip → Extract Here.
+### Updating Selah
 
-> **Note:** The database is hosted on [Hugging Face Datasets](https://huggingface.co/datasets/foooobear/selah-db) (~83MB compressed, ~500MB decompressed). No account is required to download.
+Two independent update streams:
+
+| What | How |
+|---|---|
+| **App code** (new features, bug fixes) | `docker compose pull && docker compose up -d` |
+| **Content DB** (new devotionals, commentary, etc.) | Applied automatically on every container start. Set `SELAH_AUTO_UPDATE_SEED=0` to pin. |
+
+When a new app version is available, the startup log shows:
+
+```
+[app-check] update available: v1.2.0 -> v1.3.0
+[app-check] to update: docker compose pull && docker compose up -d
+```
+
+### Building from source (contributors only)
+
+```bash
+git clone https://github.com/foobarninja/selah-app.git
+cd selah-app
+cp docker-compose.override.yml.example docker-compose.override.yml
+docker compose up -d --build
+```
+
+The override tells Compose to build locally from the working tree
+instead of pulling the published image. Delete the override to switch
+back to pulling.
 
 ## Manual Install
 
@@ -97,23 +124,16 @@ Selah's pre-baked content (verses, commentary, characters, themes, devotionals) 
 
 ### Docker: auto-update on startup (default)
 
-For Docker deployments, `docker compose up -d --build` is all you need. The entrypoint:
+Every `docker compose up -d` triggers the seed check. If Hugging Face
+has a newer seed, the entrypoint downloads it, verifies sha256, merges
+your local user tables in, atomically swaps it in with a timestamped
+backup, and boots Selah. The pipeline is **fail-open** — any network,
+download, or merge failure logs the error and boots on the existing DB.
 
-1. Checks Hugging Face for a newer seed
-2. If newer, downloads it, verifies sha256, merges your local user tables in, and atomically swaps — creating a timestamped backup first
-3. Boots Selah
+Watch it happen: `docker compose logs --tail=30 selah`.
 
-You'll see the whole flow in the container log:
-
-```bash
-docker compose logs --tail=30 selah
-```
-
-The pipeline is **fail-open**: any network, download, or merge failure logs the error and boots on the existing DB. Your app never gets stuck behind a Hugging Face outage.
-
-> **After `git pull` on an existing Docker install:** run `docker compose up -d --build` the first time — without `--build`, Compose reuses the old image and the new entrypoint isn't applied.
-
-**To pin the seed** (skip auto-updates, e.g. for reproducible deployments), set `SELAH_AUTO_UPDATE_SEED=0` in your compose env. The container will still log when an update is available but won't apply it.
+**To pin the seed** (skip auto-updates, e.g. for reproducible deployments),
+set `SELAH_AUTO_UPDATE_SEED=0` in your compose env.
 
 ### npm: check-only by default
 

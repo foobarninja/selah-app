@@ -60,7 +60,7 @@ export async function POST(request: NextRequest) {
   if (body.startNew) {
     const t = await createThread({ devotionalId: body.devotionalId, title: devotional.title })
     conversationId = t.id
-  } else if (body.conversationId) {
+  } else if (body.conversationId != null) {
     conversationId = body.conversationId
   } else {
     const active = await findActiveThread(body.devotionalId)
@@ -147,7 +147,7 @@ export async function POST(request: NextRequest) {
   return new Response(stream, {
     headers: {
       'Content-Type': 'text/event-stream',
-      'Cache-Control': 'no-cache',
+      'Cache-Control': 'no-cache, no-transform',
       Connection: 'keep-alive',
     },
   })

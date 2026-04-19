@@ -103,8 +103,9 @@ export async function getBrowseDevotionals(limit = 20): Promise<DevotionalSummar
   })
 }
 
-export async function getDevotionalHistory(limit = 20): Promise<DevotionalHistory[]> {
+export async function getDevotionalHistory(userId: string, limit = 20): Promise<DevotionalHistory[]> {
   const entries = await prisma.devotionalHistory.findMany({
+    where: { userId },
     orderBy: { completedAt: 'desc' },
     take: limit,
     include: { devotional: { select: { title: true, audience: true } } },
@@ -122,12 +123,14 @@ export async function getDevotionalHistory(limit = 20): Promise<DevotionalHistor
 }
 
 export async function completeDevotional(
+  userId: string,
   devotionalId: string,
   rating: number,
   familyNotes: string,
 ): Promise<void> {
   await prisma.devotionalHistory.create({
     data: {
+      userId,
       devotionalId,
       completedAt: new Date().toISOString(),
       rating,

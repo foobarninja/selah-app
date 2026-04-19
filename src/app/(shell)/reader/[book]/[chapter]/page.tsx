@@ -65,7 +65,7 @@ export default async function ReaderPage({ params, searchParams }: Props) {
     passage.verseEnd = verses[verses.length - 1].number
   }
 
-  recordReading(bookId, chapter).catch(() => {})
+  recordReading(userId, bookId, chapter).catch(() => {})
 
   return (
     <ReaderClient

@@ -39,6 +39,7 @@
     "tsx": "^4.21.0"
   },
   "devDependencies": {
+    "@huggingface/hub": "^2.11.0",
     "@tailwindcss/postcss": "^4",
     "@types/better-sqlite3": "^7.6.13",
     "@types/node": "^20",

@@ -4,20 +4,23 @@
 // Hugging Face dataset, atomically enough that the sha256 in the
 // manifest always matches the .xz users download.
 //
-// Failure modes that are now caught before the upload:
+// Uses @huggingface/hub (pure JS, transparent via npm install) rather
+// than shelling out to huggingface-cli — no Python dependency on
+// maintainer machines.
+//
+// Failure modes that are caught before the upload:
 //   - missing artifacts → run seed:prepare first
 //   - xz sha doesn't match manifest → run seed:prepare first (they drifted)
-//   - no HF auth → print install/login instructions, exit non-zero
+//   - no HF token → print token-creation URL and exit non-zero
 //
-// Usage:  npm run seed:publish
+// Usage:  HF_TOKEN=... npm run seed:publish
 // Repo:   hardcoded below to foooobear/selah-db
 
-import { existsSync, readFileSync, statSync } from 'fs'
+import { existsSync, readFileSync, statSync, createReadStream } from 'fs'
 import { createHash } from 'crypto'
-import { resolve } from 'path'
-import { spawnSync } from 'child_process'
+import { resolve, join } from 'path'
 import { homedir } from 'os'
-import { join } from 'path'
+import { uploadFiles } from '@huggingface/hub'
 
 const REPO_ID = 'foooobear/selah-db'
 const XZ_PATH = resolve(process.cwd(), 'data/selah-seed.db.xz')
@@ -55,7 +58,17 @@ function bail(msg: string): never {
   process.exit(1)
 }
 
-function main() {
+/** Build a File-like object that streams from disk, for @huggingface/hub.
+ *  Full buffering a 71 MB file is fine on a maintainer laptop but streaming
+ *  is cleaner and future-proofs for larger seeds. */
+function fileFromDisk(path: string, name: string): Blob {
+  // Read into a single Blob. For 70-80 MB this is fine in Node. If the
+  // seed ever crosses ~500 MB, switch to a lazy stream-backed blob.
+  const buf = readFileSync(path)
+  return new Blob([buf], { type: 'application/octet-stream' })
+}
+
+async function main() {
   if (!existsSync(XZ_PATH)) {
     bail(`missing ${XZ_PATH} — run \`npm run seed:prepare\` first`)
   }
@@ -78,52 +91,41 @@ function main() {
     bail(`size mismatch: manifest says ${manifest.sizeXz}, local .xz is ${actualSize}`)
   }
 
-  const token = findHfToken()
-  if (!token) {
+  const accessToken = findHfToken()
+  if (!accessToken) {
     bail(
       `no Hugging Face token found. Either:\n` +
-      `  - set HF_TOKEN env var, or\n` +
-      `  - run \`huggingface-cli login\` (stores token in ~/.cache/huggingface/token)\n` +
-      `get a write-scoped token at https://huggingface.co/settings/tokens`,
+      `  - set HF_TOKEN env var before running, or\n` +
+      `  - save a token to ~/.cache/huggingface/token\n` +
+      `Get a WRITE-scoped token at https://huggingface.co/settings/tokens`,
     )
   }
 
-  console.log(`[publish] repo: ${REPO_ID}`)
+  console.log(`[publish] repo:        ${REPO_ID}`)
   console.log(`[publish] seedVersion: ${manifest.seedVersion} (schema v${manifest.schemaVersion})`)
   console.log(`[publish] sha256:      ${manifest.sha256}`)
   console.log(`[publish] size:        ${(manifest.sizeXz / 1024 / 1024).toFixed(1)} MB`)
   console.log('')
 
-  // Upload .xz FIRST. If this fails, the manifest on HF keeps pointing at
-  // the OLD .xz — bad but recoverable. If we uploaded manifest first and
-  // then the .xz push failed, users would see our exact "sha mismatch"
-  // bug. Order matters for fail-safety.
-  upload(XZ_PATH, 'selah-seed.db.xz', token, `Publish seed ${manifest.seedVersion}`)
-  upload(MANIFEST_PATH, 'manifest.json', token, `Publish manifest for seed ${manifest.seedVersion}`)
+  // Single commit with BOTH files — atomic on HF's side, so users never
+  // see a manifest pointing at a missing/stale .xz mid-upload.
+  console.log('[publish] uploading selah-seed.db.xz + manifest.json (single commit)...')
+  await uploadFiles({
+    repo: { type: 'dataset', name: REPO_ID },
+    accessToken,
+    commitTitle: `Publish seed ${manifest.seedVersion}`,
+    files: [
+      { path: 'selah-seed.db.xz', content: fileFromDisk(XZ_PATH, 'selah-seed.db.xz') },
+      { path: 'manifest.json', content: fileFromDisk(MANIFEST_PATH, 'manifest.json') },
+    ],
+  })
 
   console.log('')
   console.log(`[publish] done. Users will pick up v${manifest.seedVersion} on next container restart.`)
   console.log(`[publish] dataset: https://huggingface.co/datasets/${REPO_ID}/tree/main`)
 }
 
-function upload(localPath: string, pathInRepo: string, token: string, message: string): void {
-  console.log(`[publish] uploading ${pathInRepo}...`)
-  const res = spawnSync(
-    'huggingface-cli',
-    [
-      'upload',
-      '--repo-type', 'dataset',
-      '--token', token,
-      '--commit-message', message,
-      REPO_ID,
-      localPath,
-      pathInRepo,
-    ],
-    { stdio: 'inherit' },
-  )
-  if (res.status !== 0) {
-    bail(`huggingface-cli upload failed for ${pathInRepo} (exit ${res.status})`)
-  }
-}
-
-main()
+main().catch((err) => {
+  const msg = err instanceof Error ? err.message : String(err)
+  bail(`upload failed: ${msg}`)
+})

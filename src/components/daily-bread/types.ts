@@ -23,6 +23,7 @@ export interface Devotional {
   estimatedMinutes: number; seasonalSet: SeasonalSet; moodMatch: string
   passage: string; contextBrief: string; modernMoment: string
   conversationStarters: string[]; goingDeeper: GoingDeeper
+  companionOpener?: string | null
   seriesId?: string | null
   seriesMeta?: { seriesOrder: number; seriesTitle: string; partCount: number } | null
 }

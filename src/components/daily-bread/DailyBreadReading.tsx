@@ -3,6 +3,7 @@
 import { useState } from 'react'
 import { ArrowLeft, Clock, ChevronRight } from 'lucide-react'
 import { SeriesBadge } from './SeriesBadge'
+import { CompanionChat } from './CompanionChat'
 import type { Devotional, AudienceLevel } from './types'
 
 /* ── Fonts ── */
@@ -47,6 +48,7 @@ function RatingDots({ value, onChange }: { value: number | null; onChange: (rati
 interface DailyBreadReadingProps {
   devotional: Devotional
   currentAudienceLevel: AudienceLevel
+  isAIConfigured: boolean
   onBack?: () => void
   onOverrideAudience?: (level: AudienceLevel) => void
   onNavigatePassage?: (bookId: string, chapter: number) => void
@@ -55,7 +57,7 @@ interface DailyBreadReadingProps {
   onOpenSeries?: (seriesId: string) => void
 }
 
-export function DailyBreadReading({ devotional, currentAudienceLevel, onBack, onOverrideAudience, onNavigatePassage, onComplete, onDismissCloseOut, onOpenSeries }: DailyBreadReadingProps) {
+export function DailyBreadReading({ devotional, currentAudienceLevel, isAIConfigured, onBack, onOverrideAudience, onNavigatePassage, onComplete, onDismissCloseOut, onOpenSeries }: DailyBreadReadingProps) {
   const [showAudiencePopover, setShowAudiencePopover] = useState(false)
   const [notes, setNotes] = useState('')
   const [rating, setRating] = useState<number | null>(null)
@@ -131,6 +133,8 @@ export function DailyBreadReading({ devotional, currentAudienceLevel, onBack, on
             ))}
           </ul>
         </div>
+
+        <CompanionChat devotional={devotional} isAIConfigured={isAIConfigured} />
 
         <div className="mb-12">
           <button onClick={() => onNavigatePassage?.(devotional.bookId, devotional.chapter)} className="flex items-center gap-3 w-full text-left rounded-lg transition-colors duration-150" style={{ padding: '14px 18px', backgroundColor: 'var(--selah-bg-surface, #1C1917)', border: '1px solid var(--selah-border-color, #3D3835)', cursor: 'pointer' }} onMouseEnter={(e) => { (e.currentTarget as HTMLElement).style.borderColor = 'var(--selah-gold-300, #E8C767)' }} onMouseLeave={(e) => { (e.currentTarget as HTMLElement).style.borderColor = 'var(--selah-border-color, #3D3835)' }}>

@@ -20,8 +20,9 @@ import { formatExportDate } from '../formatters'
  *     Bulleted item list with optional notes
  *   Footer
  */
-export async function generateCollectionsDocx(): Promise<Buffer> {
+export async function generateCollectionsDocx(userId: string): Promise<Buffer> {
   const collections = await prisma.userCollection.findMany({
+    where: { userId },
     include: { items: { orderBy: { sortOrder: 'asc' } } },
     orderBy: { createdAt: 'desc' },
   })

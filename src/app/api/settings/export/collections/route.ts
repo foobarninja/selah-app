@@ -1,8 +1,16 @@
 import { NextResponse } from 'next/server'
 import { exportCollections } from '@/lib/settings/queries'
+import { requireActiveProfileId } from '@/lib/profiles/active-profile'
 
 export async function GET() {
-  const md = await exportCollections()
+  let userId: string
+  try {
+    userId = await requireActiveProfileId()
+  } catch {
+    return NextResponse.json({ error: 'no active profile' }, { status: 401 })
+  }
+
+  const md = await exportCollections(userId)
   return new NextResponse(md, {
     headers: {
       'Content-Type': 'text/markdown; charset=utf-8',

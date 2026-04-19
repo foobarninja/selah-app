@@ -14,7 +14,7 @@ export async function GET() {
   }
 
   const [collections, projects] = await Promise.all([
-    getCollections(),
+    getCollections(userId),
     listProjects(userId),
   ])
 
@@ -27,7 +27,14 @@ export async function GET() {
 }
 
 export async function POST(request: NextRequest) {
+  let userId: string
+  try {
+    userId = await requireActiveProfileId()
+  } catch {
+    return NextResponse.json({ error: 'no active profile' }, { status: 401 })
+  }
+
   const { title, description } = await request.json()
-  const id = await createCollection(title ?? 'Untitled Collection', description ?? '')
+  const id = await createCollection(userId, title ?? 'Untitled Collection', description ?? '')
   return NextResponse.json({ id }, { status: 201 })
 }

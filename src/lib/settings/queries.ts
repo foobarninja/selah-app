@@ -297,8 +297,9 @@ export async function exportJournal(userId: string): Promise<string> {
   return renderJournalToMarkdown(notes)
 }
 
-export async function exportCollections(): Promise<string> {
+export async function exportCollections(userId: string): Promise<string> {
   const collections = await prisma.userCollection.findMany({
+    where: { userId },
     include: { items: { orderBy: { sortOrder: 'asc' } } },
     orderBy: { createdAt: 'desc' },
   })

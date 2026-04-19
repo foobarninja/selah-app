@@ -292,8 +292,9 @@ export async function getUserTags(userId: string): Promise<string[]> {
 
 // ── Collections ───────────────────────────────────────────────────────────────
 
-export async function getCollections(): Promise<Collection[]> {
+export async function getCollections(userId: string): Promise<Collection[]> {
   const collections = await prisma.userCollection.findMany({
+    where: { userId },
     orderBy: { updatedAt: 'desc' },
     include: { _count: { select: { items: true } } },
   })
@@ -307,10 +308,10 @@ export async function getCollections(): Promise<Collection[]> {
   }))
 }
 
-export async function createCollection(title: string, description: string): Promise<number> {
+export async function createCollection(userId: string, title: string, description: string): Promise<number> {
   const now = new Date().toISOString()
   const col = await prisma.userCollection.create({
-    data: { title, description, createdAt: now, updatedAt: now },
+    data: { userId, title, description, createdAt: now, updatedAt: now },
   })
   return col.id
 }
@@ -330,9 +331,9 @@ export interface CollectionItem {
   sortOrder: number
 }
 
-export async function getCollectionDetail(id: number): Promise<CollectionDetail | null> {
-  const col = await prisma.userCollection.findUnique({
-    where: { id },
+export async function getCollectionDetail(userId: string, id: number): Promise<CollectionDetail | null> {
+  const col = await prisma.userCollection.findFirst({
+    where: { id, userId },
     include: { items: { orderBy: { sortOrder: 'asc' } } },
   })
   if (!col) return null
@@ -352,19 +353,28 @@ export async function getCollectionDetail(id: number): Promise<CollectionDetail 
 }
 
 export async function addCollectionItem(
+  userId: string,
   collectionId: number,
   itemType: string,
   itemRef: string,
   note?: string,
 ): Promise<number> {
   const now = new Date().toISOString()
+  // Ownership check: bump updatedAt only if the collection belongs to this user.
+  const { count } = await prisma.userCollection.updateMany({
+    where: { id: collectionId, userId },
+    data: { updatedAt: now },
+  })
+  if (count === 0) throw new Error('collection not found')
+
   const maxOrder = await prisma.userCollectionItem.findFirst({
-    where: { collectionId },
+    where: { collectionId, userId },
     orderBy: { sortOrder: 'desc' },
     select: { sortOrder: true },
   })
   const item = await prisma.userCollectionItem.create({
     data: {
+      userId,
       collectionId,
       itemType,
       itemRef,
@@ -373,25 +383,24 @@ export async function addCollectionItem(
       createdAt: now,
     },
   })
-  await prisma.userCollection.update({
-    where: { id: collectionId },
-    data: { updatedAt: now },
-  })
   return item.id
 }
 
-export async function removeCollectionItem(itemId: number): Promise<void> {
-  await prisma.userCollectionItem.delete({ where: { id: itemId } })
+export async function removeCollectionItem(userId: string, itemId: number): Promise<void> {
+  // Silent no-op if item doesn't exist or isn't owned — preserves fire-and-forget semantics.
+  await prisma.userCollectionItem.deleteMany({ where: { id: itemId, userId } })
 }
 
-export async function deleteCollection(id: number): Promise<void> {
-  await prisma.userCollection.delete({ where: { id } })
+export async function deleteCollection(userId: string, id: number): Promise<void> {
+  const { count } = await prisma.userCollection.deleteMany({ where: { id, userId } })
+  if (count === 0) throw new Error('collection not found')
 }
 
 // ── Bookmarks ─────────────────────────────────────────────────────────────────
 
-export async function getBookmarks(): Promise<Bookmark[]> {
+export async function getBookmarks(userId: string): Promise<Bookmark[]> {
   const bookmarks = await prisma.userBookmark.findMany({
+    where: { userId },
     orderBy: { createdAt: 'desc' },
   })
 
@@ -406,9 +415,10 @@ export async function getBookmarks(): Promise<Bookmark[]> {
   })
 }
 
-export async function createBookmark(bookId: string, chapter: number, verse?: number): Promise<number> {
+export async function createBookmark(userId: string, bookId: string, chapter: number, verse?: number): Promise<number> {
   const bm = await prisma.userBookmark.create({
     data: {
+      userId,
       bookId,
       chapter,
       verse: verse ?? null,
@@ -418,8 +428,9 @@ export async function createBookmark(bookId: string, chapter: number, verse?: nu
   return bm.id
 }
 
-export async function deleteBookmark(id: number): Promise<void> {
-  await prisma.userBookmark.delete({ where: { id } })
+export async function deleteBookmark(userId: string, id: number): Promise<void> {
+  // Silent no-op if bookmark doesn't exist or isn't owned — preserves fire-and-forget semantics.
+  await prisma.userBookmark.deleteMany({ where: { id, userId } })
 }
 
 // ── Journals ──────────────────────────────────────────────────────────────────

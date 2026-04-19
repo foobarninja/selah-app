@@ -21,7 +21,7 @@ vi.mock('@/lib/db', () => ({
 describe('generateCollectionsDocx', () => {
   it('returns a valid DOCX buffer for collections', async () => {
     const { generateCollectionsDocx } = await import('@/lib/export/targets/collection')
-    const buffer = await generateCollectionsDocx()
+    const buffer = await generateCollectionsDocx('user-test')
     expect(buffer).toBeInstanceOf(Buffer)
     expect(buffer.slice(0, 2).toString()).toBe('PK')
   })

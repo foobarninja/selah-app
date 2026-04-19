@@ -7,11 +7,11 @@ import type {
   DailyBreadStatus,
 } from '@/components/home/types'
 
-export async function getDailyBread(): Promise<DailyBread> {
+export async function getDailyBread(userId: string): Promise<DailyBread> {
   const today = new Date().toISOString().slice(0, 10)
 
   const completed = await prisma.devotionalHistory.findFirst({
-    where: { completedAt: { startsWith: today } },
+    where: { userId, completedAt: { startsWith: today } },
     include: { devotional: { select: { title: true } } },
     orderBy: { completedAt: 'desc' },
   })
@@ -76,8 +76,9 @@ export async function getDailyBread(): Promise<DailyBread> {
   }
 }
 
-export async function getRecentHistory(limit = 6): Promise<HistoryItem[]> {
+export async function getRecentHistory(userId: string, limit = 6): Promise<HistoryItem[]> {
   const entries = await prisma.readingHistory.findMany({
+    where: { userId },
     orderBy: { visitedAt: 'desc' },
     take: limit,
     include: { book: { select: { name: true } } },
@@ -95,8 +96,9 @@ export async function getRecentHistory(limit = 6): Promise<HistoryItem[]> {
   })
 }
 
-export async function getRecentNotes(limit = 4): Promise<RecentNote[]> {
+export async function getRecentNotes(userId: string, limit = 4): Promise<RecentNote[]> {
   const notes = await prisma.userNote.findMany({
+    where: { userId },
     orderBy: { createdAt: 'desc' },
     take: limit,
     include: {

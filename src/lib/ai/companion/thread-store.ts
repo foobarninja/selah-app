@@ -96,8 +96,8 @@ export async function appendMessage(conversationId: number, input: AppendMessage
   const flagLevel = input.flagLevel ?? null
   const flagSource = input.flagSource ?? null
 
-  const ops: Parameters<typeof prisma.$transaction>[0] = [
-    prisma.aiMessage.create({
+  const message = await prisma.$transaction(async (tx) => {
+    const created = await tx.aiMessage.create({
       data: {
         conversationId,
         role: input.role,
@@ -109,21 +109,20 @@ export async function appendMessage(conversationId: number, input: AppendMessage
         flagSource,
         createdAt: now,
       },
-    }),
-    prisma.aiConversation.update({ where: { id: conversationId }, data: { updatedAt: now } }),
-  ]
-
-  if (flagLevel) {
-    ops.push(
-      prisma.aiConversation.update({
+    })
+    await tx.aiConversation.update({
+      where: { id: conversationId },
+      data: { updatedAt: now },
+    })
+    if (flagLevel) {
+      await tx.aiConversation.update({
         where: { id: conversationId },
         data: { hasFlaggedMessages: true },
-      }),
-    )
-  }
+      })
+    }
+    return created
+  })
 
-  const results = await prisma.$transaction(ops)
-  const message = results[0] as Awaited<ReturnType<typeof prisma.aiMessage.create>>
   return {
     id: message.id,
     role: narrowRole(message.role, message.id),

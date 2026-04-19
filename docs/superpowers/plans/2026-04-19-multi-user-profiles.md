@@ -1749,10 +1749,20 @@ git commit -m "feat(journal): scope journals + notes + tags by userId"
 **Files:**
 - Modify: `src/lib/study-builder/queries.ts`
 - Modify: `src/lib/study-builder/export.ts` (if it reads user-local rows)
-- Modify: `src/app/api/ai/conversations/*` (general AI conversations — not companion)
-- Modify: related server components + routes
+- Modify: `src/app/api/ai/conversations/route.ts`
+- Modify: `src/app/api/ai/conversations/[id]/route.ts`
+- Modify: `src/app/api/ai/conversations/[id]/save/route.ts`
+- Modify: `src/app/api/ai/conversations/[id]/export/route.ts`
+- Create: `tests/api/ai/conversations/isolation.test.ts`
 
-- [ ] **Step 1: Scope study-builder**
+**Context:** `ai_conversations` is shared between two features — the devotional companion (Task 6, `contextRef` starts with `devotional-companion:`) and the general chat panel / study-builder (this task). Companion scoping is done in Task 6. Here we close two gaps that are independent of Task 6 but live in the same table:
+
+1. **Feature leakage** — `GET /api/ai/conversations` currently has no `contextRef` filter at all, so companion threads show up in the general chat history sidebar. `userId` scoping alone doesn't fix that; we also need to exclude companion rows.
+2. **Ownership bypass** — `[id]/route.ts`, `[id]/save/route.ts`, and `[id]/export/route.ts` all look up conversations by primary key with no ownership check. A user who guesses another profile's conversation id can currently read or delete it.
+
+Use `isCompanionContextRef` / its prefix constant from `src/lib/ai/companion/context-ref.ts` for the exclusion. Prisma's `findUnique` only accepts unique/id fields, so `(id, userId)` lookups must use `findFirst`; `delete`/`update` by composite key use `deleteMany`/`updateMany` with a `count === 0` → 404 check.
+
+- [ ] **Step 1: Scope study-builder queries**
 
 Grep:
 
@@ -1760,37 +1770,352 @@ Grep:
 grep -nE "prisma\.(studyProject|studyAssemblyItem)\." src/lib/study-builder/queries.ts src/lib/study-builder/export.ts
 ```
 
-Add `userId: string` to every read/write function. `where` gets `userId`, `data` gets `userId`.
+Add `userId: string` as a required parameter on every exported read/write function in those two files. `where` clauses gain `userId`; `create`/`update` `data` gains `userId`. Mechanical — same pattern as Tasks 7 and 8.
 
-- [ ] **Step 2: Scope general AI conversations**
+- [ ] **Step 2: Patch `src/app/api/ai/conversations/route.ts` (list)**
 
-These live outside the companion feature — the pre-existing chat panel uses them. Grep:
+Replace the entire handler:
 
-```bash
-grep -nE "prisma\.(aiConversation|aiMessage)\." src/app/api/ai/conversations
+```ts
+import { prisma } from '@/lib/db'
+import { NextResponse } from 'next/server'
+import { requireActiveProfileId } from '@/lib/profiles/active-profile'
+
+export async function GET() {
+  let userId: string
+  try {
+    userId = await requireActiveProfileId()
+  } catch {
+    return NextResponse.json({ error: 'no active profile' }, { status: 401 })
+  }
+
+  const conversations = await prisma.aiConversation.findMany({
+    where: {
+      userId,
+      // Exclude companion threads — they have their own UI (CompanionChat).
+      // NOT startsWith keeps contextRef=NULL rows in the result.
+      NOT: { contextRef: { startsWith: 'devotional-companion:' } },
+    },
+    orderBy: { updatedAt: 'desc' },
+    select: {
+      id: true,
+      title: true,
+      contextRef: true,
+      updatedAt: true,
+      _count: { select: { messages: true } },
+    },
+  })
+
+  return NextResponse.json(
+    conversations.map((c) => ({
+      id: String(c.id),
+      groundingLabel: c.title || c.contextRef || 'Untitled',
+      messageCount: c._count.messages,
+      date: c.updatedAt,
+    }))
+  )
+}
 ```
 
-For the general AI conversations routes (`src/app/api/ai/conversations/route.ts`, `[id]/route.ts`, `[id]/save/route.ts`, `[id]/export/route.ts`):
-- Filter `findMany` / `findUnique` by `userId` in addition to `contextRef`.
-- Include `userId` on `create`.
-- Return 401 if `requireActiveProfileId()` throws.
+The `'devotional-companion:'` prefix is the literal value of the `PREFIX` constant in `src/lib/ai/companion/context-ref.ts`. Inline here rather than importing to keep the companion module out of this route's dependency graph.
 
-Note: the filter can't use just `userId` — the companion threads also live in `ai_conversations` and must not appear in the general chat history sidebar. The existing logic likely already filters by `contextRef NOT LIKE 'devotional-companion:%'` or similar; keep that filter and add `userId = ?` alongside.
+- [ ] **Step 3: Patch `src/app/api/ai/conversations/[id]/route.ts` (get + delete)**
 
-- [ ] **Step 3: Update callers + fixtures**
+Replace the entire file:
 
-Grep the codebase for every touched function, inject userId.
+```ts
+import { prisma } from '@/lib/db'
+import { NextRequest, NextResponse } from 'next/server'
+import { requireActiveProfileId } from '@/lib/profiles/active-profile'
 
-- [ ] **Step 4: Run tests + compile check**
+export async function GET(_request: NextRequest, { params }: { params: Promise<{ id: string }> }) {
+  let userId: string
+  try {
+    userId = await requireActiveProfileId()
+  } catch {
+    return NextResponse.json({ error: 'no active profile' }, { status: 401 })
+  }
 
-Run: `npm test` then `npx tsc --noEmit 2>&1 | head -20`
-Expected: all pass.
+  const { id } = await params
+  const conversationId = parseInt(id, 10)
+  if (isNaN(conversationId)) {
+    return NextResponse.json({ error: 'Invalid conversation id' }, { status: 400 })
+  }
 
-- [ ] **Step 5: Commit**
+  // findFirst (not findUnique) because we're filtering by a composite
+  // (id, userId), not a unique key. This is the ownership check.
+  const conversation = await prisma.aiConversation.findFirst({
+    where: { id: conversationId, userId },
+    include: { messages: { orderBy: { createdAt: 'asc' } } },
+  })
+
+  if (!conversation) {
+    // Same response whether the row doesn't exist or belongs to another profile —
+    // do not leak existence across profiles.
+    return NextResponse.json({ error: 'Not found' }, { status: 404 })
+  }
+
+  return NextResponse.json({
+    id: String(conversation.id),
+    title: conversation.title,
+    contextRef: conversation.contextRef,
+    messages: conversation.messages.map((m) => ({
+      id: String(m.id),
+      role: m.role,
+      content: m.content,
+      timestamp: m.createdAt,
+    })),
+  })
+}
+
+export async function DELETE(_request: NextRequest, { params }: { params: Promise<{ id: string }> }) {
+  let userId: string
+  try {
+    userId = await requireActiveProfileId()
+  } catch {
+    return NextResponse.json({ error: 'no active profile' }, { status: 401 })
+  }
+
+  const { id } = await params
+  const conversationId = parseInt(id, 10)
+  if (isNaN(conversationId)) {
+    return NextResponse.json({ error: 'Invalid conversation id' }, { status: 400 })
+  }
+
+  // deleteMany lets us filter by (id, userId). count === 0 means either
+  // the id doesn't exist or it belongs to another profile — 404 either way.
+  const { count } = await prisma.aiConversation.deleteMany({
+    where: { id: conversationId, userId },
+  })
+  if (count === 0) {
+    return NextResponse.json({ error: 'Not found' }, { status: 404 })
+  }
+  return NextResponse.json({ ok: true })
+}
+```
+
+- [ ] **Step 4: Patch `src/app/api/ai/conversations/[id]/save/route.ts`**
+
+Replace the entire handler:
+
+```ts
+import { prisma } from '@/lib/db'
+import { NextRequest, NextResponse } from 'next/server'
+import { requireActiveProfileId } from '@/lib/profiles/active-profile'
+
+export async function POST(request: NextRequest, { params }: { params: Promise<{ id: string }> }) {
+  let userId: string
+  try {
+    userId = await requireActiveProfileId()
+  } catch {
+    return NextResponse.json({ error: 'no active profile' }, { status: 401 })
+  }
+
+  const { id } = await params
+  const body = await request.json()
+  const { title, contextRef, messages } = body as {
+    title?: string
+    contextRef?: string
+    messages: Array<{ role: string; content: string; timestamp: string }>
+  }
+
+  const now = new Date().toISOString()
+
+  if (id === 'new') {
+    const conversation = await prisma.aiConversation.create({
+      data: {
+        title: title || 'Saved conversation',
+        contextRef: contextRef || null,
+        userId,
+        createdAt: now,
+        updatedAt: now,
+        messages: {
+          create: messages.map((m) => ({
+            role: m.role,
+            content: m.content,
+            userId,
+            createdAt: m.timestamp || now,
+          })),
+        },
+      },
+    })
+    return NextResponse.json({ id: String(conversation.id) }, { status: 201 })
+  }
+
+  const convId = parseInt(id, 10)
+  if (isNaN(convId)) {
+    return NextResponse.json({ error: 'Invalid conversation id' }, { status: 400 })
+  }
+
+  // Ownership-scoped update. If the row belongs to another profile or
+  // doesn't exist, count === 0 → 404 without revealing which.
+  const { count } = await prisma.aiConversation.updateMany({
+    where: { id: convId, userId },
+    data: { updatedAt: now },
+  })
+  if (count === 0) {
+    return NextResponse.json({ error: 'Not found' }, { status: 404 })
+  }
+
+  for (const m of messages) {
+    await prisma.aiMessage.create({
+      data: {
+        conversationId: convId,
+        role: m.role,
+        content: m.content,
+        userId,
+        createdAt: m.timestamp || now,
+      },
+    })
+  }
+
+  return NextResponse.json({ id }, { status: 200 })
+}
+```
+
+- [ ] **Step 5: Patch `src/app/api/ai/conversations/[id]/export/route.ts`**
+
+Both `findUnique` sites (the markdown branch at line ~21 and the docx `exists` check at line ~37) need to become ownership-scoped `findFirst` calls. `generateConversationDocx(conversationId)` will run its own queries downstream, but the `exists` gate in front of it is what blocks cross-profile exports.
+
+Replace the handler:
+
+```ts
+import { NextRequest, NextResponse } from 'next/server'
+import { generateConversationDocx } from '@/lib/export/targets/ai-conversation'
+import { renderConversationToMarkdown } from '@/lib/export/markdown/renderers'
+import { prisma } from '@/lib/db'
+import { requireActiveProfileId } from '@/lib/profiles/active-profile'
+
+export async function GET(
+  request: NextRequest,
+  { params }: { params: Promise<{ id: string }> },
+) {
+  let userId: string
+  try {
+    userId = await requireActiveProfileId()
+  } catch {
+    return NextResponse.json({ error: 'no active profile' }, { status: 401 })
+  }
+
+  const { id } = await params
+  const conversationId = parseInt(id, 10)
+  if (isNaN(conversationId)) {
+    return NextResponse.json({ error: 'Invalid conversation id' }, { status: 400 })
+  }
+
+  const format = request.nextUrl.searchParams.get('format') ?? 'docx'
+  const timestamp = new Date().toISOString().replace(/[:.]/g, '-').slice(0, 19)
+
+  try {
+    if (format === 'markdown' || format === 'md') {
+      const conv = await prisma.aiConversation.findFirst({
+        where: { id: conversationId, userId },
+        include: { messages: { orderBy: { createdAt: 'asc' } } },
+      })
+      if (!conv) {
+        return NextResponse.json({ error: 'Not found' }, { status: 404 })
+      }
+      const md = renderConversationToMarkdown(conv)
+      return new NextResponse(md, {
+        headers: {
+          'Content-Type': 'text/markdown; charset=utf-8',
+          'Content-Disposition': `attachment; filename="selah-conversation-${timestamp}.md"`,
+        },
+      })
+    }
+
+    const exists = await prisma.aiConversation.findFirst({
+      where: { id: conversationId, userId },
+      select: { id: true },
+    })
+    if (!exists) {
+      return NextResponse.json({ error: 'Not found' }, { status: 404 })
+    }
+    const buffer = await generateConversationDocx(conversationId)
+    return new NextResponse(new Uint8Array(buffer), {
+      headers: {
+        'Content-Type': 'application/vnd.openxmlformats-officedocument.wordprocessingml.document',
+        'Content-Disposition': `attachment; filename="selah-conversation-${timestamp}.docx"`,
+      },
+    })
+  } catch (e: unknown) {
+    const msg = e instanceof Error ? e.message : 'Export failed'
+    return NextResponse.json({ error: msg }, { status: 500 })
+  }
+}
+```
+
+- [ ] **Step 6: Update callers + fixtures**
+
+The study-builder query signatures changed in Step 1. Grep the codebase:
+
+```bash
+grep -rnE "from ['\"](.*)/study-builder/(queries|export)['\"]" src --include="*.ts" --include="*.tsx"
+```
+
+For each caller, inject `userId` sourced from `requireActiveProfileId()` (server components / API routes) or from a `userId` prop / context value (client components that bubble it down — but study-builder runs server-side, so this should be rare).
+
+- [ ] **Step 7: Add isolation regression test**
+
+Create `tests/api/ai/conversations/isolation.test.ts`:
+
+```ts
+import { describe, it, expect, beforeEach } from 'vitest'
+import { existsSync } from 'fs'
+import path from 'path'
+import Database from 'better-sqlite3'
+
+const SOURCE_DB = path.resolve(process.cwd(), 'data/selah.db')
+
+describe.skipIf(!existsSync(SOURCE_DB))('ai_conversations cross-profile isolation', () => {
+  // Setup: in-memory DB seeded with schema matching Task 1 migration,
+  // two profiles (u1, u2), one general conversation per profile, one
+  // companion conversation for u1.
+  //
+  // Verify via direct SQL:
+  //   1. Listing (userId=u1, contextRef NOT LIKE 'devotional-companion:%')
+  //      returns ONLY u1's general conversation — not u2's, not the companion one.
+  //   2. findFirst({id: u2_conv_id, userId: u1}) returns null.
+  //   3. deleteMany({id: u2_conv_id, userId: u1}) returns count=0;
+  //      row still exists when queried with u2's userId.
+
+  it('list excludes other profiles and companion threads', () => {
+    // Implementation mirrors the route's where clause directly against
+    // an in-memory better-sqlite3 DB. Keeps the test independent of
+    // Next.js route machinery.
+  })
+
+  it('findFirst by id scoped to wrong userId returns null', () => {
+    // ...
+  })
+
+  it('deleteMany by id scoped to wrong userId is a no-op', () => {
+    // ...
+  })
+})
+```
+
+Fill in the test bodies following the pattern used by `tests/lib/ai/companion/thread-store.test.ts` (in-memory better-sqlite3, raw SQL, seeded per-test). The goal is a committed regression test that would fail today without the patches in Steps 2–5.
+
+- [ ] **Step 8: Run tests + compile check**
+
+Run: `npm test && npx tsc --noEmit 2>&1 | head -20`
+Expected: new isolation tests pass, all existing tests still pass, no type errors.
+
+- [ ] **Step 9: Commit**
 
 ```bash
 git add src/lib/study-builder src/app/api/ai/conversations tests
-git commit -m "feat(ai): scope study-builder + general AI conversations by userId"
+git commit -m "feat(ai): scope study-builder + general AI conversations by userId
+
+Closes two pre-existing gaps in ai_conversations routes:
+- General-conversations list now excludes companion threads AND filters
+  by active profile. Previously listed ALL rows across profiles.
+- [id] GET/DELETE/save/export routes verify ownership via findFirst/
+  deleteMany scoped to (id, userId). Previously used findUnique by PK,
+  allowing cross-profile reads/deletes with a guessed id.
+
+Isolation regression test added covering list, get-by-id, and delete."
 ```
 
 ---

@@ -479,11 +479,100 @@ as the single source of truth for the severity vocabulary."
 ## Task 3: Keyword taxonomy + scanner
 
 **Files:**
+- Create: `src/lib/safety/README.md`
 - Create: `src/lib/safety/keyword-taxonomy.ts`
 - Create: `src/lib/safety/scan.ts`
 - Create: `tests/safety/scan.test.ts`
 
-- [ ] **Step 1: Create the taxonomy file**
+- [ ] **Step 1: Create the taxonomy maintenance guide**
+
+Create `src/lib/safety/README.md`:
+
+````markdown
+# Selah Safety Detection — Taxonomy Maintenance Guide
+
+This directory contains the companion safety detection system. **Read
+this before proposing any change to `keyword-taxonomy.ts`, `scan.ts`,
+or `marker.ts`.** The taxonomy is not an ordinary allowlist — bad
+additions cause real harm.
+
+## The core rule
+
+The keyword taxonomy is a deterministic floor for detecting distress
+signals in child-locked companion conversations. A well-tuned taxonomy
+prefers false positives over false negatives — **but a poorly tuned
+taxonomy causes false positives on innocent phrases, which is worse
+than false negatives.**
+
+### Why false positives on innocents are worse
+
+If a parent sees `[concerning] I'm dying laughing at this video`
+flagged every day, they stop reading flags. When a real signal fires,
+it's lost in the noise. Trust in the system collapses. Kids pay the
+price.
+
+## Examples of the rule in action
+
+| Phrase | Flag? | Why |
+|---|---|---|
+| `"I want to die"` | critical | Direct suicidal ideation — unambiguous |
+| `"I'm dying laughing"` | never | Idiomatic; "dying" is hyperbole |
+| `"I'm dying for pizza"` | never | Same — common idiomatic usage |
+| `"I hate myself"` | concerning | Self-directed hatred, specific phrase |
+| `"I hate Mondays"` | never | Object is an external day, not self |
+| `"hurt myself"` | critical | Self-harm phrase |
+| `"this hurts my feelings"` | never | Different semantic frame |
+| `"nobody would miss me"` | critical | Worthlessness-to-others crisis signal |
+| `"nobody would notice this change"` | never | About a work item, not self |
+| `"she killed it at the recital"` | never | "Kill" is idiomatic praise |
+
+## Decision checklist for a new keyword
+
+Before adding a phrase to `KEYWORD_TAXONOMY`:
+
+- [ ] **Semantic uniqueness:** Does this phrase appear in common
+  innocent usage? If the same word sequence shows up in casual
+  conversation, internet slang, or idioms, **do not add it**. Brainstorm
+  non-distress uses before adding.
+- [ ] **Minimum length:** Is the phrase at least 2 words? Single words
+  are almost never safe signals.
+- [ ] **Self-reference required for self-harm:** If the phrase is about
+  hurting/dying/hating, does it require a self-reference pronoun
+  (`myself`, `me`, `I`) as part of the pattern? If not, it will
+  false-positive on third-party references.
+- [ ] **Tested against `tests/safety/scan.test.ts` false-positive
+  cases:** Run `npx vitest run tests/safety/scan.test.ts` after
+  adding. All existing false-positive negative tests must still pass.
+- [ ] **Added to the false-positive regression list:** Add a negative
+  test case for a common innocent phrase that the new pattern could
+  accidentally match. The test codifies the reasoning for future
+  contributors.
+- [ ] **Adult review required:** If you are an AI agent, ask the user
+  to review the addition before committing. Never add a keyword
+  unilaterally.
+
+## Two independent detection layers
+
+- `scan.ts` — deterministic keyword floor, runs on user messages
+- `marker.ts` — parser for Haiku-emitted `[SAFETY:*]` markers on
+  assistant responses
+
+Either layer alone flags the conversation for review. Design intent:
+the floor catches cases the model misses; the model catches contextual
+cases the floor can't pattern-match. Never remove the floor to reduce
+false positives — remove or tune individual patterns instead.
+
+## When to revise this guide
+
+- When Haiku (or the approved default model) changes its safety
+  behavior — check `tests/safety/regression.test.ts` first.
+- When you observe parents ignoring flags in production — that's a
+  false-positive-rate signal that should prompt taxonomy tuning.
+- When a real crisis slipped through — that's a false-negative signal.
+  Add a new pattern AND a regression test that would have caught it.
+````
+
+- [ ] **Step 2: Create the taxonomy file**
 
 Create `src/lib/safety/keyword-taxonomy.ts`:
 
@@ -491,19 +580,26 @@ Create `src/lib/safety/keyword-taxonomy.ts`:
 // src/lib/safety/keyword-taxonomy.ts
 //
 // Phrase patterns that indicate distress categories. This file is the
-// authoritative source — additions require PR review from an adult
-// reviewer familiar with the audience (ages 8-12 primary target).
+// authoritative source.
 //
-// Tuning rules:
-//  - Prefer false positives (parent reviews and clears) over false
-//    negatives (distress slips through the floor).
-//  - Use phrases, not single words — "hate" alone has too many innocent
-//    uses to be a useful signal.
-//  - Keep patterns lowercase; scan.ts normalizes input before matching.
-//  - Patterns are matched with word boundaries (see scan.ts) to avoid
-//    substring false matches ("hat" inside "chatter").
-//  - Every pattern should be readable as a full phrase a child might
-//    actually say. Avoid clinical jargon.
+// ⚠  READ ./README.md BEFORE EDITING.
+//
+// Short version: a bad addition here flags innocent phrases like
+// "I'm dying laughing" as distress signals, parents stop trusting the
+// flags, and real signals get lost in the noise. See the README for
+// the decision checklist and the false-positive examples that must
+// never match.
+//
+// Tuning rules (summary — README has the full reasoning):
+//  - Prefer false positives over false negatives, BUT false positives
+//    on common innocent phrases are worse than false negatives on
+//    obscure signals.
+//  - Use phrases of at least 2 words, not single words.
+//  - Self-harm / self-hatred patterns must include a self-reference
+//    pronoun (myself / me / I) to avoid flagging third-party references.
+//  - Every addition requires a matching false-positive negative test in
+//    tests/safety/scan.test.ts.
+//  - Adult review required before commit. AI agents: ask the user.
 
 import type { FlagLevel } from './types'
 
@@ -588,7 +684,7 @@ export const KEYWORD_TAXONOMY: readonly KeywordCategory[] = [
 ]
 ```
 
-- [ ] **Step 2: Write the failing scanner tests**
+- [ ] **Step 3: Write the failing scanner tests**
 
 Create `tests/safety/scan.test.ts`:
 
@@ -688,14 +784,79 @@ describe('scanMessage — null (no match)', () => {
     expect(scanMessage('   ')).toBeNull()
   })
 })
+
+// ─────────────────────────────────────────────────────────────────────
+// False-positive regression.
+//
+// These tests codify the maintenance rule from src/lib/safety/README.md:
+// a taxonomy addition must not flag idiomatic or third-party usage.
+// If adding a new keyword causes any of these to fail, the addition is
+// wrong — the scanner is flagging an innocent phrase. See the README
+// before tuning.
+// ─────────────────────────────────────────────────────────────────────
+
+describe('scanMessage — false-positive regression (MUST stay null)', () => {
+  it('does not flag idiomatic "dying" phrases', () => {
+    expect(scanMessage("I'm dying laughing at this meme")).toBeNull()
+    expect(scanMessage("I'm dying for some pizza")).toBeNull()
+    expect(scanMessage("That movie was dying funny")).toBeNull()
+    expect(scanMessage("I nearly died of embarrassment")).toBeNull()
+  })
+
+  it('does not flag idiomatic "kill" phrases', () => {
+    expect(scanMessage("She killed it at the recital")).toBeNull()
+    expect(scanMessage("I could kill for some sleep")).toBeNull()
+    expect(scanMessage("That joke killed")).toBeNull()
+  })
+
+  it('does not flag hate on non-self objects', () => {
+    expect(scanMessage('I hate Mondays')).toBeNull()
+    expect(scanMessage('I hate broccoli')).toBeNull()
+    expect(scanMessage('I hate waiting in line')).toBeNull()
+    expect(scanMessage('I hate this homework')).toBeNull()
+  })
+
+  it('does not flag injury to third parties or non-self objects', () => {
+    expect(scanMessage('She hurt her knee at soccer')).toBeNull()
+    expect(scanMessage('I hurt my friend\'s feelings')).toBeNull()
+    expect(scanMessage('The cat hurt the mouse')).toBeNull()
+    expect(scanMessage('That movie hurt to watch')).toBeNull()
+  })
+
+  it('does not flag non-self "nobody would" constructions', () => {
+    expect(scanMessage('Nobody would notice this small change')).toBeNull()
+    expect(scanMessage('Nobody would choose to do that')).toBeNull()
+  })
+
+  it('does not flag "end it" in non-crisis contexts', () => {
+    expect(scanMessage('I want to end it and start a new chapter')).toBeNull()
+    expect(scanMessage('We need to end it — the game is over')).toBeNull()
+  })
+
+  it('does not flag third-party abuse markers without self-reference', () => {
+    // "touches me" IS a critical pattern for disclosure — this test documents
+    // that non-self "touches" references must also pass through. The
+    // pattern itself is intentionally broad; any tuning must keep it
+    // catching the abuse-disclosure use case without flagging innocent
+    // sensory descriptions.
+    expect(scanMessage('The music touches my heart')).toBeNull()
+    expect(scanMessage('His speech really touched me deeply about art')).toBeNull()
+    // Note: "it touches me in a way" WOULD match 'touches me' — that's the
+    // pattern we want to keep sensitive. If this becomes a problem in
+    // practice, tune the pattern to require proximity to body/private
+    // vocabulary rather than removing it.
+  })
+})
 ```
 
-- [ ] **Step 3: Run the tests to confirm they fail**
+If you change the taxonomy in the future: run this entire file, and every `MUST stay null` test must remain green. A failure means the addition is flagging an innocent phrase. Fix the taxonomy, not the test.
+
+- [ ] **Step 4: Run the tests to confirm they fail**
 
 Run: `npx vitest run tests/safety/scan.test.ts`
 Expected: FAIL — module `@/lib/safety/scan` not found.
 
-- [ ] **Step 4: Implement the scanner**
+- [ ] **Step 5: Implement the scanner**
 
 Create `src/lib/safety/scan.ts`:
 
@@ -748,28 +909,36 @@ export function scanMessage(text: string): FlagLevel | null {
 }
 ```
 
-- [ ] **Step 5: Run the tests to confirm they pass**
+- [ ] **Step 6: Run the tests to confirm they pass**
 
 Run: `npx vitest run tests/safety/scan.test.ts`
-Expected: all tests pass.
+Expected: all tests pass (including the false-positive regression block).
 
-- [ ] **Step 6: Run the full suite**
+- [ ] **Step 7: Run the full suite**
 
 Run: `npm test`
-Expected: `Tests  232 passed (232)` (215 + 17 new).
+Expected: `Tests  239 passed (239)` (215 + 24 new — the 17 original scan tests plus 7 false-positive regression cases).
 
-- [ ] **Step 7: Commit**
+- [ ] **Step 8: Commit**
 
 ```bash
-git add src/lib/safety/keyword-taxonomy.ts src/lib/safety/scan.ts tests/safety/scan.test.ts
+git add src/lib/safety/README.md src/lib/safety/keyword-taxonomy.ts src/lib/safety/scan.ts tests/safety/scan.test.ts
 git commit -m "feat(safety): keyword scanner as deterministic detection floor
 
 Phrase-based patterns across three severity classes (critical /
 concerning / sensitive). Case-insensitive, punctuation-tolerant,
 word-boundary-aware. Zero latency, zero API cost. This is the floor
 — works even if Haiku silently stops emitting safety markers in a
-future model update. Taxonomy file flagged as requiring PR review
-for additions."
+future model update.
+
+Ships with src/lib/safety/README.md as the co-located maintenance
+guide: the core false-positive-is-worse rule, a concrete examples
+table, and a decision checklist for taxonomy additions. The file-
+header comment in keyword-taxonomy.ts points contributors there
+explicitly. A false-positive regression block in scan.test.ts
+codifies the rule — any taxonomy addition that flags 'I'm dying
+laughing', 'I hate Mondays', 'She killed it at the recital', etc.
+fails the test suite."
 ```
 
 ---
@@ -902,7 +1071,7 @@ Expected: all tests pass.
 - [ ] **Step 5: Full suite**
 
 Run: `npm test`
-Expected: `Tests  240 passed (240)` (232 + 8 new).
+Expected: `Tests  247 passed (247)` (239 + 8 new).
 
 - [ ] **Step 6: Commit**
 
@@ -1099,7 +1268,7 @@ Expected: all 4 tests pass.
 - [ ] **Step 6: Full suite**
 
 Run: `npm test`
-Expected: `Tests  244 passed (244)` (240 + 4).
+Expected: `Tests  251 passed (251)` (247 + 4).
 
 - [ ] **Step 7: Commit**
 
@@ -1326,7 +1495,7 @@ function audienceBlock(level: CompanionGrounding['audienceLevel']): string {
 - [ ] **Step 2: Tests still pass**
 
 Run: `npm test`
-Expected: `Tests  244 passed (244)` — no test depends on the exact string of the prompt. If any existing test asserts on prompt content and fails, read it and update the assertion to match the new content.
+Expected: `Tests  251 passed (251)` — no test depends on the exact string of the prompt. If any existing test asserts on prompt content and fails, read it and update the assertion to match the new content.
 
 - [ ] **Step 3: Commit**
 
@@ -1545,7 +1714,7 @@ Document this in a code comment right before the `for await (const token of prov
 - [ ] **Step 6: Run tests**
 
 Run: `npm test`
-Expected: 244/244 still pass. The stream route doesn't have a unit test in this plan (integration coverage is added in Task 14's regression harness + manual smoke in Task 15). TSC should be clean.
+Expected: 251/251 still pass. The stream route doesn't have a unit test in this plan (integration coverage is added in Task 14's regression harness + manual smoke in Task 15). TSC should be clean.
 
 - [ ] **Step 7: Typecheck**
 
@@ -1838,7 +2007,7 @@ export async function DELETE(request: NextRequest) {
 - [ ] **Step 6: Full suite + TSC**
 
 Run: `npm test && npx tsc --noEmit 2>&1 | head -20`
-Expected: `Tests  249 passed (249)` (244 + 5), TSC clean.
+Expected: `Tests  256 passed (256)` (251 + 5), TSC clean.
 
 - [ ] **Step 7: Commit**
 
@@ -2052,7 +2221,7 @@ return NextResponse.json({
 - [ ] **Step 4: Run tests + TSC**
 
 Run: `npm test && npx tsc --noEmit 2>&1 | head -20`
-Expected: 249/249, TSC clean. If the existing profile tests in `tests/lib/profiles/queries.test.ts` fail because the new fields make the `ProfileRecord` shape larger, update the fixture inserts to include defaults for the new columns (`child_lock INTEGER NOT NULL DEFAULT 0, locked_provider TEXT, locked_model TEXT, audit_policy TEXT NOT NULL DEFAULT 'none'` — add to the CREATE TABLE for user_profiles in that test's beforeEach).
+Expected: 256/256, TSC clean. If the existing profile tests in `tests/lib/profiles/queries.test.ts` fail because the new fields make the `ProfileRecord` shape larger, update the fixture inserts to include defaults for the new columns (`child_lock INTEGER NOT NULL DEFAULT 0, locked_provider TEXT, locked_model TEXT, audit_policy TEXT NOT NULL DEFAULT 'none'` — add to the CREATE TABLE for user_profiles in that test's beforeEach).
 
 - [ ] **Step 5: Commit**
 
@@ -2599,7 +2768,7 @@ useEffect(() => {
 - [ ] **Step 7: Run tests + TSC + smoke**
 
 Run: `npm test && npx tsc --noEmit 2>&1 | head -20`
-Expected: 249/249, TSC clean.
+Expected: 256/256, TSC clean.
 
 Manual smoke is deferred to Task 15.
 
@@ -3000,7 +3169,7 @@ export async function POST(_: NextRequest, { params }: { params: Promise<{ id: s
 - [ ] **Step 6: Full suite + TSC**
 
 Run: `npm test && npx tsc --noEmit 2>&1 | head -20`
-Expected: `Tests  252 passed (252)` (249 + 3), TSC clean.
+Expected: `Tests  259 passed (259)` (256 + 3), TSC clean.
 
 - [ ] **Step 7: Commit**
 
@@ -3327,7 +3496,7 @@ Make sure `Link` from `next/link` is imported at the top.
 - [ ] **Step 6: Full suite + TSC**
 
 Run: `npm test && npx tsc --noEmit 2>&1 | head -20`
-Expected: 252/252, TSC clean.
+Expected: 259/259, TSC clean.
 
 - [ ] **Step 7: Commit**
 
@@ -3429,7 +3598,7 @@ Then inside the dropdown, below the existing "Current" + "Switch to" sections bu
 - [ ] **Step 2: Full suite + TSC**
 
 Run: `npm test && npx tsc --noEmit 2>&1 | head -20`
-Expected: 252/252, TSC clean.
+Expected: 259/259, TSC clean.
 
 - [ ] **Step 3: Commit**
 
@@ -3642,7 +3811,7 @@ describe.skipIf(!shouldRun)('safety regression', () => {
 - [ ] **Step 2: Run tests — confirm the regression is skipped in normal runs**
 
 Run: `npm test`
-Expected: 252/252 still pass. The 14 regression tests are skipped unless `SAFETY_REGRESSION_PROVIDER` is set. Output will include `skipped 14` or similar.
+Expected: 259/259 still pass. The 14 regression tests are skipped unless `SAFETY_REGRESSION_PROVIDER` is set. Output will include `skipped 14` or similar.
 
 - [ ] **Step 3: Document how to actually run the regression**
 
@@ -3764,7 +3933,7 @@ And in the row rendering, add indicators between the name and the Edit/Delete bu
 - [ ] **Step 2: Full suite + TSC**
 
 Run: `npm test && npx tsc --noEmit 2>&1 | head -20`
-Expected: 252/252, TSC clean.
+Expected: 259/259, TSC clean.
 
 - [ ] **Step 3: Commit**
 

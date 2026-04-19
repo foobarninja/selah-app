@@ -34,6 +34,28 @@ jobs:
       - id: version
         run: echo "version=$(node -pe "require('./package.json').version")" >> "$GITHUB_OUTPUT"
 
+      # Next.js static export pre-renders pages that query the DB (e.g.
+      # /characters). The seed isn't in the repo — pull it from Hugging
+      # Face so `npm run build` has data to render against. Cached so
+      # most runs don't re-download the 71 MB archive.
+      - name: Cache seed download
+        id: cache-seed
+        uses: actions/cache@v4
+        with:
+          path: data/selah-seed.db.xz
+          key: selah-seed-v1
+      - name: Download seed
+        if: steps.cache-seed.outputs.cache-hit != 'true'
+        run: |
+          mkdir -p data
+          curl -L -o data/selah-seed.db.xz \
+            https://huggingface.co/datasets/foooobear/selah-db/resolve/main/selah-seed.db.xz
+      - name: Decompress seed
+        run: |
+          cp data/selah-seed.db.xz data/selah.db.xz
+          xz -d -f data/selah.db.xz
+          ls -lh data/selah.db
+
       - uses: docker/setup-qemu-action@v3
       - uses: docker/setup-buildx-action@v3
 

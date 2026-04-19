@@ -22,6 +22,7 @@ interface Props {
   history: DevotionalHistory[]
   tonightDevotional: Devotional | null
   devotionalBooks: DevotionalBook[]
+  isAIConfigured: boolean
 }
 
 export default function DailyBreadClient({
@@ -31,6 +32,7 @@ export default function DailyBreadClient({
   history,
   tonightDevotional,
   devotionalBooks,
+  isAIConfigured,
 }: Props) {
   const router = useRouter()
   const [selectedDevotional, setSelectedDevotional] = useState<Devotional | null>(null)
@@ -102,6 +104,7 @@ export default function DailyBreadClient({
       <DailyBreadReading
         devotional={selectedDevotional}
         currentAudienceLevel={audienceLevel}
+        isAIConfigured={isAIConfigured}
         onBack={handleBackFromReading}
         onComplete={onComplete}
         onOverrideAudience={setAudienceLevel}

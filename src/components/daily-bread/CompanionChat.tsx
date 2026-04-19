@@ -27,6 +27,7 @@ export function CompanionChat({ devotional, isAIConfigured }: CompanionChatProps
   const [isStreaming, setIsStreaming] = useState(false)
   const [error, setError] = useState<string | null>(null)
   const [showPast, setShowPast] = useState(false)
+  const [pendingNewThread, setPendingNewThread] = useState(false)
   const streamingRef = useRef('')
 
   useEffect(() => {
@@ -46,7 +47,9 @@ export function CompanionChat({ devotional, isAIConfigured }: CompanionChatProps
     return () => { cancelled = true }
   }, [devotional.id, isAIConfigured])
 
-  const send = async (startNew = false) => {
+  const send = async () => {
+    const startNew = pendingNewThread
+    setPendingNewThread(false)
     const text = input.trim()
     if (!text || isStreaming) return
     setError(null)
@@ -124,6 +127,7 @@ export function CompanionChat({ devotional, isAIConfigured }: CompanionChatProps
     setMessages([])
     setConversationId(null)
     setError(null)
+    setPendingNewThread(true)
     // Refresh past list so the thread we just left appears there.
     fetch(`/api/ai/companion/thread?devotionalId=${encodeURIComponent(devotional.id)}`)
       .then((r) => r.json())
@@ -190,7 +194,7 @@ export function CompanionChat({ devotional, isAIConfigured }: CompanionChatProps
       )}
 
       <form
-        onSubmit={(e) => { e.preventDefault(); send(false) }}
+        onSubmit={(e) => { e.preventDefault(); send() }}
         style={{ display: 'flex', gap: '8px' }}
       >
         <input

@@ -1,7 +1,7 @@
 import { NextRequest, NextResponse } from 'next/server'
 import { getProfile } from '@/lib/profiles/queries'
 import { verifyPin } from '@/lib/profiles/pin'
-import { setActiveProfileCookie } from '@/lib/profiles/active-profile'
+import { attachActiveProfileCookie } from '@/lib/profiles/active-profile'
 
 export async function POST(request: NextRequest) {
   const { id, pin } = (await request.json().catch(() => ({}))) as { id?: string; pin?: string }
@@ -13,6 +13,5 @@ export async function POST(request: NextRequest) {
       return NextResponse.json({ error: 'invalid PIN' }, { status: 401 })
     }
   }
-  await setActiveProfileCookie(id)
-  return NextResponse.json({ ok: true })
+  return attachActiveProfileCookie(NextResponse.json({ ok: true }), id)
 }

@@ -76,6 +76,38 @@ When a new app version is available, the startup log shows:
 [app-check] to update: docker compose pull && docker compose up -d
 ```
 
+### Migrating from a legacy install
+
+If you installed Selah before v0.2.0 you have a local clone with a
+`build: .` compose file. Everything you care about (your DB, notes,
+bookmarks, study projects) lives in Docker named volumes — they survive
+the switch as long as you run the migrated compose from the same
+directory.
+
+```bash
+cd selah-app                # the directory where you've been running compose
+docker compose down         # stop the running container; volumes stay
+
+# Grab the new compose file directly. Skips git entirely so you don't
+# have to reason about diverged history / local commits.
+cp docker-compose.yml docker-compose.yml.legacy.bak
+curl -L -o docker-compose.yml \
+  https://raw.githubusercontent.com/foobarninja/selah-app/master/docker-compose.yml
+
+docker compose pull         # fetch ghcr.io/foobarninja/selah-app:latest
+docker compose up -d        # start from the pulled image
+docker compose logs -f --tail=30   # watch the seed auto-update flow
+```
+
+On first boot the entrypoint will auto-apply the latest content seed
+(merging your local notes/bookmarks/history in) and write a timestamped
+backup at `data/selah.pre-update-<ts>.db.bak`. Delete it after a day or
+two once you're satisfied.
+
+> **Recommended before migrating:** download a backup via Settings →
+> Backup & Data → Download Backup. If anything goes wrong, you can
+> restore from it.
+
 ### Building from source (contributors only)
 
 ```bash

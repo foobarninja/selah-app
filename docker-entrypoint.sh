@@ -17,6 +17,10 @@ mkdir -p /app/backups
 # failure logs the error and proceeds to boot on the existing DB.
 export SELAH_AUTO_UPDATE_SEED="${SELAH_AUTO_UPDATE_SEED:-1}"
 
+if [ -f /app/scripts/ops/check-app-update.ts ]; then
+  /app/node_modules/.bin/tsx /app/scripts/ops/check-app-update.ts || true
+fi
+
 if [ -f /app/scripts/ops/check-seed-update.ts ]; then
   echo "[entrypoint] checking seed status (auto-apply: $SELAH_AUTO_UPDATE_SEED)"
   /app/node_modules/.bin/tsx /app/scripts/ops/check-seed-update.ts || \

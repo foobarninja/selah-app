@@ -1,6 +1,6 @@
 {
   "name": "selah",
-  "version": "0.1.0",
+  "version": "0.2.0",
   "private": true,
   "scripts": {
     "predev": "tsx scripts/ops/check-seed-update.ts",
@@ -13,7 +13,8 @@
     "test:watch": "vitest",
     "seed:check": "tsx scripts/ops/check-seed-update.ts",
     "seed:update": "tsx scripts/ops/apply-seed-update.ts",
-    "seed:prepare": "tsx scripts/release/prepare-seed-db.ts"
+    "seed:prepare": "tsx scripts/release/prepare-seed-db.ts",
+    "app:check": "tsx scripts/ops/check-app-update.ts"
   },
   "dependencies": {
     "@anthropic-ai/sdk": "^0.82.0",

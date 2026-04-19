@@ -15,6 +15,11 @@ RUN npm run build
 # Stage 3: Production
 FROM node:22-alpine AS runner
 WORKDIR /app
+# APP_VERSION is baked in at build time. CI passes the package.json version
+# via --build-arg APP_VERSION=... Local/dev builds fall back to -dev so
+# the startup app-version check knows to skip remote comparison.
+ARG APP_VERSION=0.0.0-dev
+ENV APP_VERSION=${APP_VERSION}
 ENV NODE_ENV=production
 ENV HOSTNAME=0.0.0.0
 ENV PORT=4610

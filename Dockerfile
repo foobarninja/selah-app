@@ -19,6 +19,9 @@ ENV NODE_ENV=production
 ENV HOSTNAME=0.0.0.0
 ENV PORT=4610
 
+# xz is used by the seed-update tooling to decompress downloaded artifacts.
+RUN apk add --no-cache xz
+
 RUN addgroup --system --gid 1001 nodejs
 RUN adduser --system --uid 1001 nextjs
 
@@ -32,8 +35,20 @@ COPY --from=builder /app/data/selah.db /app/seed/selah.db
 # Copy the plain-JS seed-update check script used by the entrypoint.
 COPY --from=builder /app/scripts/ops/docker-check-seed.cjs /app/scripts/ops/docker-check-seed.cjs
 
+# Seed-update TS scripts + the library they import. Lets containerized
+# users run `docker compose run --rm selah npm run seed:update`.
+COPY --from=builder /app/scripts /app/scripts
+COPY --from=builder /app/src/lib/seed /app/src/lib/seed
+COPY --from=builder /app/package.json /app/package.json
+COPY --from=builder /app/tsconfig.json /app/tsconfig.json
+
+# tsx is needed at runtime to run the TS seed scripts. It's not traced by
+# Next's standalone tracer because nothing in the Next app imports it.
+RUN npm install --no-save --production tsx@4.21.0
+
 # Create data and backup directories
-RUN mkdir -p /app/data /app/backups && chown -R nextjs:nodejs /app/data /app/backups /app/seed /app/scripts
+RUN mkdir -p /app/data /app/backups && \
+    chown -R nextjs:nodejs /app/data /app/backups /app/seed /app/scripts /app/src
 
 # Copy entrypoint
 COPY docker-entrypoint.sh /app/docker-entrypoint.sh

@@ -97,29 +97,37 @@ Selah's pre-baked content (verses, commentary, characters, themes, devotionals) 
 
 ### Check if an update is available
 
-`npm run dev` / `npm run start` run a check automatically on boot. You'll see one of:
+**npm users** — `npm run dev` / `npm run start` run a check automatically on boot. To check manually any time: `npm run seed:check`.
+
+**Docker users** — `docker compose up -d` runs the same check on the container's entrypoint. Tail the logs to see it:
+
+```bash
+docker compose logs --tail=20 selah
+```
+
+Either way you'll see one of:
 
 ```
 [seed-check] local seed v2026.04.19 is current
-[seed-check] update available: v2026.04.19 → v2026.05.10 (71.2 MB download). Run `npm run seed:update` to apply.
+[seed-check] update available: v2026.04.19 -> v2026.05.10 (71.2 MB download).
+[seed-check] run: docker compose run --rm selah npm run seed:update
 ```
 
-To check manually any time: `npm run seed:check`.
-
-For Docker users, the entrypoint runs the same check on `docker compose up` and logs to the container stdout.
+> **After `git pull` on an existing Docker install:** run `docker compose up -d --build` the first time — without `--build`, Compose reuses the old image and the new entrypoint check won't be present.
 
 ### Apply an update (manual)
 
+**npm users:**
 ```bash
 npm run seed:update
 ```
-
-This downloads the new seed, verifies sha256, merges your local user tables in, timestamps a backup of the current DB, and atomically swaps. The previous DB is preserved at `data/selah.pre-update-<timestamp>.db.bak` — delete it once you're satisfied with the update.
 
 **Docker users:**
 ```bash
 docker compose run --rm selah npm run seed:update
 ```
+
+Both variants do the same thing: download the new seed, verify sha256, merge your local user tables into it, timestamp a backup of the current DB, and atomically swap. The previous DB is preserved at `data/selah.pre-update-<timestamp>.db.bak` — delete it once you're satisfied with the update.
 
 ### Apply automatically on startup (opt-in)
 

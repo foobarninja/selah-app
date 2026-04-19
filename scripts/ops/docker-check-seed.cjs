@@ -38,18 +38,20 @@ async function main() {
     return
   }
 
+  const applyCmd = `docker compose run --rm selah npm run seed:update`
   if (local === null) {
     console.log(
-      `[seed-check] local seed is unversioned; latest on Hugging Face is v${remote.seedVersion}. ` +
-        `See README for how to update (user data preserved).`,
+      `[seed-check] local seed is unversioned; latest on Hugging Face is v${remote.seedVersion}.`,
     )
+    console.log(`[seed-check] run: ${applyCmd}  (user data preserved)`)
   } else if (local >= remote.seedVersion) {
     console.log(`[seed-check] local seed v${local} is current`)
   } else {
     console.log(
       `[seed-check] update available: v${local} -> v${remote.seedVersion} ` +
-        `(${fmtMB(remote.sizeXz)} download). See README for how to update.`,
+        `(${fmtMB(remote.sizeXz)} download).`,
     )
+    console.log(`[seed-check] run: ${applyCmd}`)
   }
 }
 

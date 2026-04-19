@@ -11,14 +11,14 @@ export function useChatStream({ onToken, onDone, onError }: UseChatStreamOptions
   const abortRef = useRef<AbortController | null>(null)
 
   const send = useCallback(
-    async (messages: ChatMessage[], grounding: GroundingRequest, conversationId?: string, contextToggles?: ContextToggles) => {
+    async (messages: ChatMessage[], grounding: GroundingRequest, conversationId?: string, contextToggles?: ContextToggles, endpoint?: string) => {
       // Abort any in-flight request
       abortRef.current?.abort()
       const controller = new AbortController()
       abortRef.current = controller
 
       try {
-        const response = await fetch('/api/ai/send', {
+        const response = await fetch(endpoint ?? '/api/ai/send', {
           method: 'POST',
           headers: { 'Content-Type': 'application/json' },
           body: JSON.stringify({ messages, grounding, conversationId, contextToggles }),

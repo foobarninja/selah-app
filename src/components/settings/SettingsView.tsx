@@ -1,6 +1,7 @@
 'use client'
 
 import { useEffect, useState } from 'react'
+import Link from 'next/link'
 import { Eye, EyeOff, Check, X, Download, Upload, Minus, Plus, Sun, Moon, Monitor, ChevronDown } from 'lucide-react'
 import type { SettingsProps, AIProvider, ThemeMode, AudienceLevel, RetentionDays } from './types'
 import { ConfirmDialog } from '@/components/ui/ConfirmDialog'
@@ -255,6 +256,11 @@ export function SettingsView({ translations, aiConfig, aiProviders, studyPrefere
           <section id="safety" className="mb-12">
             <h2 style={{ fontFamily: font.display, fontSize: '24px', fontWeight: 400, color: 'var(--selah-text-1, #E8E2D9)', marginBottom: '4px' }}>Safety</h2>
             <p style={{ fontFamily: font.body, fontSize: '13px', color: 'var(--selah-text-3, #6E695F)', marginBottom: '20px' }}>Approved AI models for child-locked profiles. Additions require your PIN.</p>
+            <div style={{ marginBottom: '20px' }}>
+              <Link href="/settings/audit" style={{ display: 'inline-block', padding: '10px 16px', borderRadius: '8px', backgroundColor: 'var(--selah-gold-500)', color: 'var(--selah-bg-page)', textDecoration: 'none', fontFamily: "var(--selah-font-body)", fontWeight: 600 }}>
+                Parent audit dashboard →
+              </Link>
+            </div>
             <SafeModelsEditor parentProfileId={activeProfileId} />
           </section>
         )}

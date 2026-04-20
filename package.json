@@ -1,6 +1,6 @@
 {
   "name": "selah",
-  "version": "0.3.0",
+  "version": "0.3.1",
   "private": true,
   "scripts": {
     "predev": "tsx scripts/ops/check-seed-update.ts",

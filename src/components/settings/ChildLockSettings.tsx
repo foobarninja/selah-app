@@ -48,9 +48,18 @@ export function ChildLockSettings({ profile, parentProfileId, onSaved }: Props) 
 
   useEffect(() => {
     fetch('/api/safe-models').then((r) => r.json()).then((b) => {
-      setModels(b.models ?? [])
-      if (!modelKey && b.models?.length) {
-        setModelKey(`${b.models[0].provider}:${b.models[0].modelId}`)
+      const approved: KidSafeModel[] = b.models ?? []
+      setModels(approved)
+      if (!approved.length) return
+      const stillApproved = approved.some((m) => `${m.provider}:${m.modelId}` === modelKey)
+      // Snap modelKey to an approved entry if it's empty OR if the profile's
+      // stored lock no longer appears in the approved list (e.g., Mom added a
+      // new model and removed the old one). Prevents a silent <select> mismatch
+      // where the form state keeps an invalid value while the browser renders
+      // the first visible option — the same class of bug that stuck audit
+      // policy at 'none' previously.
+      if (!modelKey || !stillApproved) {
+        setModelKey(`${approved[0].provider}:${approved[0].modelId}`)
       }
     })
     // eslint-disable-next-line react-hooks/exhaustive-deps

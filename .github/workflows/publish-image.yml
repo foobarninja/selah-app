@@ -36,20 +36,36 @@ jobs:
 
       # Next.js static export pre-renders pages that query the DB (e.g.
       # /characters). The seed isn't in the repo — pull it from Hugging
-      # Face so `npm run build` has data to render against. Cached so
-      # most runs don't re-download the 71 MB archive.
+      # Face so `npm run build` has data to render against. The cache
+      # key is the HF manifest sha so releases invalidate automatically
+      # (a static key like selah-seed-v1 would silently bake the OLD
+      # seed into every image after the first cached run).
+      - name: Fetch seed manifest
+        id: seed-manifest
+        run: |
+          curl -sfL https://huggingface.co/datasets/foooobear/selah-db/resolve/main/manifest.json -o /tmp/manifest.json
+          SEED_SHA=$(jq -r .sha256 /tmp/manifest.json)
+          SEED_VER=$(jq -r .seedVersion /tmp/manifest.json)
+          SCHEMA_VER=$(jq -r .schemaVersion /tmp/manifest.json)
+          echo "sha=$SEED_SHA" >> "$GITHUB_OUTPUT"
+          echo "seedVersion=$SEED_VER" >> "$GITHUB_OUTPUT"
+          echo "schemaVersion=$SCHEMA_VER" >> "$GITHUB_OUTPUT"
+          echo "[seed] manifest: v$SEED_VER (schema v$SCHEMA_VER, sha ${SEED_SHA:0:12}...)"
       - name: Cache seed download
         id: cache-seed
         uses: actions/cache@v4
         with:
           path: data/selah-seed.db.xz
-          key: selah-seed-v1
+          key: selah-seed-${{ steps.seed-manifest.outputs.sha }}
       - name: Download seed
         if: steps.cache-seed.outputs.cache-hit != 'true'
         run: |
           mkdir -p data
-          curl -L -o data/selah-seed.db.xz \
+          curl -fL -o data/selah-seed.db.xz \
             https://huggingface.co/datasets/foooobear/selah-db/resolve/main/selah-seed.db.xz
+      - name: Verify seed sha
+        run: |
+          echo "${{ steps.seed-manifest.outputs.sha }}  data/selah-seed.db.xz" | sha256sum -c -
       - name: Decompress seed
         run: |
           cp data/selah-seed.db.xz data/selah.db.xz

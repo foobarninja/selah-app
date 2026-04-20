@@ -33,12 +33,18 @@ export function ProfilesClient({ profiles }: Props) {
       })
       if (res.status === 401) {
         setPinError(true)
+        setSubmitting(false)
         return
       }
       if (!res.ok) throw new Error(`HTTP ${res.status}`)
+      // Keep submitting=true so PinPad stays disabled — otherwise its
+      // 4-digit-autosubmit useEffect retriggers while the router is still
+      // navigating, producing an infinite /api/profiles/select loop.
       router.push('/')
-    } finally {
+    } catch (err) {
+      setPinError(true)
       setSubmitting(false)
+      throw err
     }
   }
 

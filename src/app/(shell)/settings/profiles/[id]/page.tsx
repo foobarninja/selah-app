@@ -7,13 +7,15 @@ export default async function EditProfilePage({ params }: { params: Promise<{ id
   const activeId = await requireActiveProfileId()
   const active = await getProfile(activeId)
   return (
-    <ProfileSettings
-      id={id}
-      activeProfile={active ? {
-        id: active.id,
-        hasPin: active.pinHash !== null,
-        childLock: active.childLock,
-      } : undefined}
-    />
+    <div style={{ maxWidth: '720px', padding: '24px 32px' }}>
+      <ProfileSettings
+        id={id}
+        activeProfile={active ? {
+          id: active.id,
+          hasPin: active.pinHash !== null,
+          childLock: active.childLock,
+        } : undefined}
+      />
+    </div>
   )
 }

@@ -35,7 +35,13 @@ export function ChildLockSettings({ profile, parentProfileId, onSaved }: Props) 
       ? `${profile.lockedProvider}:${profile.lockedModel}`
       : '',
   )
-  const [auditPolicy, setAuditPolicy] = useState<ProfileView['auditPolicy']>(profile.auditPolicy)
+  // Normalize initial value: the dropdown only exposes 'flagged-only' | 'full'.
+  // If the DB has 'none' (the default for a newly-locked profile), start the
+  // form at 'flagged-only' so the visible option matches the state that will
+  // be PATCHed when Mom saves without touching the dropdown.
+  const [auditPolicy, setAuditPolicy] = useState<'flagged-only' | 'full'>(
+    profile.auditPolicy === 'full' ? 'full' : 'flagged-only',
+  )
   const [pin, setPin] = useState('')
   const [error, setError] = useState<string | null>(null)
   const [busy, setBusy] = useState(false)
@@ -100,7 +106,7 @@ export function ChildLockSettings({ profile, parentProfileId, onSaved }: Props) 
           </div>
           <div style={{ marginBottom: '10px' }}>
             <div style={{ fontFamily: font.body, color: 'var(--selah-text-2)', fontSize: '13px', marginBottom: '4px' }}>Parent review policy</div>
-            <select value={auditPolicy} onChange={(e) => setAuditPolicy(e.target.value as ProfileView['auditPolicy'])} style={selectStyle}>
+            <select value={auditPolicy} onChange={(e) => setAuditPolicy(e.target.value as 'flagged-only' | 'full')} style={selectStyle}>
               <option value="flagged-only">Flagged messages only (recommended)</option>
               <option value="full">Full transcripts</option>
             </select>

@@ -13,6 +13,8 @@ interface ProfileSummary {
   avatarColor: string
   hasPin: boolean
   isDefault: boolean
+  childLock?: boolean
+  unreviewedFlags?: number
 }
 
 interface DeleteDialogState {
@@ -30,9 +32,20 @@ export function ManageProfiles() {
 
   const reload = async () => {
     setLoading(true)
-    const res = await fetch('/api/profiles')
-    const body = await res.json()
-    setProfiles(body.profiles ?? [])
+    const [profilesRes, auditRes] = await Promise.all([
+      fetch('/api/profiles').then((r) => r.json()),
+      fetch('/api/audit/profiles').then((r) => r.ok ? r.json() : { profiles: [] }),
+    ])
+    const countsById = new Map<string, number>()
+    for (const row of auditRes.profiles ?? []) {
+      const total = (row.unreviewed?.critical ?? 0) + (row.unreviewed?.concerning ?? 0) + (row.unreviewed?.sensitive ?? 0)
+      countsById.set(row.profile.id, total)
+    }
+    const withCounts = (profilesRes.profiles ?? []).map((p: ProfileSummary) => ({
+      ...p,
+      unreviewedFlags: countsById.get(p.id) ?? 0,
+    }))
+    setProfiles(withCounts)
     setLoading(false)
   }
 
@@ -82,6 +95,12 @@ export function ManageProfiles() {
               {p.name}
               {p.hasPin && <span style={{ marginLeft: '8px', fontSize: '10px', color: 'var(--selah-text-3)', textTransform: 'uppercase', letterSpacing: '1px' }}>PIN</span>}
               {p.isDefault && <span style={{ marginLeft: '8px', fontSize: '10px', color: 'var(--selah-text-3)', textTransform: 'uppercase', letterSpacing: '1px' }}>Default</span>}
+              {p.childLock && <span style={{ marginLeft: '8px', fontSize: '10px', color: 'var(--selah-gold-500)', textTransform: 'uppercase', letterSpacing: '1px' }}>Locked</span>}
+              {(p.unreviewedFlags ?? 0) > 0 && (
+                <span style={{ marginLeft: '8px', fontSize: '10px', color: 'var(--selah-terra-400)', textTransform: 'uppercase', letterSpacing: '1px' }}>
+                  {p.unreviewedFlags} flag{p.unreviewedFlags === 1 ? '' : 's'}
+                </span>
+              )}
             </div>
             <Link href={`/settings/profiles/${p.id}`} style={{ padding: '6px 10px', fontSize: '12px', color: 'var(--selah-text-2)', textDecoration: 'none' }}>Edit</Link>
             <button onClick={() => openDelete(p)} aria-label={`Delete ${p.name}`} style={{ padding: '6px', background: 'transparent', border: 'none', color: 'var(--selah-terra-400)', cursor: 'pointer' }}>

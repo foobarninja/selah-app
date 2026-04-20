@@ -18,6 +18,10 @@ export async function GET(
       avatarColor: string
       hasPin: boolean
       isDefault: boolean
+      childLock: boolean
+      lockedProvider: string | null
+      lockedModel: string | null
+      auditPolicy: 'none' | 'flagged-only' | 'full'
     }
     counts?: Record<string, number>
   } = {
@@ -27,6 +31,10 @@ export async function GET(
       avatarColor: p.avatarColor,
       hasPin: p.pinHash !== null,
       isDefault: p.isDefault,
+      childLock: p.childLock,
+      lockedProvider: p.lockedProvider,
+      lockedModel: p.lockedModel,
+      auditPolicy: p.auditPolicy,
     },
   }
   if (includeCounts) {
@@ -40,12 +48,84 @@ export async function PATCH(
   { params }: { params: Promise<{ id: string }> },
 ) {
   const { id } = await params
-  const body = (await request.json()) as { name?: string; avatarColor?: string; pin?: string | null }
+  const body = (await request.json()) as {
+    name?: string
+    avatarColor?: string
+    pin?: string | null
+    childLock?: boolean
+    lockedProvider?: string | null
+    lockedModel?: string | null
+    auditPolicy?: 'none' | 'flagged-only' | 'full'
+    parentProfileId?: string
+    parentPin?: string
+  }
   if (body.pin != null && !isValidPinFormat(body.pin)) {
     return NextResponse.json({ error: 'PIN must be 4 digits' }, { status: 400 })
   }
+
+  const touchesSafety =
+    body.childLock !== undefined ||
+    body.lockedProvider !== undefined ||
+    body.lockedModel !== undefined ||
+    body.auditPolicy !== undefined
+  if (touchesSafety) {
+    if (!body.parentProfileId || !body.parentPin) {
+      return NextResponse.json(
+        { error: 'parent PIN verification required for safety changes' },
+        { status: 400 },
+      )
+    }
+    const parent = await getProfile(body.parentProfileId)
+    if (!parent || !parent.pinHash || parent.childLock) {
+      return NextResponse.json({ error: 'not a valid parent profile' }, { status: 403 })
+    }
+    if (!(await verifyPin(body.parentPin, parent.pinHash))) {
+      return NextResponse.json({ error: 'invalid parent PIN' }, { status: 401 })
+    }
+  }
+
+  if (body.childLock === true) {
+    const { listKidSafeModels } = await import('@/lib/safe-models/queries')
+    const approved = await listKidSafeModels()
+    const target = await getProfile(id)
+    const provider = body.lockedProvider ?? target?.lockedProvider ?? null
+    const modelId = body.lockedModel ?? target?.lockedModel ?? null
+    if (!provider || !modelId) {
+      return NextResponse.json(
+        { error: 'lockedProvider and lockedModel are required when enabling child lock' },
+        { status: 400 },
+      )
+    }
+    const ok = approved.some((m) => m.provider === provider && m.modelId === modelId)
+    if (!ok) {
+      return NextResponse.json(
+        { error: `${provider}:${modelId} is not in the approved models list` },
+        { status: 400 },
+      )
+    }
+  }
+
+  if (body.auditPolicy !== undefined) {
+    const valid = ['none', 'flagged-only', 'full'] as const
+    if (!(valid as readonly string[]).includes(body.auditPolicy)) {
+      return NextResponse.json({ error: 'invalid auditPolicy' }, { status: 400 })
+    }
+  }
+
   try {
-    const updated = await updateProfile(id, body)
+    const patch: Parameters<typeof updateProfile>[1] = { ...body }
+    if (body.childLock === false) {
+      patch.lockedProvider = null
+      patch.lockedModel = null
+      patch.auditPolicy = 'none'
+    }
+    if (body.childLock === true && body.auditPolicy === undefined) {
+      patch.auditPolicy = 'flagged-only'
+    }
+    delete (patch as Record<string, unknown>).parentProfileId
+    delete (patch as Record<string, unknown>).parentPin
+
+    const updated = await updateProfile(id, patch)
     return NextResponse.json({
       profile: {
         id: updated.id,
@@ -53,6 +133,10 @@ export async function PATCH(
         avatarColor: updated.avatarColor,
         hasPin: updated.pinHash !== null,
         isDefault: updated.isDefault,
+        childLock: updated.childLock,
+        lockedProvider: updated.lockedProvider,
+        lockedModel: updated.lockedModel,
+        auditPolicy: updated.auditPolicy,
       },
     })
   } catch (err) {

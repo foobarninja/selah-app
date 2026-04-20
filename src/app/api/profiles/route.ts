@@ -14,6 +14,7 @@ export async function GET() {
       avatarColor: p.avatarColor,
       hasPin: p.pinHash !== null,
       isDefault: p.isDefault,
+      childLock: p.childLock,
     })),
   })
 }

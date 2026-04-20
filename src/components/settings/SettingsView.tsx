@@ -1,11 +1,13 @@
 'use client'
 
 import { useEffect, useState } from 'react'
+import Link from 'next/link'
 import { Eye, EyeOff, Check, X, Download, Upload, Minus, Plus, Sun, Moon, Monitor, ChevronDown } from 'lucide-react'
 import type { SettingsProps, AIProvider, ThemeMode, AudienceLevel, RetentionDays } from './types'
 import { ConfirmDialog } from '@/components/ui/ConfirmDialog'
 import { findOpenRouterPreset } from '@/lib/ai/model-presets'
 import { ManageProfiles } from './ManageProfiles'
+import { SafeModelsEditor } from './SafeModelsEditor'
 
 const font = {
   display: "var(--selah-font-display, 'Cormorant Garamond', serif)",
@@ -93,6 +95,17 @@ function HelpItem({ question, children }: { question: string; children: React.Re
 export function SettingsView({ translations, aiConfig, aiProviders, studyPreferences, backupInfo, onChangePrimary, onToggleParallel, onToggleDisplay, onSelectProvider, onSaveAIConfig, onTestConnection, onChangeCommentary, onToggleSourceTier, onChangeDailyBreadAudience, onChangeFontSize, onChangeTheme, onDownloadBackup, onToggleAutoBackup, onChangeRetention, onRestoreBackup, onExportJournal, onExportCollections, onExportConversations }: SettingsProps) {
   const [showApiKey, setShowApiKey] = useState(false)
   const [restoreFile, setRestoreFile] = useState<File | null>(null)
+  const [activeProfileId, setActiveProfileId] = useState<string | null>(null)
+  const [activeHasPin, setActiveHasPin] = useState(false)
+
+  useEffect(() => {
+    fetch('/api/profiles/me').then((r) => r.json()).then((b) => {
+      if (b.profile) {
+        setActiveProfileId(b.profile.id)
+        setActiveHasPin(b.profile.hasPin)
+      }
+    })
+  }, [])
   const [apiKey, setApiKey] = useState('')
   const [ollamaUrl, setOllamaUrl] = useState(aiConfig.ollamaUrl || 'http://localhost:11434')
   const [selectedProvider, setSelectedProvider] = useState<AIProvider | null>(aiConfig.provider)
@@ -237,6 +250,20 @@ export function SettingsView({ translations, aiConfig, aiProviders, studyPrefere
           <p style={{ fontFamily: font.body, fontSize: '13px', color: 'var(--selah-text-3, #6E695F)', marginBottom: '20px' }}>Manage who uses this Selah installation. Each profile keeps its own notes, journal, and reading history.</p>
           <ManageProfiles />
         </section>
+
+        {/* 0b. SAFETY */}
+        {activeProfileId && activeHasPin && (
+          <section id="safety" className="mb-12">
+            <h2 style={{ fontFamily: font.display, fontSize: '24px', fontWeight: 400, color: 'var(--selah-text-1, #E8E2D9)', marginBottom: '4px' }}>Safety</h2>
+            <p style={{ fontFamily: font.body, fontSize: '13px', color: 'var(--selah-text-3, #6E695F)', marginBottom: '20px' }}>Approved AI models for child-locked profiles. Additions require your PIN.</p>
+            <div style={{ marginBottom: '20px' }}>
+              <Link href="/settings/audit" style={{ display: 'inline-block', padding: '10px 16px', borderRadius: '8px', backgroundColor: 'var(--selah-gold-500)', color: 'var(--selah-bg-page)', textDecoration: 'none', fontFamily: "var(--selah-font-body)", fontWeight: 600 }}>
+                Parent audit dashboard →
+              </Link>
+            </div>
+            <SafeModelsEditor parentProfileId={activeProfileId} />
+          </section>
+        )}
 
         {/* 1. TRANSLATIONS */}
         <SettingsSection title="Translations" description="Choose your reading translations and display preferences.">

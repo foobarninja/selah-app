@@ -28,6 +28,11 @@ import {
 } from '@/lib/ai/companion/thread-store'
 import { requireActiveProfileId } from '@/lib/profiles/active-profile'
 import type { ModelConfig } from '@/lib/ai/types'
+import { scanMessage } from '@/lib/safety/scan'
+import { extractSafetyMarker } from '@/lib/safety/marker'
+import { getEffectiveAIConfig } from '@/lib/profiles/effective-ai-config'
+import { maxFlagLevel } from '@/lib/safety/types'
+import { getProfile } from '@/lib/profiles/queries'
 
 const MAX_HISTORY_MESSAGES = 20
 
@@ -57,6 +62,21 @@ export async function POST(request: NextRequest) {
     return jsonError('devotionalId and userMessage required', 400)
   }
 
+  const profileForAudit = await getProfile(userId)
+  const shouldPersistFlags = !!(
+    profileForAudit?.childLock &&
+    profileForAudit.auditPolicy &&
+    profileForAudit.auditPolicy !== 'none'
+  )
+
+  const effective = await getEffectiveAIConfig(userId)
+  if (!effective.isConfigured || !effective.provider) {
+    return jsonError('AI not configured for this profile', 503)
+  }
+  // getProvider() currently reads device settings; since the locked provider
+  // matches the device provider (isConfigured gate above), getProvider()
+  // returns the right client. We only need to override the model name
+  // downstream in modelConfig.
   const provider = await getProvider()
   if (!provider) {
     return jsonError('AI not configured', 503)
@@ -82,7 +102,14 @@ export async function POST(request: NextRequest) {
     }
   }
 
-  await appendMessage(conversationId, { role: 'user', content: body.userMessage, userId })
+  const userFlagLevel = shouldPersistFlags ? scanMessage(body.userMessage) : null
+  await appendMessage(conversationId, {
+    role: 'user',
+    content: body.userMessage,
+    userId,
+    flagLevel: userFlagLevel,
+    flagSource: userFlagLevel ? 'keyword' : null,
+  })
 
   const grounding = buildCompanionGrounding(devotional)
   const systemPrompt = buildCompanionSystemPrompt(grounding)
@@ -121,9 +148,12 @@ export async function POST(request: NextRequest) {
     }
   }
 
+  // Set the model name from the effective config (child-lock aware)
+  modelConfig.model = effective.model ?? ''
+
   // Capture provider + model for message persistence.
   const providerId = providerSetting ?? undefined
-  const modelId = (await getSetting('ai_model')) ?? undefined
+  const modelId = effective.model ?? undefined
 
   const encoder = new TextEncoder()
   const stream = new ReadableStream({
@@ -135,16 +165,45 @@ export async function POST(request: NextRequest) {
           { role: 'system' as const, content: systemPrompt },
           ...recentHistory.map((m) => ({ role: m.role as 'user' | 'assistant' | 'system', content: m.content })),
         ]
+        // UX note: when the model emits a [SAFETY:*] marker, the marker tokens
+        // stream to the user briefly before the full response completes. The
+        // persisted message strips the marker; the transient display is
+        // acceptable for v1. A streaming-time marker strip is phase-2 polish.
         for await (const token of provider.stream(chatMessages, modelConfig)) {
           assistantText += token
           emit({ type: 'token', content: token })
         }
+        // Parse the first-line safety marker from the model's response.
+        // extractSafetyMarker returns the stripped text (marker removed) + the level.
+        // Runs unconditionally so the user never sees a stray marker, regardless of
+        // audit policy. Persistence of the level is gated on shouldPersistFlags.
+        const { level: markerLevel, stripped: assistantVisible } = extractSafetyMarker(assistantText)
+
+        // Combine: upgrade the assistant message's flag level if the user's message
+        // keyword-matched at a higher severity than the marker indicates. This
+        // captures the case where a user writes "I want to die" and the model
+        // somehow responds without the marker — the keyword floor still flags
+        // the conversation for review.
+        let assistantFlag = markerLevel
+        let assistantSource: 'keyword' | 'model' | 'both' | null = markerLevel ? 'model' : null
+        if (shouldPersistFlags && userFlagLevel) {
+          const combined = maxFlagLevel(markerLevel, userFlagLevel)
+          if (combined !== markerLevel) {
+            assistantFlag = combined
+            assistantSource = markerLevel ? 'both' : 'keyword'
+          } else if (markerLevel && userFlagLevel === markerLevel) {
+            assistantSource = 'both'
+          }
+        }
+
         await appendMessage(conversationId, {
           role: 'assistant',
-          content: assistantText,
+          content: assistantVisible,
           providerId,
           modelId,
           userId,
+          flagLevel: shouldPersistFlags ? assistantFlag : null,
+          flagSource: shouldPersistFlags ? assistantSource : null,
         })
         emit({ type: 'done', citations: [], conversationId })
       } catch (err) {

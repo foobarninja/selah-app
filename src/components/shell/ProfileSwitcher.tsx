@@ -23,6 +23,7 @@ interface ProfileSwitcherProps {
 
 export function ProfileSwitcher({ current, others }: ProfileSwitcherProps) {
   const [open, setOpen] = useState(false)
+  const [unreviewed, setUnreviewed] = useState(0)
   const rootRef = useRef<HTMLDivElement>(null)
   const router = useRouter()
 
@@ -34,6 +35,35 @@ export function ProfileSwitcher({ current, others }: ProfileSwitcherProps) {
     window.addEventListener('mousedown', onDocClick)
     return () => window.removeEventListener('mousedown', onDocClick)
   }, [open])
+
+  useEffect(() => {
+    // Clear before any conditional return so a kid profile never inherits
+    // a stale count from a prior adult session in the same tab.
+    setUnreviewed(0)
+    if (!current.hasPin) return
+    let cancelled = false
+    const fetchCount = async () => {
+      const r = await fetch('/api/audit/profiles')
+      if (!r.ok) return
+      const b = await r.json()
+      if (cancelled) return
+      let total = 0
+      for (const row of b.profiles ?? []) {
+        total += (row.unreviewed?.critical ?? 0) + (row.unreviewed?.concerning ?? 0) + (row.unreviewed?.sensitive ?? 0)
+      }
+      setUnreviewed(total)
+    }
+    fetchCount()
+    // Refetch when another component (e.g., ThreadAuditView's mark-reviewed
+    // action) dispatches selah-flags-updated, so the badge clears in place
+    // without a page reload.
+    const onUpdate = () => { fetchCount() }
+    window.addEventListener('selah-flags-updated', onUpdate)
+    return () => {
+      cancelled = true
+      window.removeEventListener('selah-flags-updated', onUpdate)
+    }
+  }, [current.hasPin, current.id])
 
   const switchTo = async (p: ProfileSummary) => {
     if (p.hasPin) {
@@ -59,7 +89,33 @@ export function ProfileSwitcher({ current, others }: ProfileSwitcherProps) {
         aria-label="Switch profile"
         style={{ display: 'inline-flex', alignItems: 'center', gap: '6px', background: 'transparent', border: 'none', cursor: 'pointer', padding: '2px 4px' }}
       >
-        <ProfileAvatar name={current.name} color={current.avatarColor} size={32} />
+        <div style={{ position: 'relative', display: 'inline-flex' }}>
+          <ProfileAvatar name={current.name} color={current.avatarColor} size={32} />
+          {unreviewed > 0 && (
+            <span
+              aria-label={`${unreviewed} unreviewed flags`}
+              style={{
+                position: 'absolute',
+                top: '-2px',
+                right: '-2px',
+                minWidth: '16px',
+                height: '16px',
+                borderRadius: '50%',
+                backgroundColor: 'var(--selah-terra-500, #B5542E)',
+                color: 'white',
+                fontSize: '10px',
+                fontWeight: 600,
+                display: 'flex',
+                alignItems: 'center',
+                justifyContent: 'center',
+                padding: '0 4px',
+                border: '2px solid var(--selah-bg-surface)',
+              }}
+            >
+              {unreviewed > 9 ? '9+' : unreviewed}
+            </span>
+          )}
+        </div>
         <ChevronDown size={14} color="var(--selah-text-3)" />
       </button>
       {open && (
@@ -94,6 +150,15 @@ export function ProfileSwitcher({ current, others }: ProfileSwitcherProps) {
             </>
           )}
           <div style={{ borderTop: '1px solid var(--selah-border-color)', marginTop: '4px', paddingTop: '4px' }}>
+            {unreviewed > 0 && (
+              <Link
+                href="/settings/audit"
+                role="menuitem"
+                style={{ display: 'flex', alignItems: 'center', gap: '8px', padding: '8px', color: 'var(--selah-terra-400)', textDecoration: 'none', fontSize: '13px', fontFamily: font.body }}
+              >
+                {unreviewed} unreviewed flag{unreviewed === 1 ? '' : 's'}
+              </Link>
+            )}
             <Link
               href="/settings?section=profiles"
               role="menuitem"

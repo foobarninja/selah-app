@@ -6,6 +6,7 @@
 // testable in isolation.
 
 import { prisma } from '@/lib/db'
+import type { FlagLevel, FlagSource } from '@/lib/safety/types'
 import { toContextRef } from './context-ref'
 import type { CompanionMessage, CompanionThreadSummary } from './types'
 
@@ -21,6 +22,8 @@ interface AppendMessageInput {
   providerId?: string | null
   modelId?: string | null
   userId: string
+  flagLevel?: FlagLevel | null
+  flagSource?: FlagSource | null
 }
 
 export async function createThread(input: CreateThreadInput): Promise<CompanionThreadSummary> {
@@ -90,8 +93,11 @@ export async function getThreadMessages(conversationId: number, userId: string):
 
 export async function appendMessage(conversationId: number, input: AppendMessageInput): Promise<CompanionMessage> {
   const now = new Date().toISOString()
-  const [message] = await prisma.$transaction([
-    prisma.aiMessage.create({
+  const flagLevel = input.flagLevel ?? null
+  const flagSource = input.flagSource ?? null
+
+  const message = await prisma.$transaction(async (tx) => {
+    const created = await tx.aiMessage.create({
       data: {
         conversationId,
         role: input.role,
@@ -99,11 +105,24 @@ export async function appendMessage(conversationId: number, input: AppendMessage
         providerId: input.providerId ?? null,
         modelId: input.modelId ?? null,
         userId: input.userId,
+        flagLevel,
+        flagSource,
         createdAt: now,
       },
-    }),
-    prisma.aiConversation.update({ where: { id: conversationId }, data: { updatedAt: now } }),
-  ])
+    })
+    await tx.aiConversation.update({
+      where: { id: conversationId },
+      data: { updatedAt: now },
+    })
+    if (flagLevel) {
+      await tx.aiConversation.update({
+        where: { id: conversationId },
+        data: { hasFlaggedMessages: true },
+      })
+    }
+    return created
+  })
+
   return {
     id: message.id,
     role: narrowRole(message.role, message.id),

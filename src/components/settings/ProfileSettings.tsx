@@ -2,6 +2,8 @@
 
 import { useEffect, useState } from 'react'
 import { useRouter } from 'next/navigation'
+import { ChildLockSettings } from './ChildLockSettings'
+import { KidTransparencyNotice } from '@/components/profiles/KidTransparencyNotice'
 
 const font = { body: "var(--selah-font-body, 'Source Sans 3', sans-serif)" }
 
@@ -16,9 +18,19 @@ interface ProfileSummary {
   avatarColor: string
   hasPin: boolean
   isDefault: boolean
+  childLock: boolean
+  lockedProvider: string | null
+  lockedModel: string | null
+  auditPolicy: 'none' | 'flagged-only' | 'full'
 }
 
-export function ProfileSettings({ id }: { id: string }) {
+interface ActiveProfileProps {
+  id: string
+  hasPin: boolean
+  childLock: boolean
+}
+
+export function ProfileSettings({ id, activeProfile }: { id: string; activeProfile?: ActiveProfileProps }) {
   const router = useRouter()
   const [profile, setProfile] = useState<ProfileSummary | null>(null)
   const [name, setName] = useState('')
@@ -28,15 +40,30 @@ export function ProfileSettings({ id }: { id: string }) {
   const [busy, setBusy] = useState(false)
   const [error, setError] = useState<string | null>(null)
 
-  useEffect(() => {
+  const loadProfile = () => {
     fetch(`/api/profiles/${id}`).then((r) => r.json()).then((b) => {
-      setProfile(b.profile)
-      setName(b.profile.name)
-      setColor(b.profile.avatarColor)
+      const raw = b.profile
+      setProfile({
+        ...raw,
+        childLock: raw.childLock ?? false,
+        lockedProvider: raw.lockedProvider ?? null,
+        lockedModel: raw.lockedModel ?? null,
+        auditPolicy: (raw.auditPolicy ?? 'none') as ProfileSummary['auditPolicy'],
+      })
+      setName(raw.name)
+      setColor(raw.avatarColor)
     })
+  }
+
+  useEffect(() => {
+    loadProfile()
+  // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [id])
 
   if (!profile) return <div style={{ fontFamily: font.body, color: 'var(--selah-text-3)' }}>Loading...</div>
+
+  const isSelf = activeProfile?.id === id
+  const isAdultViewer = !!(activeProfile?.hasPin && !activeProfile?.childLock)
 
   const save = async (e: React.FormEvent) => {
     e.preventDefault()
@@ -66,6 +93,9 @@ export function ProfileSettings({ id }: { id: string }) {
   return (
     <form onSubmit={save} style={{ display: 'flex', flexDirection: 'column', gap: '18px', maxWidth: '420px' }}>
       <h2 style={{ fontFamily: 'var(--selah-font-display)', fontSize: '22px', color: 'var(--selah-text-1)', margin: 0 }}>Edit profile</h2>
+      {isSelf && profile.childLock && profile.auditPolicy !== 'none' && (
+        <KidTransparencyNotice auditPolicy={profile.auditPolicy as 'flagged-only' | 'full'} />
+      )}
       <label style={{ fontFamily: font.body, color: 'var(--selah-text-2)' }}>
         Name
         <input type="text" value={name} onChange={(e) => setName(e.target.value)} maxLength={30} style={{ width: '100%', padding: '10px', marginTop: '6px', borderRadius: '8px', border: '1px solid var(--selah-border-color)', backgroundColor: 'var(--selah-bg-surface)', color: 'var(--selah-text-1)', fontFamily: font.body }} />
@@ -97,6 +127,15 @@ export function ProfileSettings({ id }: { id: string }) {
         <button type="button" onClick={() => router.push('/settings?section=profiles')} disabled={busy} style={{ padding: '10px 16px', borderRadius: '8px', backgroundColor: 'transparent', border: '1px solid var(--selah-border-color)', color: 'var(--selah-text-2)', cursor: 'pointer' }}>Cancel</button>
         <button type="submit" disabled={busy} style={{ padding: '10px 16px', borderRadius: '8px', backgroundColor: 'var(--selah-gold-500)', color: 'var(--selah-bg-page)', border: 'none', cursor: 'pointer', fontWeight: 600 }}>Save</button>
       </div>
+      {isAdultViewer && !isSelf && activeProfile && (
+        <ChildLockSettings
+          profile={profile}
+          parentProfileId={activeProfile.id}
+          onSaved={() => {
+            loadProfile()
+          }}
+        />
+      )}
     </form>
   )
 }

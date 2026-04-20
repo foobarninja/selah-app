@@ -16,14 +16,17 @@ describe('profiles/queries', () => {
       CREATE TABLE user_profiles (
         id TEXT PRIMARY KEY, name TEXT NOT NULL, avatar_color TEXT NOT NULL,
         pin_hash TEXT, is_default INTEGER NOT NULL DEFAULT 0,
+        child_lock INTEGER NOT NULL DEFAULT 0,
+        locked_provider TEXT, locked_model TEXT,
+        audit_policy TEXT NOT NULL DEFAULT 'none',
         created_at TEXT NOT NULL DEFAULT '', updated_at TEXT NOT NULL DEFAULT ''
       );
       -- Tables exercised by assertions:
       CREATE TABLE user_notes (id INTEGER PRIMARY KEY, user_id TEXT, body TEXT);
       CREATE TABLE journals (id TEXT PRIMARY KEY, user_id TEXT, title TEXT);
-      CREATE TABLE ai_conversations (id INTEGER PRIMARY KEY, user_id TEXT, title TEXT);
+      CREATE TABLE ai_conversations (id INTEGER PRIMARY KEY, user_id TEXT, title TEXT, has_flagged_messages INTEGER NOT NULL DEFAULT 0);
       -- Stubs so cascade DELETE doesn't hit "no such table":
-      CREATE TABLE ai_messages (id INTEGER PRIMARY KEY, user_id TEXT);
+      CREATE TABLE ai_messages (id INTEGER PRIMARY KEY, user_id TEXT, flag_level TEXT, flag_source TEXT, flag_reviewed_at TEXT);
       CREATE TABLE devotional_history (id INTEGER PRIMARY KEY, user_id TEXT);
       CREATE TABLE user_note_anchors (id INTEGER PRIMARY KEY, user_id TEXT);
       CREATE TABLE user_note_themes (id INTEGER PRIMARY KEY, user_id TEXT);

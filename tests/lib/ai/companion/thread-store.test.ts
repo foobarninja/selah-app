@@ -29,6 +29,7 @@ describe('thread-store', () => {
         title TEXT,
         context_ref TEXT,
         user_id TEXT,
+        has_flagged_messages INTEGER NOT NULL DEFAULT 0,
         created_at TEXT NOT NULL DEFAULT '',
         updated_at TEXT NOT NULL DEFAULT ''
       );
@@ -40,6 +41,9 @@ describe('thread-store', () => {
         provider_id TEXT,
         model_id TEXT,
         user_id TEXT,
+        flag_level TEXT,
+        flag_source TEXT,
+        flag_reviewed_at TEXT,
         created_at TEXT NOT NULL DEFAULT ''
       );
     `)
@@ -136,5 +140,56 @@ describe('thread-store', () => {
     const b = await findActiveThread('rom-8-28', 'u2')
     expect(a?.title).toBe('a')
     expect(b?.title).toBe('b')
+  })
+
+  it('appendMessage persists flagLevel and flagSource when provided', async () => {
+    const { createThread, findActiveThread, appendMessage } = await import('@/lib/ai/companion/thread-store')
+    await createThread({ devotionalId: 'rom-8-28', title: 'a', userId: 'u1' })
+    const active = await findActiveThread('rom-8-28', 'u1')
+    expect(active).not.toBeNull()
+    const msg = await appendMessage(active!.id, {
+      role: 'user',
+      content: 'I hate myself',
+      userId: 'u1',
+      flagLevel: 'concerning',
+      flagSource: 'keyword',
+    })
+    const db = new Database(dbPath)
+    const raw = db.prepare('SELECT flag_level, flag_source FROM ai_messages WHERE id=?').get(msg.id) as { flag_level: string; flag_source: string }
+    db.close()
+    expect(raw.flag_level).toBe('concerning')
+    expect(raw.flag_source).toBe('keyword')
+  })
+
+  it('appendMessage sets has_flagged_messages on the parent conversation when flagLevel is present', async () => {
+    const { createThread, findActiveThread, appendMessage } = await import('@/lib/ai/companion/thread-store')
+    await createThread({ devotionalId: 'rom-8-28', title: 'a', userId: 'u1' })
+    const active = await findActiveThread('rom-8-28', 'u1')
+    await appendMessage(active!.id, {
+      role: 'user',
+      content: 'I hate myself',
+      userId: 'u1',
+      flagLevel: 'concerning',
+      flagSource: 'keyword',
+    })
+    const db = new Database(dbPath)
+    const conv = db.prepare('SELECT has_flagged_messages FROM ai_conversations WHERE id=?').get(active!.id) as { has_flagged_messages: number }
+    db.close()
+    expect(conv.has_flagged_messages).toBe(1)
+  })
+
+  it('appendMessage does NOT set has_flagged_messages when no flag is provided', async () => {
+    const { createThread, findActiveThread, appendMessage } = await import('@/lib/ai/companion/thread-store')
+    await createThread({ devotionalId: 'rom-8-28', title: 'a', userId: 'u1' })
+    const active = await findActiveThread('rom-8-28', 'u1')
+    await appendMessage(active!.id, {
+      role: 'user',
+      content: 'what does this mean',
+      userId: 'u1',
+    })
+    const db = new Database(dbPath)
+    const conv = db.prepare('SELECT has_flagged_messages FROM ai_conversations WHERE id=?').get(active!.id) as { has_flagged_messages: number }
+    db.close()
+    expect(conv.has_flagged_messages).toBe(0)
   })
 })

@@ -35,6 +35,10 @@ export interface ProfileRecord {
   avatarColor: string
   pinHash: string | null
   isDefault: boolean
+  childLock: boolean
+  lockedProvider: string | null
+  lockedModel: string | null
+  auditPolicy: 'none' | 'flagged-only' | 'full'
   createdAt: string
   updatedAt: string
 }
@@ -45,10 +49,14 @@ function toRecord(row: {
   avatarColor: string
   pinHash: string | null
   isDefault: boolean
+  childLock: boolean
+  lockedProvider: string | null
+  lockedModel: string | null
+  auditPolicy: string
   createdAt: string
   updatedAt: string
 }): ProfileRecord {
-  return { ...row }
+  return { ...row, auditPolicy: row.auditPolicy as ProfileRecord['auditPolicy'] }
 }
 
 export async function listProfiles(): Promise<ProfileRecord[]> {
@@ -90,6 +98,10 @@ export async function updateProfile(
     name?: string
     avatarColor?: string
     pin?: string | null // string = new PIN, null = remove PIN, undefined = untouched
+    childLock?: boolean
+    lockedProvider?: string | null
+    lockedModel?: string | null
+    auditPolicy?: 'none' | 'flagged-only' | 'full'
   },
 ): Promise<ProfileRecord> {
   const now = new Date().toISOString()
@@ -97,11 +109,19 @@ export async function updateProfile(
     name?: string
     avatarColor?: string
     pinHash?: string | null
+    childLock?: boolean
+    lockedProvider?: string | null
+    lockedModel?: string | null
+    auditPolicy?: string
     updatedAt: string
   } = { updatedAt: now }
   if (input.name !== undefined) data.name = input.name.trim().slice(0, 30)
   if (input.avatarColor !== undefined) data.avatarColor = input.avatarColor
   if (input.pin !== undefined) data.pinHash = input.pin === null ? null : await hashPin(input.pin)
+  if (input.childLock !== undefined) data.childLock = input.childLock
+  if (input.lockedProvider !== undefined) data.lockedProvider = input.lockedProvider
+  if (input.lockedModel !== undefined) data.lockedModel = input.lockedModel
+  if (input.auditPolicy !== undefined) data.auditPolicy = input.auditPolicy
   const row = await prisma.userProfile.update({ where: { id }, data })
   return toRecord(row)
 }

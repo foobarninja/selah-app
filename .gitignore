@@ -54,6 +54,11 @@ next-env.d.ts
 /data/selah-seed.db-shm
 /data/selah-seed.db-wal
 /data/selah-seed.db.xz
+/data/selah-seed-src.db
+/data/selah-seed-src.db-journal
+/data/selah-seed-src.db-shm
+/data/selah-seed-src.db-wal
+/data/manifest.json
 /data/selah-test.db
 /data/selah-test.db-journal
 /data/selah-test.db-shm

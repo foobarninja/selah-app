@@ -34,14 +34,14 @@ export interface SeedManifest {
  *    2. Downward: APP_MIN_SEED_SCHEMA below is the floor — if the local
  *       seed's schemaVersion is lower than this, the app warns loudly on
  *       boot because the app assumes columns/tables that don't exist yet. */
-export const APP_SCHEMA_VERSION = 1
+export const APP_SCHEMA_VERSION = 2
 
 /** Minimum seed schemaVersion this app can run correctly against. When
  *  you add code that queries a new column/table, bump APP_SCHEMA_VERSION
  *  AND bump this to the same number — running against an older seed will
  *  produce Prisma errors. Pinned-seed operators see the warning and know
  *  to update. */
-export const APP_MIN_SEED_SCHEMA = 1
+export const APP_MIN_SEED_SCHEMA = 2
 
 /** URL where the live manifest is hosted. */
 export const MANIFEST_URL =

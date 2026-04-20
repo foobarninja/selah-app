@@ -25,7 +25,15 @@ import { spawnSync } from 'child_process'
 import { APP_SCHEMA_VERSION } from '../../src/lib/seed/manifest'
 import { USER_LOCAL_TABLES } from '../../src/lib/seed/user-tables'
 
-const SRC = resolve(process.cwd(), 'data/selah.db')
+// Prefer the scrubbed copy produced by scripts/release/scrub-for-seed.ts so
+// a careless invocation of seed:prepare can't ship raw user data. Fall back
+// to data/selah.db only if the scrubbed copy is absent (new-repo case —
+// first-ever release where USER_LOCAL_TABLES are already empty).
+const SCRUBBED = resolve(process.cwd(), 'data/selah-seed-src.db')
+const RAW = resolve(process.cwd(), 'data/selah.db')
+const SRC = process.env.SELAH_SEED_SRC
+  ? resolve(process.cwd(), process.env.SELAH_SEED_SRC)
+  : (existsSync(SCRUBBED) ? SCRUBBED : RAW)
 const DEST = resolve(process.cwd(), 'data/selah-seed.db')
 const DEST_XZ = `${DEST}.xz`
 const PREV = resolve(process.cwd(), 'data/selah-seed-prev.db')
@@ -101,6 +109,14 @@ async function main() {
   if (!existsSync(SRC)) {
     console.error(`[release] source not found: ${SRC}`)
     process.exit(1)
+  }
+
+  if (SRC === RAW) {
+    console.warn(`[release] WARNING: reading from ${RAW} (the raw dev DB).`)
+    console.warn(`[release] Run \`npm run seed:scrub\` first to strip user-local rows`)
+    console.warn(`[release] or ensure this DB has no personal data before continuing.`)
+  } else {
+    console.log(`[release] using scrubbed source: ${SRC}`)
   }
 
   const seedVersion = process.argv[2] ?? todayVersion()

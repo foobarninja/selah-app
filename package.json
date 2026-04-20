@@ -1,6 +1,6 @@
 {
   "name": "selah",
-  "version": "0.2.0",
+  "version": "0.3.0",
   "private": true,
   "scripts": {
     "predev": "tsx scripts/ops/check-seed-update.ts",
@@ -13,6 +13,7 @@
     "test:watch": "vitest",
     "seed:check": "tsx scripts/ops/check-seed-update.ts",
     "seed:update": "tsx scripts/ops/apply-seed-update.ts",
+    "seed:scrub": "tsx scripts/release/scrub-for-seed.ts",
     "seed:prepare": "tsx scripts/release/prepare-seed-db.ts",
     "seed:publish": "tsx scripts/release/publish-seed.ts",
     "app:check": "tsx scripts/ops/check-app-update.ts"
@@ -52,6 +53,7 @@
     "eslint-config-next": "16.2.2",
     "tailwindcss": "^4",
     "typescript": "^5",
+    "undici": "^8.1.0",
     "vitest": "^4.1.4"
   }
 }

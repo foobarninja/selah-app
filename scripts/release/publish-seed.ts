@@ -20,6 +20,7 @@ import { existsSync, readFileSync, statSync } from 'fs'
 import { createHash } from 'crypto'
 import { resolve, join } from 'path'
 import { homedir } from 'os'
+import { Agent, fetch as undiciFetch } from 'undici'
 import { uploadFiles } from '@huggingface/hub'
 import { config as loadDotenv } from 'dotenv'
 
@@ -27,6 +28,27 @@ import { config as loadDotenv } from 'dotenv'
 // reliably forward exported shell env vars to child Node processes, so
 // `.env` is the most portable way to make the token available.
 loadDotenv({ path: resolve(process.cwd(), '.env'), quiet: true })
+
+// HF's xet-backed upload API processes 70+ MB commits in chunks server-side,
+// which can push the time-to-first-response-byte past undici's 300 s default
+// (symptom: UND_ERR_HEADERS_TIMEOUT). We pass a custom fetch using an
+// Agent with higher timeouts to @huggingface/hub. (setGlobalDispatcher on
+// the installed undici doesn't affect Node's built-in fetch — they're
+// separate undici instances.)
+const longTimeoutDispatcher = new Agent({
+  headersTimeout: 15 * 60 * 1000,
+  bodyTimeout: 15 * 60 * 1000,
+  connectTimeout: 30 * 1000,
+})
+
+// uploadFiles calls fetch with the Web fetch signature. undici.fetch is
+// type-compatible at runtime but drifts at the type level; cast to the
+// globalThis shape to satisfy @huggingface/hub's `fetch?: typeof fetch`.
+const longTimeoutFetch: typeof fetch = ((input: Parameters<typeof fetch>[0], init?: Parameters<typeof fetch>[1]) =>
+  undiciFetch(input as Parameters<typeof undiciFetch>[0], {
+    ...(init as Parameters<typeof undiciFetch>[1]),
+    dispatcher: longTimeoutDispatcher,
+  })) as unknown as typeof fetch
 
 const REPO_ID = 'foooobear/selah-db'
 const XZ_PATH = resolve(process.cwd(), 'data/selah-seed.db.xz')
@@ -124,6 +146,7 @@ async function main() {
     repo: { type: 'dataset', name: REPO_ID },
     accessToken,
     commitTitle: `Publish seed ${manifest.seedVersion}`,
+    fetch: longTimeoutFetch,
     files: [
       { path: 'selah-seed.db.xz', content: fileFromDisk(XZ_PATH, 'selah-seed.db.xz') },
       { path: 'manifest.json', content: fileFromDisk(MANIFEST_PATH, 'manifest.json') },
@@ -137,5 +160,8 @@ async function main() {
 
 main().catch((err) => {
   const msg = err instanceof Error ? err.message : String(err)
-  bail(`upload failed: ${msg}`)
+  const cause = err instanceof Error && err.cause ? ` (cause: ${err.cause instanceof Error ? err.cause.message : String(err.cause)})` : ''
+  const code = err instanceof Error && err.cause && typeof err.cause === 'object' && 'code' in err.cause ? ` [${(err.cause as { code?: string }).code}]` : ''
+  if (err instanceof Error && err.stack) console.error(err.stack)
+  bail(`upload failed: ${msg}${cause}${code}`)
 })

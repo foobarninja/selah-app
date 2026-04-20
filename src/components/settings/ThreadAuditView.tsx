@@ -40,6 +40,9 @@ export function ThreadAuditView({ profileId, threadId }: Props) {
 
   const markReviewed = async (messageId: number) => {
     await fetch(`/api/audit/messages/${messageId}/review`, { method: 'POST' })
+    // Notify badge-holding components (ProfileSwitcher, ManageProfiles) that
+    // unreviewed counts have changed so they can refetch without a full reload.
+    window.dispatchEvent(new Event('selah-flags-updated'))
     load()
   }
 

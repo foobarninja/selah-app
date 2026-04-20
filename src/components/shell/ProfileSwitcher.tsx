@@ -37,9 +37,13 @@ export function ProfileSwitcher({ current, others }: ProfileSwitcherProps) {
   }, [open])
 
   useEffect(() => {
+    // Clear before any conditional return so a kid profile never inherits
+    // a stale count from a prior adult session in the same tab.
+    setUnreviewed(0)
     if (!current.hasPin) return
     let cancelled = false
-    fetch('/api/audit/profiles').then(async (r) => {
+    const fetchCount = async () => {
+      const r = await fetch('/api/audit/profiles')
       if (!r.ok) return
       const b = await r.json()
       if (cancelled) return
@@ -48,8 +52,17 @@ export function ProfileSwitcher({ current, others }: ProfileSwitcherProps) {
         total += (row.unreviewed?.critical ?? 0) + (row.unreviewed?.concerning ?? 0) + (row.unreviewed?.sensitive ?? 0)
       }
       setUnreviewed(total)
-    })
-    return () => { cancelled = true }
+    }
+    fetchCount()
+    // Refetch when another component (e.g., ThreadAuditView's mark-reviewed
+    // action) dispatches selah-flags-updated, so the badge clears in place
+    // without a page reload.
+    const onUpdate = () => { fetchCount() }
+    window.addEventListener('selah-flags-updated', onUpdate)
+    return () => {
+      cancelled = true
+      window.removeEventListener('selah-flags-updated', onUpdate)
+    }
   }, [current.hasPin, current.id])
 
   const switchTo = async (p: ProfileSummary) => {

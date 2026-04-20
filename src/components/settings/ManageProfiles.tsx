@@ -49,7 +49,13 @@ export function ManageProfiles() {
     setLoading(false)
   }
 
-  useEffect(() => { reload() }, [])
+  useEffect(() => {
+    reload()
+    const onUpdate = () => { reload() }
+    window.addEventListener('selah-flags-updated', onUpdate)
+    return () => window.removeEventListener('selah-flags-updated', onUpdate)
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [])
 
   const openDelete = async (p: ProfileSummary) => {
     const res = await fetch(`/api/profiles/${p.id}?counts=1`)

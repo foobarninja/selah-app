@@ -1,5 +1,6 @@
 import { NextRequest, NextResponse } from 'next/server'
 import { getSetting } from '@/lib/settings/queries'
+import { sanitizeProviderError } from '@/lib/ai/sanitize-error'
 
 export async function GET(request: NextRequest) {
   // Allow URL override via query param (for settings UI before saving), fall back to stored setting
@@ -20,9 +21,9 @@ export async function GET(request: NextRequest) {
     }))
     return NextResponse.json({ models })
   } catch (err: unknown) {
-    const message = err instanceof Error ? err.message : 'Connection failed'
+    console.error('[ai/ollama/models] error:', err instanceof Error ? err.message : err)
     return NextResponse.json(
-      { error: `Ollama unreachable at ${baseUrl}. Is it running? (${message})` },
+      { error: `Ollama unreachable at ${baseUrl}. Is it running? (${sanitizeProviderError(err)})` },
       { status: 502 }
     )
   }

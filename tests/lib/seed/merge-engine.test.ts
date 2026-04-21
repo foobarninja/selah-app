@@ -169,11 +169,20 @@ describe('mergeUserData', () => {
       db.exec(`CREATE TABLE ${T_HISTORY} (id INTEGER PRIMARY KEY, devotional_id TEXT REFERENCES devotionals(id))`)
     })
 
-    const report = mergeUserData(oldPath, newPath)
-    expect(report.invariantViolations).toEqual([])
-    expect(countRows(newPath, T_HISTORY)).toBe(1) // orphan preserved
-    expect(report.orphanRows.length).toBeGreaterThan(0)
-    expect(report.orphanRows.some((o) => o.table === T_HISTORY && o.target === 'devotionals')).toBe(true)
+    // This test exercises the "preserve orphan rows, report them" contract;
+    // with the default guard the merge refuses, so opt in explicitly here.
+    const originalEnv = process.env.SELAH_ALLOW_ORPHAN_FKS
+    process.env.SELAH_ALLOW_ORPHAN_FKS = '1'
+    try {
+      const report = mergeUserData(oldPath, newPath)
+      expect(report.invariantViolations).toEqual([])
+      expect(countRows(newPath, T_HISTORY)).toBe(1) // orphan preserved
+      expect(report.orphanRows.length).toBeGreaterThan(0)
+      expect(report.orphanRows.some((o) => o.table === T_HISTORY && o.target === 'devotionals')).toBe(true)
+    } finally {
+      if (originalEnv === undefined) delete process.env.SELAH_ALLOW_ORPHAN_FKS
+      else process.env.SELAH_ALLOW_ORPHAN_FKS = originalEnv
+    }
   })
 
   it('covers every registered user-local table without error (smoke)', () => {

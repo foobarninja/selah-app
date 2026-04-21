@@ -129,6 +129,16 @@ export function mergeUserData(
         const [table, parent, fkid] = key.split('::')
         report.orphanRows.push({ table, column: `fk#${fkid}`, target: parent, count })
       }
+
+      if (report.orphanRows.length > 0 && process.env.SELAH_ALLOW_ORPHAN_FKS !== '1') {
+        const summary = report.orphanRows
+          .map((o) => `${o.count} in ${o.table} → ${o.target}`)
+          .join('; ')
+        throw new Error(
+          `Aborting merge: ${report.orphanRows.length} orphan FK group(s) found (${summary}). ` +
+          `Set SELAH_ALLOW_ORPHAN_FKS=1 to proceed anyway — but expect runtime errors.`,
+        )
+      }
     } finally {
       db.prepare(`DETACH DATABASE oldseed`).run()
     }

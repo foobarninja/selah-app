@@ -8,6 +8,7 @@
 import { prisma } from '@/lib/db'
 import type { FlagLevel, FlagSource } from '@/lib/safety/types'
 import { toContextRef } from './context-ref'
+import { requireOwnedConversation } from './require-owned'
 import type { CompanionMessage, CompanionThreadSummary } from './types'
 
 interface CreateThreadInput {
@@ -79,6 +80,8 @@ function narrowRole(role: string, messageId: number): 'user' | 'assistant' {
 }
 
 export async function getThreadMessages(conversationId: number, userId: string): Promise<CompanionMessage[]> {
+  const owned = await requireOwnedConversation(prisma, userId, conversationId)
+  if (!owned) return []
   const rows = await prisma.aiMessage.findMany({
     where: { conversationId, userId },
     orderBy: { createdAt: 'asc' },
@@ -92,6 +95,10 @@ export async function getThreadMessages(conversationId: number, userId: string):
 }
 
 export async function appendMessage(conversationId: number, input: AppendMessageInput): Promise<CompanionMessage> {
+  const owned = await requireOwnedConversation(prisma, input.userId, conversationId)
+  if (!owned) {
+    throw new Error('conversation not found or not owned by this user')
+  }
   const now = new Date().toISOString()
   const flagLevel = input.flagLevel ?? null
   const flagSource = input.flagSource ?? null

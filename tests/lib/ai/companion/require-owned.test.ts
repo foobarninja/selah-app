@@ -9,7 +9,7 @@ function makePrisma() {
   const raw = new Database(':memory:')
   raw.exec(`
     CREATE TABLE ai_conversations (
-      id TEXT PRIMARY KEY,
+      id INTEGER PRIMARY KEY,
       user_id TEXT,
       title TEXT,
       context_ref TEXT,
@@ -21,17 +21,17 @@ function makePrisma() {
   `)
   raw.prepare(
     'INSERT INTO ai_conversations (id,user_id,title,context_ref,created_at,updated_at) VALUES (?,?,?,?,?,?)',
-  ).run('conv-alice', 'user-alice', 'Alice chat', 'GEN:1', '2026-01-01', '2026-01-01')
+  ).run(1, 'user-alice', 'Alice chat', 'GEN:1', '2026-01-01', '2026-01-01')
   raw.prepare(
     'INSERT INTO ai_conversations (id,user_id,title,context_ref,created_at,updated_at) VALUES (?,?,?,?,?,?)',
-  ).run('conv-bob', 'user-bob', 'Bob chat', 'ROM:8', '2026-01-01', '2026-01-01')
+  ).run(2, 'user-bob', 'Bob chat', 'ROM:8', '2026-01-01', '2026-01-01')
 
   const prisma = {
     aiConversation: {
-      findFirst: async ({ where }: { where: { id: string; userId: string } }) => {
+      findFirst: async ({ where }: { where: { id: number; userId: string } }) => {
         const row = raw
           .prepare('SELECT id, user_id FROM ai_conversations WHERE id = ? AND user_id = ?')
-          .get(where.id, where.userId) as { id: string; user_id: string } | undefined
+          .get(where.id, where.userId) as { id: number; user_id: string } | undefined
         return row ? { id: row.id, userId: row.user_id } : null
       },
     },
@@ -42,20 +42,20 @@ function makePrisma() {
 describe('requireOwnedConversation', () => {
   it('returns the conversation when owned by userId', async () => {
     const prisma = makePrisma()
-    const result = await requireOwnedConversation(prisma, 'user-alice', 'conv-alice')
+    const result = await requireOwnedConversation(prisma, 'user-alice', 1)
     expect(result).not.toBeNull()
-    expect(result?.id).toBe('conv-alice')
+    expect(result?.id).toBe(1)
   })
 
   it('returns null when conversation belongs to a different user', async () => {
     const prisma = makePrisma()
-    const result = await requireOwnedConversation(prisma, 'user-alice', 'conv-bob')
+    const result = await requireOwnedConversation(prisma, 'user-alice', 2)
     expect(result).toBeNull()
   })
 
   it('returns null when conversation does not exist', async () => {
     const prisma = makePrisma()
-    const result = await requireOwnedConversation(prisma, 'user-alice', 'conv-does-not-exist')
+    const result = await requireOwnedConversation(prisma, 'user-alice', 999)
     expect(result).toBeNull()
   })
 })

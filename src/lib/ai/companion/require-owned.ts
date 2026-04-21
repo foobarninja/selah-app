@@ -11,7 +11,7 @@ import type { PrismaClient } from '@prisma/client'
 export async function requireOwnedConversation(
   prisma: PrismaClient,
   userId: string,
-  conversationId: string,
+  conversationId: number,
 ) {
   return prisma.aiConversation.findFirst({
     where: { id: conversationId, userId },

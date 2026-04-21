@@ -19,7 +19,6 @@ interface AppShellProps {
   children: React.ReactNode
   user?: { name: string; avatarUrl?: string }
   isAIConfigured?: boolean
-  onLogout?: () => void
   activeProfile: ProfileSummary
   otherProfiles: ProfileSummary[]
 }
@@ -32,7 +31,6 @@ export default function AppShell({
   children,
   user,
   isAIConfigured = false,
-  onLogout,
   activeProfile,
   otherProfiles,
 }: AppShellProps) {
@@ -170,7 +168,6 @@ export default function AppShell({
         <UserMenu
           user={user}
           isCollapsed={isCollapsed && !isMobileOpen}
-          onLogout={onLogout}
         />
       </aside>
 

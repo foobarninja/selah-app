@@ -18,7 +18,7 @@ export default async function ShellLayout({
   return (
     <ShellProviders>
       <AppShell
-        user={{ name: 'Study User' }}
+        user={{ name: current.name }}
         isAIConfigured={aiConfig.isConfigured}
         activeProfile={{
           id: current.id,

@@ -18,14 +18,14 @@ export function sanitizeProviderError(err: unknown): string {
 
   const lower = raw.toLowerCase()
   if (
-    lower.includes('401') ||
+    /\b401\b/.test(lower) ||
     lower.includes('unauthorized') ||
     lower.includes('invalid_api_key') ||
     lower.includes('invalid api key')
   ) {
     return INVALID_KEY_MESSAGE
   }
-  if (lower.includes('429') || lower.includes('rate_limit') || lower.includes('rate limit')) {
+  if (/\b429\b/.test(lower) || lower.includes('rate_limit') || lower.includes('rate limit')) {
     return RATE_LIMIT_MESSAGE
   }
   if (lower.includes('context_length') || lower.includes('context length') || lower.includes('token limit')) {

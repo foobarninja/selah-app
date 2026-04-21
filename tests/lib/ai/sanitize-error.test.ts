@@ -46,4 +46,26 @@ describe('sanitizeProviderError', () => {
       'The AI provider returned an error. Check your settings or try again.',
     )
   })
+
+  it('does not match embedded numeric sequences that contain 401 or 429', () => {
+    // These are all unclassified — should get the generic message.
+    expect(sanitizeProviderError(new Error('HTTP 4010'))).toBe(
+      'The AI provider returned an error. Check your settings or try again.',
+    )
+    expect(sanitizeProviderError(new Error('request id 4012345'))).toBe(
+      'The AI provider returned an error. Check your settings or try again.',
+    )
+    expect(sanitizeProviderError(new Error('wrote 4291 bytes'))).toBe(
+      'The AI provider returned an error. Check your settings or try again.',
+    )
+  })
+
+  it('still matches 401 / 429 when they appear as actual status codes', () => {
+    expect(sanitizeProviderError(new Error('status: 401'))).toBe(
+      'Invalid API key. Check your settings.',
+    )
+    expect(sanitizeProviderError(new Error('HTTP 429 received'))).toBe(
+      'Rate limited. Try again in a moment.',
+    )
+  })
 })

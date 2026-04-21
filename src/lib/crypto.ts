@@ -4,11 +4,18 @@ const ALGORITHM = 'aes-256-gcm'
 const IV_LENGTH = 16
 
 /**
- * Derive a stable 32-byte encryption key from environment.
- * Uses DATABASE_URL as entropy (unique per installation).
+ * Derive a stable 32-byte AES-GCM key. Prefer a dedicated ENCRYPTION_SECRET
+ * env so the key is not co-located with the database connection string.
+ * Fall back to DATABASE_URL for backward compatibility with installs that
+ * predate the split — operators who set ENCRYPTION_SECRET after upgrading
+ * will invalidate any previously-stored ciphertexts (they return unchanged
+ * from decryptValue's catch-all, i.e. the operator re-enters them).
  */
 function getEncryptionKey(): Buffer {
-  const secret = process.env.DATABASE_URL ?? 'selah-default-key-seed'
+  const secret =
+    process.env.ENCRYPTION_SECRET ??
+    process.env.DATABASE_URL ??
+    'selah-default-key-seed'
   return createHash('sha256').update(secret).digest()
 }
 

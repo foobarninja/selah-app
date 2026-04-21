@@ -6,7 +6,7 @@
 // callers should translate null into a 404 (not 401/403, to avoid leaking
 // whether a conversation exists under a different user).
 
-import type { PrismaClient } from '@prisma/client'
+import type { PrismaClient } from '@/generated/prisma/client'
 
 export async function requireOwnedConversation(
   prisma: PrismaClient,

@@ -1,6 +1,6 @@
 import { describe, it, expect } from 'vitest'
 import Database from 'better-sqlite3'
-import type { PrismaClient } from '@prisma/client'
+import type { PrismaClient } from '@/generated/prisma/client'
 import { requireOwnedConversation } from '@/lib/ai/companion/require-owned'
 
 // We stand up a minimal in-memory DB and a narrow Prisma-shaped stub so the

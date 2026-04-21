@@ -98,8 +98,31 @@ export async function applySeedUpdate(opts: ApplyOptions = {}): Promise<void> {
     const p = resolve(cwd, sidecar)
     if (existsSync(p)) unlinkSync(p)
   }
-  renameSync(dbPath, backupPath)
-  renameSync(stagedRawPath, dbPath)
+  let backedUp = false
+  try {
+    renameSync(dbPath, backupPath)
+    backedUp = true
+    renameSync(stagedRawPath, dbPath)
+  } catch (err) {
+    // If we moved the live DB aside but the new-seed rename failed, restore
+    // from backup so the operator is never left without a usable DB.
+    if (backedUp && existsSync(backupPath) && !existsSync(dbPath)) {
+      try {
+        renameSync(backupPath, dbPath)
+        console.error(
+          `[seed-update] swap failed, restored original DB from backup: ${err instanceof Error ? err.message : err}`,
+        )
+      } catch (restoreErr) {
+        console.error(
+          `[seed-update] CRITICAL: swap failed AND restore failed. ` +
+            `Live DB is missing at ${dbPath}; backup is at ${backupPath}; ` +
+            `incoming seed is at ${stagedRawPath}. Recover manually.`,
+          restoreErr,
+        )
+      }
+    }
+    throw err
+  }
   writeLocalSeedState(versionPath, {
     seedVersion: manifest.seedVersion,
     schemaVersion: manifest.schemaVersion,

@@ -13,5 +13,5 @@ export async function POST(request: NextRequest) {
       return NextResponse.json({ error: 'invalid PIN' }, { status: 401 })
     }
   }
-  return attachActiveProfileCookie(NextResponse.json({ ok: true }), id)
+  return attachActiveProfileCookie(NextResponse.json({ ok: true }), id, request)
 }

@@ -19,6 +19,7 @@ export async function GET(request: Request) {
     return attachActiveProfileCookie(
       NextResponse.redirect(new URL('/', origin)),
       profiles[0].id,
+      request,
     )
   }
 

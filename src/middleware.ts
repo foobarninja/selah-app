@@ -16,17 +16,31 @@ const PROFILE_COOKIE_NAME = 'selah-profile-id'
 
 const ALLOW_PREFIXES = [
   '/profiles',
-  '/api/profiles',
   '/_next',
   '/favicon',
   '/api/health',
 ]
+
+// /api/profiles is partially open: the picker page needs GET (list) and
+// POST /select + POST /logout + GET /auto-select to work without an active
+// cookie. All other profile API surface (e.g. /api/profiles/[id]) is
+// REQUIRED to be authenticated and falls through to the cookie gate below.
+const PROFILE_API_OPEN_PATHS = new Set([
+  '/api/profiles',
+  '/api/profiles/select',
+  '/api/profiles/logout',
+  '/api/profiles/auto-select',
+  '/api/profiles/me',
+])
 
 export function middleware(request: NextRequest) {
   const { pathname } = request.nextUrl
 
   // Allow listed prefixes + any file with an extension (static assets).
   if (ALLOW_PREFIXES.some((p) => pathname.startsWith(p))) {
+    return NextResponse.next()
+  }
+  if (PROFILE_API_OPEN_PATHS.has(pathname)) {
     return NextResponse.next()
   }
   if (/\.[a-zA-Z0-9]{2,5}$/.test(pathname)) {

@@ -1,6 +1,8 @@
 import { NextRequest, NextResponse } from 'next/server'
 import { getProfile, updateProfile, deleteProfile, countCascade } from '@/lib/profiles/queries'
 import { isValidPinFormat, verifyPin } from '@/lib/profiles/pin'
+import { requireActiveProfileId } from '@/lib/profiles/active-profile'
+import { canModifyProfile } from '@/lib/profiles/require-caller-profile'
 
 export async function GET(
   request: NextRequest,
@@ -48,6 +50,18 @@ export async function PATCH(
   { params }: { params: Promise<{ id: string }> },
 ) {
   const { id } = await params
+  let callerId: string | null
+  try {
+    callerId = await requireActiveProfileId()
+  } catch {
+    return NextResponse.json({ error: 'not authenticated' }, { status: 401 })
+  }
+  const caller = await getProfile(callerId)
+  const target = await getProfile(id)
+  if (!target) return NextResponse.json({ error: 'not found' }, { status: 404 })
+  if (!caller || !canModifyProfile(caller, target)) {
+    return NextResponse.json({ error: 'forbidden' }, { status: 403 })
+  }
   const body = (await request.json()) as {
     name?: string
     avatarColor?: string
@@ -87,7 +101,6 @@ export async function PATCH(
   if (body.childLock === true) {
     const { listKidSafeModels } = await import('@/lib/safe-models/queries')
     const approved = await listKidSafeModels()
-    const target = await getProfile(id)
     const provider = body.lockedProvider ?? target?.lockedProvider ?? null
     const modelId = body.lockedModel ?? target?.lockedModel ?? null
     if (!provider || !modelId) {
@@ -150,10 +163,20 @@ export async function DELETE(
   { params }: { params: Promise<{ id: string }> },
 ) {
   const { id } = await params
+  let callerId: string | null
+  try {
+    callerId = await requireActiveProfileId()
+  } catch {
+    return NextResponse.json({ error: 'not authenticated' }, { status: 401 })
+  }
+  const caller = await getProfile(callerId)
   const body = (await request.json().catch(() => ({}))) as { pin?: string; confirmName?: string }
 
   const target = await getProfile(id)
   if (!target) return NextResponse.json({ error: 'not found' }, { status: 404 })
+  if (!caller || !canModifyProfile(caller, target)) {
+    return NextResponse.json({ error: 'forbidden' }, { status: 403 })
+  }
 
   // PIN-gated delete: if the target has a PIN, require it.
   if (target.pinHash) {

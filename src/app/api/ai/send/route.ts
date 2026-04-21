@@ -5,6 +5,7 @@ import { buildGroundingContext } from '@/lib/ai/grounding/context-builder'
 import { buildSystemPrompt } from '@/lib/ai/grounding/system-prompt'
 import { extractCitations } from '@/lib/ai/post-processing/citation-extractor'
 import { requireActiveProfileId } from '@/lib/profiles/active-profile'
+import { sanitizeProviderError } from '@/lib/ai/sanitize-error'
 import type { AiSendRequest, ChatMessage, ModelConfig, StreamEvent } from '@/lib/ai/types'
 
 const MAX_HISTORY_MESSAGES = 20
@@ -55,7 +56,7 @@ export async function POST(request: NextRequest) {
     async start(controller) {
       let fullResponse = ''
       const timeout = setTimeout(() => {
-        controller.enqueue(encoder.encode(encodeSSE({ type: 'error', message: 'Response timed out after 30 seconds.' })))
+        controller.enqueue(encoder.encode(encodeSSE({ type: 'error', message: `Response timed out after ${STREAM_TIMEOUT_MS / 1000} seconds.` })))
         controller.close()
       }, STREAM_TIMEOUT_MS)
 
@@ -104,18 +105,8 @@ export async function POST(request: NextRequest) {
         controller.enqueue(encoder.encode(encodeSSE({ type: 'done', citations })))
       } catch (err: unknown) {
         clearTimeout(timeout)
-        const message = err instanceof Error ? err.message : 'Unknown error'
-
-        // Classify errors
-        let userMessage = message
-        if (message.includes('401') || message.includes('Unauthorized') || message.includes('invalid')) {
-          userMessage = 'Invalid API key. Check your settings.'
-        } else if (message.includes('429') || message.includes('rate')) {
-          userMessage = 'Rate limited. Try again in a moment.'
-        } else if (message.includes('context_length') || message.includes('token')) {
-          userMessage = 'Message too long. Try a shorter question or start a new conversation.'
-        }
-
+        const userMessage = sanitizeProviderError(err)
+        console.error('[ai/send] provider error:', err instanceof Error ? err.message : err)
         controller.enqueue(encoder.encode(encodeSSE({ type: 'error', message: userMessage })))
       } finally {
         controller.close()

@@ -33,6 +33,7 @@ import { extractSafetyMarker } from '@/lib/safety/marker'
 import { getEffectiveAIConfig } from '@/lib/profiles/effective-ai-config'
 import { maxFlagLevel } from '@/lib/safety/types'
 import { getProfile } from '@/lib/profiles/queries'
+import { sanitizeProviderError } from '@/lib/ai/sanitize-error'
 
 const MAX_HISTORY_MESSAGES = 20
 
@@ -207,8 +208,8 @@ export async function POST(request: NextRequest) {
         })
         emit({ type: 'done', citations: [], conversationId })
       } catch (err) {
-        const message = err instanceof Error ? err.message : 'stream failed'
-        emit({ type: 'error', message })
+        console.error('[ai/companion/stream] provider error:', err instanceof Error ? err.message : err)
+        emit({ type: 'error', message: sanitizeProviderError(err) })
       } finally {
         controller.close()
       }

@@ -3,6 +3,7 @@ import { generateConversationDocx } from '@/lib/export/targets/ai-conversation'
 import { renderConversationToMarkdown } from '@/lib/export/markdown/renderers'
 import { prisma } from '@/lib/db'
 import { requireActiveProfileId } from '@/lib/profiles/active-profile'
+import { sanitizeProviderError } from '@/lib/ai/sanitize-error'
 
 export async function GET(
   request: NextRequest,
@@ -57,7 +58,7 @@ export async function GET(
       },
     })
   } catch (e: unknown) {
-    const msg = e instanceof Error ? e.message : 'Export failed'
-    return NextResponse.json({ error: msg }, { status: 500 })
+    console.error('[ai/conversations/export] error:', e instanceof Error ? e.message : e)
+    return NextResponse.json({ error: sanitizeProviderError(e) }, { status: 500 })
   }
 }

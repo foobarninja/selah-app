@@ -1,6 +1,7 @@
 import { NextRequest, NextResponse } from 'next/server'
 import { getSetting } from '@/lib/settings/queries'
 import { decryptValue, isEncrypted } from '@/lib/crypto'
+import { sanitizeProviderError } from '@/lib/ai/sanitize-error'
 
 export const dynamic = 'force-dynamic'
 
@@ -44,7 +45,7 @@ export async function GET(request: NextRequest) {
 
     return NextResponse.json(models)
   } catch (err: unknown) {
-    const message = err instanceof Error ? err.message : 'Unknown error'
-    return NextResponse.json({ error: message }, { status: 500 })
+    console.error('[ai/openrouter/models] provider error:', err instanceof Error ? err.message : err)
+    return NextResponse.json({ error: sanitizeProviderError(err) }, { status: 500 })
   }
 }

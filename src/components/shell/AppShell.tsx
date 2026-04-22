@@ -5,6 +5,7 @@ import { Menu, X } from 'lucide-react'
 import { MainNav } from './MainNav'
 import { UserMenu } from './UserMenu'
 import { ProfileSwitcher } from './ProfileSwitcher'
+import { VersionBanner } from './VersionBanner'
 import { navigationItems } from './navigation'
 
 interface ProfileSummary {
@@ -180,6 +181,8 @@ export default function AppShell({
       >
         {/* Mobile spacer for top bar */}
         <div className="h-14 md:hidden" />
+
+        <VersionBanner />
 
         <div className="max-w-7xl mx-auto w-full h-full">
           {children}

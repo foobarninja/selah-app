@@ -23,18 +23,27 @@ export async function POST(request: NextRequest) {
     messageId: string
     question: string
     answer: string
+    projectId?: string
   }
 
   if (!body.answer) {
     return NextResponse.json({ error: 'Missing answer' }, { status: 400 })
   }
 
-  // Pick the most-recently-updated project as the "active" target (scoped to userId).
   const projects = await listProjects(userId)
   if (projects.length === 0) {
     return NextResponse.json({ error: 'No study projects exist. Create one first.' }, { status: 400 })
   }
-  const activeProject = projects[0]
+
+  // If the caller picked a specific project, honor it (after verifying
+  // ownership via listProjects' userId scope). Otherwise fall back to the
+  // most-recently-updated project for backward compatibility.
+  const activeProject = body.projectId
+    ? projects.find((p) => p.id === body.projectId)
+    : projects[0]
+  if (!activeProject) {
+    return NextResponse.json({ error: 'project not found' }, { status: 404 })
+  }
 
   // Build the stored payload: short preview for the assembly item list, full Q&A
   // in the annotation field for display and export.

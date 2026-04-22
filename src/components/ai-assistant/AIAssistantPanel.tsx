@@ -5,7 +5,14 @@ import ReactMarkdown from 'react-markdown'
 import remarkGfm from 'remark-gfm'
 import { X, Clock, Send, Bookmark, BookmarkCheck, ChevronLeft, Save, Check, Plus, Copy, Library, Download } from 'lucide-react'
 import { ContextControls } from './ContextControls'
+import JournalPicker from '@/components/journal/JournalPicker'
+import StudyProjectPicker from '@/components/study-builder/StudyProjectPicker'
 import type { AIAssistantProps, Message, GroundingContext, ConversationThread } from './types'
+
+type PendingSave =
+  | { kind: 'journal'; messageId: string; content: string }
+  | { kind: 'collection'; messageId: string; question: string; answer: string }
+  | null
 
 const font = {
   display: "var(--selah-font-display, 'Cormorant Garamond', serif)",
@@ -67,11 +74,10 @@ function StreamingDots() {
   )
 }
 
-function MessageBubble({ message, onSave, onCopy, onSaveToCollection, isStreaming, isSaved }: { message: Message; onSave?: () => void; onCopy?: () => void; onSaveToCollection?: () => void; isStreaming?: boolean; isSaved?: boolean }) {
+function MessageBubble({ message, onSave, onCopy, onSaveToCollection, isStreaming, isSaved, isCollected }: { message: Message; onSave?: () => void; onCopy?: () => void; onSaveToCollection?: () => void; isStreaming?: boolean; isSaved?: boolean; isCollected?: boolean }) {
   const isUser = message.role === 'user'
   const showDots = !isUser && isStreaming && message.content === ''
   const [copied, setCopied] = useState(false)
-  const [collected, setCollected] = useState(false)
 
   const handleCopy = async () => {
     if (!message.content) return
@@ -115,13 +121,6 @@ function MessageBubble({ message, onSave, onCopy, onSaveToCollection, isStreamin
     onCopy?.()
   }
 
-  const handleSaveToCollection = () => {
-    if (!onSaveToCollection) return
-    setCollected(true)
-    onSaveToCollection()
-    setTimeout(() => setCollected(false), 1800)
-  }
-
   return (
     <div className={`flex ${isUser ? 'justify-end' : 'justify-start'} mb-4 group`}>
       <div className="relative rounded-xl" style={{ maxWidth: '85%', padding: '12px 16px', backgroundColor: isUser ? 'var(--selah-gold-900, #4A3711)' : 'var(--selah-bg-surface, #1C1917)', border: isUser ? 'none' : '1px solid var(--selah-border-color, #3D3835)' }}>
@@ -147,12 +146,12 @@ function MessageBubble({ message, onSave, onCopy, onSaveToCollection, isStreamin
               </button>
               {onSaveToCollection && (
                 <button
-                  onClick={handleSaveToCollection}
-                  title={collected ? 'Added to collection' : 'Save to study collection'}
+                  onClick={onSaveToCollection}
+                  title={isCollected ? 'Added to collection' : 'Save to study collection'}
                   className="opacity-0 group-hover:opacity-100 transition-opacity duration-150"
-                  style={{ color: collected ? 'var(--selah-teal-400, #4A9E88)' : 'var(--selah-sky-400, #6B91B5)', background: 'none', border: 'none', cursor: 'pointer', padding: '2px' }}
+                  style={{ color: isCollected ? 'var(--selah-teal-400, #4A9E88)' : 'var(--selah-sky-400, #6B91B5)', background: 'none', border: 'none', cursor: 'pointer', padding: '2px' }}
                 >
-                  {collected ? <Check size={14} strokeWidth={1.5} /> : <Library size={14} strokeWidth={1.5} />}
+                  {isCollected ? <Check size={14} strokeWidth={1.5} /> : <Library size={14} strokeWidth={1.5} />}
                 </button>
               )}
               {isSaved ? (
@@ -240,7 +239,32 @@ export function AIAssistantPanel({ groundingContext, messages, conversationHisto
   const [showHistory, setShowHistory] = useState(false)
   const [saveStatus, setSaveStatus] = useState<'idle' | 'saving' | 'saved'>('idle')
   const [savedMessageIds, setSavedMessageIds] = useState<Set<string>>(new Set())
+  const [collectedMessageIds, setCollectedMessageIds] = useState<Set<string>>(new Set())
+  const [pendingSave, setPendingSave] = useState<PendingSave>(null)
   const messagesEndRef = useRef<HTMLDivElement>(null)
+
+  const confirmSaveJournal = async (journalId: string) => {
+    if (!pendingSave || pendingSave.kind !== 'journal') return
+    const { messageId, content } = pendingSave
+    setPendingSave(null)
+    onSaveToJournal?.(messageId, journalId, 'insight', content, [], [])
+    setSavedMessageIds((prev) => new Set(prev).add(messageId))
+  }
+
+  const confirmSaveCollection = async (projectId: string) => {
+    if (!pendingSave || pendingSave.kind !== 'collection') return
+    const { messageId, question, answer } = pendingSave
+    setPendingSave(null)
+    await onSaveToCollection?.(messageId, projectId, question, answer)
+    setCollectedMessageIds((prev) => new Set(prev).add(messageId))
+    setTimeout(() => {
+      setCollectedMessageIds((prev) => {
+        const next = new Set(prev)
+        next.delete(messageId)
+        return next
+      })
+    }, 1800)
+  }
 
   useEffect(() => { messagesEndRef.current?.scrollIntoView({ behavior: 'smooth' }) }, [messages.length, messages[messages.length - 1]?.content])
 
@@ -322,13 +346,18 @@ export function AIAssistantPanel({ groundingContext, messages, conversationHisto
               message={msg}
               isStreaming={isStreaming && msg.id === 'streaming'}
               onSave={msg.role === 'assistant' && msg.id !== 'streaming' && !savedMessageIds.has(msg.id) ? () => {
-                onSaveToJournal?.(msg.id, 'insight', msg.content, [], [])
-                setSavedMessageIds((prev) => new Set(prev).add(msg.id))
+                setPendingSave({ kind: 'journal', messageId: msg.id, content: msg.content })
               } : undefined}
               onSaveToCollection={canSaveToCollection ? () => {
-                onSaveToCollection?.(msg.id, precedingUserMessage, msg.content)
+                setPendingSave({
+                  kind: 'collection',
+                  messageId: msg.id,
+                  question: precedingUserMessage,
+                  answer: msg.content,
+                })
               } : undefined}
               isSaved={savedMessageIds.has(msg.id)}
+              isCollected={collectedMessageIds.has(msg.id)}
             />
           )
         })}
@@ -341,6 +370,36 @@ export function AIAssistantPanel({ groundingContext, messages, conversationHisto
           <button onClick={handleSend} disabled={isStreaming} className="shrink-0 rounded-lg transition-colors duration-150" style={{ padding: '6px 10px', backgroundColor: input.trim() && !isStreaming ? 'var(--selah-sky-400, #6B91B5)' : 'var(--selah-border-color, #3D3835)', color: '#fff', border: 'none', cursor: input.trim() && !isStreaming ? 'pointer' : 'default' }}><Send size={14} strokeWidth={2} /></button>
         </div>
       </div>
+
+      {pendingSave && (
+        <div
+          role="dialog"
+          aria-modal="true"
+          onClick={(e) => { if (e.target === e.currentTarget) setPendingSave(null) }}
+          style={{
+            position: 'fixed',
+            inset: 0,
+            zIndex: 60,
+            display: 'flex',
+            alignItems: 'center',
+            justifyContent: 'center',
+            backgroundColor: 'rgba(15, 13, 11, 0.6)',
+            padding: '16px',
+          }}
+        >
+          {pendingSave.kind === 'journal' ? (
+            <JournalPicker
+              onSave={confirmSaveJournal}
+              onCancel={() => setPendingSave(null)}
+            />
+          ) : (
+            <StudyProjectPicker
+              onSave={confirmSaveCollection}
+              onCancel={() => setPendingSave(null)}
+            />
+          )}
+        </div>
+      )}
     </div>
   )
 }

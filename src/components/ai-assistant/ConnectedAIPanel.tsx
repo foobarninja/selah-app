@@ -35,7 +35,7 @@ export function ConnectedAIPanel() {
     isStreaming,
     onSendMessage: sendMessage,
     onClose: closePanel,
-    onSaveToJournal: (_messageId, noteType, content, anchors, tags) => {
+    onSaveToJournal: (_messageId, journalId, noteType, content, anchors, tags) => {
       fetch('/api/notes', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
@@ -45,16 +45,16 @@ export function ConnectedAIPanel() {
           anchors,
           tags,
           studyContext: 'ai-conversation',
-          journalId: 'default',
+          journalId,
         }),
       })
     },
-    onSaveToCollection: async (messageId, question, answer) => {
+    onSaveToCollection: async (messageId, projectId, question, answer) => {
       try {
         const res = await fetch('/api/ai/save-to-collection', {
           method: 'POST',
           headers: { 'Content-Type': 'application/json' },
-          body: JSON.stringify({ messageId, question, answer }),
+          body: JSON.stringify({ messageId, projectId, question, answer }),
         })
         if (!res.ok) return null
         const data = await res.json() as { projectTopic: string }

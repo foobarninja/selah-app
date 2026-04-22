@@ -39,9 +39,9 @@ export interface AIAssistantProps {
   onSendMessage?: (content: string) => void
   onClose?: () => void
   onTogglePanel?: () => void
-  onSaveToJournal?: (messageId: string, noteType: NoteType, content: string, anchors: Anchor[], tags: string[]) => void
-  /** Save an assistant message (with its preceding user question) to the active study builder project. */
-  onSaveToCollection?: (messageId: string, question: string, answer: string) => Promise<{ projectTopic: string } | null>
+  onSaveToJournal?: (messageId: string, journalId: string, noteType: NoteType, content: string, anchors: Anchor[], tags: string[]) => void
+  /** Save an assistant message (with its preceding user question) to a study builder project. */
+  onSaveToCollection?: (messageId: string, projectId: string, question: string, answer: string) => Promise<{ projectTopic: string } | null>
   onOpenThread?: (threadId: string) => void
   onDeleteThread?: (threadId: string) => void
   onNewConversation?: () => void

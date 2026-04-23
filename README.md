@@ -12,11 +12,15 @@ A self-hosted Bible study app with pre-baked contextual knowledge. Everything ru
 - 290+ theological themes with scholarly definitions and modern framing
 - Study Builder — assemble passages, characters, themes, and notes into study projects
 - Journal with multi-anchor notes and a resurfacing engine that reconnects past reflections
-- Daily Bread devotionals with mood-based selection
-- Optional AI assistant — OpenRouter, Ollama, or any OpenAI-compatible server
+- Daily Bread devotionals with mood-based selection and a Companion AI chat
+- Multi-user profiles with PINs, Child Lock, and per-profile source-tier settings
+- Companion Safety: AI replies are scanned for age-appropriateness on child-locked profiles, flagged messages land in a per-profile audit view for review
+- Save-to-journal and save-to-study-collection pickers on every AI panel
+- Optional AI assistant — Claude (Anthropic), OpenAI, Gemini, OpenRouter, Ollama, or any OpenAI-compatible server, with streaming, grounding controls, and tunable sampling
 - Full-text search across verses, characters, themes, and narrative units
 - DOCX and Markdown export for studies, journals, and AI conversations
 - Automatic backup with configurable retention
+- In-app update banner — Selah checks GitHub hourly and nudges you when a newer release is available
 - Dark and light mode
 
 ## Quick Start
@@ -241,13 +245,21 @@ For llama-server, vLLM, or any OpenAI-compatible endpoint:
 
 See [docs/models_recommendations.md](docs/models_recommendations.md) for detailed benchmarks, parameter tuning guides, and model-specific notes.
 
+### Using AI with Children
+
+If a profile belongs to a child — or has Child Lock turned on — be deliberate about which model you pick. The guardrails that keep an AI out of scary, adult, or graphically violent territory are themselves a capability, and cheap models fail those tests more often.
+
+**Recommended floor:** **Claude Haiku 4.5** or a comparable tier from another provider (GPT-4o-mini, Gemini Flash, Llama 3.1 8B-Instruct or larger for Ollama). Don't go below this for child-facing profiles.
+
+**Always test before handing it over.** Pose the kinds of hard questions kids actually ask — death, suffering, violent passages, "why did God do that" — and confirm the answers stay age-appropriate *for your child*. Companion Safety will flag obvious problems after the fact, but your pre-check is the first line of defense. Re-test whenever you switch models.
+
 ## Configuration
 
 | Setting | Location | Default | Description |
 |---------|----------|---------|-------------|
 | Primary translation | Settings → Translations | BSB | Default Bible translation for reading |
 | Parallel translations | Settings → Translations | None | Up to 3 side-by-side translations |
-| AI provider | Settings → AI Assistant | None | OpenRouter, Ollama, or Custom |
+| AI provider | Settings → AI Assistant | None | Claude, OpenAI, Gemini, OpenRouter, Ollama, or Custom |
 | AI temperature | Settings → AI Assistant | 0.7 (API) / 0.5 (Ollama) | Lower = more focused, higher = more creative |
 | AI frequency penalty | Settings → AI Assistant | 0.3 (API) / 0.6 (Ollama) | Reduces repetitive phrasing |
 | AI presence penalty | Settings → AI Assistant | 0.3 (API) / 0.5 (Ollama) | Pushes the model toward broader source coverage |

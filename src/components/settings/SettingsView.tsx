@@ -593,13 +593,28 @@ export function SettingsView({ translations, aiConfig, aiProviders, studyPrefere
             Every passage in Selah is enriched with five layers of context: <strong>Scene Cast</strong> (who&apos;s present and what they&apos;re feeling), <strong>Themes</strong> (theological threads), <strong>Climate</strong> (historical and cultural setting), <strong>Cross-references</strong> (connected passages), and <strong>Commentary</strong> (curated scholarly notes).
           </HelpItem>
           <HelpItem question="How do I set up an AI assistant?">
-            Scroll up to the AI Assistant section on this page. Selah works beautifully without it — the AI is simply an optional conversation partner for your study.
+            Scroll up to the AI Assistant section on this page. Selah supports six providers: <strong>Claude</strong> (Anthropic), <strong>OpenAI</strong>, <strong>Gemini</strong> (Google), <strong>OpenRouter</strong>, <strong>Ollama</strong> (local), and any <strong>custom</strong> OpenAI-compatible endpoint. Pick a provider, paste the API key (or point Ollama at its URL), choose a model, and save. Sampling knobs — temperature, frequency penalty, presence penalty — are tucked beneath the model picker if you want to tune tone and repetition. Selah works beautifully without any AI, too.
+          </HelpItem>
+          <HelpItem question="Using AI when children are involved">
+            If a profile belongs to a child — or has Child Lock turned on — don&apos;t use the weakest model you can find. The safety guardrails that stop an AI from wandering into scary, adult, or graphically violent territory are themselves a capability, and cheap models fail those tests more often. Use at least <strong>Claude Haiku 4.5</strong> (or a comparable tier from another provider: GPT-4o-mini, Gemini Flash, Llama 3.1 8B-Instruct or larger for Ollama). Before you hand a model to a child, <em>test it yourself</em>: prompt it with the kinds of hard questions kids ask — death, suffering, violence in Scripture, &ldquo;why did God do that&rdquo; — and confirm the answers stay age-appropriate. Companion Safety will flag obvious problems after the fact, but your pre-check is the first line of defense.
+          </HelpItem>
+          <HelpItem question="How do profiles and PINs work?">
+            Each person in your household can have their own profile with a PIN. Child profiles can turn on <strong>Child Lock</strong>, which restricts which AI models they can talk to (see Companion Safety) and keeps AI-assisted content tier-gated. Only adults who own a profile with a PIN and no Child Lock can modify other profiles. Switch profiles any time from the sidebar.
+          </HelpItem>
+          <HelpItem question="What is Companion Safety?">
+            Selah scans every AI reply for patterns that might be age-inappropriate for a child-locked profile — graphic violence, adult themes, self-harm language, etc. Flagged messages get a badge so you can review them on the profile&apos;s audit page, mark them reviewed, or keep the conversation moving. Flags clear when you switch profiles so they don&apos;t leak across users.
           </HelpItem>
           <HelpItem question="How do I build a study?">
-            Open the Study Builder from the sidebar. Create a project, then assemble passages, characters, themes, and notes. You can export the whole study as a Word document when you&apos;re ready.
+            Open the Study Builder from the sidebar. Create a project, then assemble passages, characters, themes, and notes. From the AI panels in the Reader and Daily Bread, you can save helpful answers straight into a study project with the save-to-collection button. When you&apos;re ready, export the whole study as a Word document.
           </HelpItem>
           <HelpItem question="What is Daily Bread?">
-            A devotional companion that meets you where you are. Choose what&apos;s on your mind, and Selah will offer a passage with context, conversation starters, and a moment to reflect.
+            A devotional companion that meets you where you are. Pick an audience level and what&apos;s on your mind, and Selah will offer a passage with context, conversation starters, and a moment to reflect. Each devotional has a <strong>Companion chat</strong> at the bottom — ask follow-up questions, and save any reply you want to keep straight to your journal or to a Study Builder project with the save buttons that appear on hover.
+          </HelpItem>
+          <HelpItem question="What&rsquo;s the AI panel in the Reader?">
+            Open any passage in the Reader and the AI panel lets you ask questions grounded in the text you&apos;re reading. Toggle which context is included (cross-refs, themes, commentary, parallel translations) with the grounding controls. Just like in Daily Bread, hover any assistant reply to copy it, save it to a journal, or add it to a Study Builder project.
+          </HelpItem>
+          <HelpItem question="Why do I sometimes see an &ldquo;update available&rdquo; banner?">
+            Selah checks GitHub once an hour for a newer released version and shows a dismissible banner when one is available. The banner tells you the command to run (<code>docker compose pull &amp;&amp; docker compose up -d</code>) and links to the release notes. Dismissing the banner only mutes that specific version — a newer release will nag again.
           </HelpItem>
 
           {/* Troubleshooting */}
@@ -614,6 +629,9 @@ export function SettingsView({ translations, aiConfig, aiProviders, studyPrefere
           </HelpItem>
           <HelpItem question="AI responses seem off">
             Every model has its own personality. Try adjusting the temperature and penalty sliders in AI settings, or switch to a different model.
+          </HelpItem>
+          <HelpItem question="A safety flag fired on a reply that looks fine">
+            Companion Safety errs on the side of catching things. Open the profile&apos;s audit page (Settings → Audit), read the message in context, and click <strong>Mark reviewed</strong> to clear the badge. If you&apos;re seeing a lot of false positives from a particular model, swap it out — a stronger model usually answers kid-safe questions in a way the safety layer recognizes more cleanly.
           </HelpItem>
           <HelpItem question="How do I restore a backup?">
             In the Backup &amp; Data section above, click the upload area and select a .db backup file. Your current data will be replaced with the backup.

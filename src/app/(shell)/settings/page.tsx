@@ -94,7 +94,22 @@ export default function SettingsPage() {
 
       onSaveAIConfig={async (provider, apiKey, model) => {
         const isOllama = provider === 'ollama'
-        await patchSetting('ai_config', JSON.stringify({ provider, apiKey: isOllama ? '' : apiKey, model, ollamaUrl: isOllama ? apiKey : undefined }))
+        const body = JSON.stringify({ provider, apiKey: isOllama ? '' : apiKey, model, ollamaUrl: isOllama ? apiKey : undefined })
+        try {
+          const res = await fetch('/api/settings', {
+            method: 'PATCH',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({ ai_config: body }),
+          })
+          if (!res.ok) {
+            const err = await res.json().catch(() => ({}))
+            toast.error("Couldn't save AI settings", err.error ?? `Server returned ${res.status}`)
+            return
+          }
+        } catch (err) {
+          toast.error("Couldn't save AI settings", err instanceof Error ? err.message : 'Network error')
+          return
+        }
         setData((d) => {
           if (!d) return d
           const prev = d.aiConfig
@@ -119,6 +134,7 @@ export default function SettingsPage() {
             },
           }
         })
+        toast.success('AI settings saved', `${provider} · ${model || 'default model'}`)
       }}
 
       onTestConnection={async () => {

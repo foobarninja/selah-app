@@ -50,6 +50,22 @@ function sha256(path: string): string {
   return h.digest('hex')
 }
 
+function resolveXzBinary(): string {
+  // On Windows, `xz` is often not on the PowerShell PATH even when it is
+  // available in Git Bash's mingw64 bundle. Prefer an explicit path when
+  // we can find one so `npm run seed:prepare` works from PowerShell too.
+  if (process.platform === 'win32') {
+    const candidates = [
+      'C:/Program Files/Git/mingw64/bin/xz.exe',
+      'C:/Program Files/Git/usr/bin/xz.exe',
+    ]
+    for (const c of candidates) {
+      if (existsSync(c)) return c
+    }
+  }
+  return 'xz'
+}
+
 function todayVersion(): string {
   const d = new Date()
   const y = d.getUTCFullYear()
@@ -161,11 +177,18 @@ async function main() {
   }
 
   console.log(`[release] step 4/5: xz -9 -T 0 --keep`)
-  const xz = spawnSync('xz', ['-9', '-T', '0', '--keep', '--force', DEST], {
+  const xzBin = resolveXzBinary()
+  const xz = spawnSync(xzBin, ['-9', '-T', '0', '--keep', '--force', DEST], {
     stdio: 'inherit',
   })
+  if (xz.error) {
+    console.error(`[release] xz failed to launch: ${xz.error.message}`)
+    console.error(`[release] install xz or ensure it's on PATH; on Windows, Git Bash ships xz at`)
+    console.error(`[release]   C:\\Program Files\\Git\\mingw64\\bin\\xz.exe`)
+    process.exit(1)
+  }
   if (xz.status !== 0) {
-    console.error('[release] xz failed')
+    console.error(`[release] xz exited with status ${xz.status}`)
     process.exit(1)
   }
 

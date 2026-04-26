@@ -36,8 +36,8 @@ loadDotenv({ path: resolve(process.cwd(), '.env'), quiet: true })
 // the installed undici doesn't affect Node's built-in fetch — they're
 // separate undici instances.)
 const longTimeoutDispatcher = new Agent({
-  headersTimeout: 15 * 60 * 1000,
-  bodyTimeout: 15 * 60 * 1000,
+  headersTimeout: 45 * 60 * 1000,
+  bodyTimeout: 45 * 60 * 1000,
   connectTimeout: 30 * 1000,
 })
 
@@ -87,6 +87,25 @@ function findHfToken(): string | null {
 function bail(msg: string): never {
   console.error(`[publish] ${msg}`)
   process.exit(1)
+}
+
+const TRANSIENT_CODES = new Set([
+  'UND_ERR_HEADERS_TIMEOUT',
+  'UND_ERR_BODY_TIMEOUT',
+  'UND_ERR_CONNECT_TIMEOUT',
+  'UND_ERR_SOCKET',
+  'ECONNRESET',
+  'ETIMEDOUT',
+  'ENETUNREACH',
+  'EAI_AGAIN',
+])
+
+function isTransientNetworkError(err: unknown): boolean {
+  if (!(err instanceof Error)) return false
+  const cause = err.cause as { code?: string; name?: string } | undefined
+  if (cause?.code && TRANSIENT_CODES.has(cause.code)) return true
+  const msg = err.message.toLowerCase()
+  return msg.includes('fetch failed') || msg.includes('network') || msg.includes('timeout')
 }
 
 /** Build a File-like object that streams from disk, for @huggingface/hub.
@@ -141,17 +160,39 @@ async function main() {
 
   // Single commit with BOTH files — atomic on HF's side, so users never
   // see a manifest pointing at a missing/stale .xz mid-upload.
+  //
+  // HF's xet backend uploads xorb chunks via its own internal fetch path
+  // that ignores our custom dispatcher. On flaky links that surfaces as
+  // UND_ERR_HEADERS_TIMEOUT partway through. xet is content-addressed,
+  // so re-uploading the same chunks dedups server-side — retrying the
+  // whole call is the pragmatic fix.
   console.log('[publish] uploading selah-seed.db.xz + manifest.json (single commit)...')
-  await uploadFiles({
-    repo: { type: 'dataset', name: REPO_ID },
-    accessToken,
-    commitTitle: `Publish seed ${manifest.seedVersion}`,
-    fetch: longTimeoutFetch,
-    files: [
-      { path: 'selah-seed.db.xz', content: fileFromDisk(XZ_PATH, 'selah-seed.db.xz') },
-      { path: 'manifest.json', content: fileFromDisk(MANIFEST_PATH, 'manifest.json') },
-    ],
-  })
+  const MAX_ATTEMPTS = 4
+  const BACKOFF_MS = [0, 5_000, 15_000, 45_000]
+  for (let attempt = 1; attempt <= MAX_ATTEMPTS; attempt++) {
+    if (BACKOFF_MS[attempt - 1] > 0) {
+      console.log(`[publish] attempt ${attempt}/${MAX_ATTEMPTS} — retrying in ${BACKOFF_MS[attempt - 1] / 1000}s…`)
+      await new Promise((r) => setTimeout(r, BACKOFF_MS[attempt - 1]))
+    }
+    try {
+      await uploadFiles({
+        repo: { type: 'dataset', name: REPO_ID },
+        accessToken,
+        commitTitle: `Publish seed ${manifest.seedVersion}`,
+        fetch: longTimeoutFetch,
+        files: [
+          { path: 'selah-seed.db.xz', content: fileFromDisk(XZ_PATH, 'selah-seed.db.xz') },
+          { path: 'manifest.json', content: fileFromDisk(MANIFEST_PATH, 'manifest.json') },
+        ],
+      })
+      break
+    } catch (err) {
+      const transient = isTransientNetworkError(err)
+      if (!transient || attempt === MAX_ATTEMPTS) throw err
+      const cause = err instanceof Error && err.cause ? ` (${err.cause instanceof Error ? err.cause.message : String(err.cause)})` : ''
+      console.warn(`[publish] attempt ${attempt} failed with transient error${cause} — will retry`)
+    }
+  }
 
   console.log('')
   console.log(`[publish] done. Users will pick up v${manifest.seedVersion} on next container restart.`)

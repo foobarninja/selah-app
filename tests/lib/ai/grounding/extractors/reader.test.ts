@@ -97,4 +97,30 @@ describe('extractReaderContext — climate injection', () => {
     expect(climate!.content).toContain('Uz, Patriarchal Age')
     expect(climate!.content).toContain('semi-arid land east of Canaan')
   })
+
+  it('does not exhaust the commentary char budget via double-counting', async () => {
+    const { getPassageContext } = await import('@/lib/reader/queries')
+    // 6 entries; each excerpt is 3000 chars so it truncates to ~2000 emitted.
+    // Correct accounting (emitted ~2000/entry) fits all 6 under the 15000 budget.
+    // The double-count bug charged ~5000/entry and stopped after 3.
+    const commentaries = Array.from({ length: 6 }, (_, i) => ({
+      author: `Author${i + 1}`,
+      verseRange: '2:1',
+      excerpt: 'x'.repeat(3000),
+      displayTier: 'curated',
+    }))
+    vi.mocked(getPassageContext).mockResolvedValueOnce({
+      sceneCast: [], themes: [], climateContexts: [], crossReferences: [],
+      commentaries, lensTags: [],
+    } as never)
+    const { extractReaderContext } = await import('@/lib/ai/grounding/extractors/reader')
+    const sections = await extractReaderContext(
+      { bookId: 'JOB', chapter: 38, translationId: 'BSB' } as never,
+      'user-1',
+    )
+    const commentary = sections.find((s) => s.id === 'commentary')
+    expect(commentary).toBeDefined()
+    // The last entry must survive — under the bug it was dropped.
+    expect(commentary!.content).toContain('Author6')
+  })
 })

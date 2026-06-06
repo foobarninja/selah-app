@@ -291,7 +291,6 @@ export async function extractReaderContext(ctx: ReaderContext, userId: string): 
       if (commentaryChars + text.length > MAX_COMMENTARY_CHARS) break
       lines.push(`**${c.author}** (${c.verseRange}): ${text}`)
       commentaryChars += text.length
-      commentaryChars += c.excerpt.length
     }
     const content = lines.join('\n')
     if (content) {

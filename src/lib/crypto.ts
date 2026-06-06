@@ -3,6 +3,8 @@ import { randomBytes, createCipheriv, createDecipheriv, createHash } from 'crypt
 const ALGORITHM = 'aes-256-gcm'
 const IV_LENGTH = 16
 
+const HARDCODED_FALLBACK_SEED = 'selah-default-key-seed'
+
 /**
  * Derive a stable 32-byte AES-GCM key. Prefer a dedicated ENCRYPTION_SECRET
  * env so the key is not co-located with the database connection string.
@@ -10,13 +12,34 @@ const IV_LENGTH = 16
  * predate the split — operators who set ENCRYPTION_SECRET after upgrading
  * will invalidate any previously-stored ciphertexts (they return unchanged
  * from decryptValue's catch-all, i.e. the operator re-enters them).
+ *
+ * If NEITHER env var is set we fall back to a hardcoded seed. That seed is a
+ * known-plaintext key offering no real protection, so:
+ *   - In production we refuse to derive a key (throw) — never silently encrypt
+ *     secrets under a publicly-known seed.
+ *   - In dev/test we warn loudly but still derive, so the test suite and local
+ *     dev (which commonly have neither var) keep working.
+ * The hard-fail is gated inside this function (not at module top-level) so
+ * importing this module never crashes a test runner that lacks env vars.
  */
 function getEncryptionKey(): Buffer {
-  const secret =
-    process.env.ENCRYPTION_SECRET ??
-    process.env.DATABASE_URL ??
-    'selah-default-key-seed'
-  return createHash('sha256').update(secret).digest()
+  const envSecret = process.env.ENCRYPTION_SECRET ?? process.env.DATABASE_URL
+
+  if (envSecret === undefined) {
+    const msg =
+      'crypto: no ENCRYPTION_SECRET or DATABASE_URL set — falling back to a ' +
+      'hardcoded, publicly-known key seed. Stored secrets would NOT be protected. ' +
+      'Set ENCRYPTION_SECRET (or DATABASE_URL) to a high-entropy value.'
+    if (process.env.NODE_ENV === 'production') {
+      throw new Error(
+        msg + ' Refusing to derive an encryption key in production.',
+      )
+    }
+    console.warn('[selah] ⚠ ' + msg)
+    return createHash('sha256').update(HARDCODED_FALLBACK_SEED).digest()
+  }
+
+  return createHash('sha256').update(envSecret).digest()
 }
 
 /** Encrypt a plaintext string → JSON string with iv, authTag, encrypted */

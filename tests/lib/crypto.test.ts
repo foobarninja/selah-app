@@ -1,4 +1,4 @@
-import { describe, it, expect, afterEach } from 'vitest'
+import { describe, it, expect, afterEach, vi } from 'vitest'
 import { encryptValue, decryptValue, isEncrypted } from '@/lib/crypto'
 
 describe('crypto', () => {
@@ -10,6 +10,8 @@ describe('crypto', () => {
     else process.env.ENCRYPTION_SECRET = originalSecret
     if (originalDbUrl === undefined) delete process.env.DATABASE_URL
     else process.env.DATABASE_URL = originalDbUrl
+    vi.unstubAllEnvs()
+    vi.restoreAllMocks()
   })
 
   it('round-trips with ENCRYPTION_SECRET', () => {
@@ -45,5 +47,36 @@ describe('crypto', () => {
     expect(isEncrypted('{"random":"json"}')).toBe(false)
     const ct = encryptValue('payload')
     expect(isEncrypted(ct)).toBe(true)
+  })
+
+  // ── Hardened fallback (no env secret present) ────────────────────────────────
+
+  it('warns (not throws) and still round-trips on the hardcoded fallback in dev/test', () => {
+    delete process.env.ENCRYPTION_SECRET
+    delete process.env.DATABASE_URL
+    vi.stubEnv('NODE_ENV', 'test')
+    const warn = vi.spyOn(console, 'warn').mockImplementation(() => {})
+
+    const ct = encryptValue('fallback-payload')
+    expect(decryptValue(ct)).toBe('fallback-payload')
+    expect(warn).toHaveBeenCalled()
+    expect(String(warn.mock.calls[0][0])).toMatch(/hardcoded/i)
+  })
+
+  it('refuses to derive a key (throws) on the hardcoded fallback in production', () => {
+    delete process.env.ENCRYPTION_SECRET
+    delete process.env.DATABASE_URL
+    vi.stubEnv('NODE_ENV', 'production')
+
+    expect(() => encryptValue('should-not-encrypt')).toThrow(/production/i)
+  })
+
+  it('does NOT throw in production when DATABASE_URL is present (env-derived path unchanged)', () => {
+    delete process.env.ENCRYPTION_SECRET
+    process.env.DATABASE_URL = 'file:./data/selah.db'
+    vi.stubEnv('NODE_ENV', 'production')
+
+    const ct = encryptValue('prod-payload')
+    expect(decryptValue(ct)).toBe('prod-payload')
   })
 })

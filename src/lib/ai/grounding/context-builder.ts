@@ -64,7 +64,7 @@ export async function buildGroundingContext(
   const remainingBudget = MAX_CONTEXT_CHARS - currentLength
 
   if (remainingBudget > 500) {
-    const queryLower = grounding.query.toLowerCase()
+    const queryLower = (grounding.query ?? '').toLowerCase()
 
     if (grounding.page !== 'character') {
       const charNames = await getCharacterNames()
@@ -98,7 +98,10 @@ export async function buildGroundingContext(
   // 4. Assemble within budget
   let assembled = ''
   for (const section of enabledSections) {
-    if (assembled.length + section.content.length > MAX_CONTEXT_CHARS) break
+    // Skip (don't stop): a single oversized section must not drop every
+    // smaller section that follows it. Sections are ordered by the extractor;
+    // greedily fit whatever still has room within the budget.
+    if (assembled.length + section.content.length > MAX_CONTEXT_CHARS) continue
     assembled += (assembled ? '\n\n---\n\n' : '') + section.content
   }
 

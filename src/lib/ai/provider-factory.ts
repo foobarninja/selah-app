@@ -45,7 +45,8 @@ export async function getProvider(): Promise<AiProviderAdapter | null> {
     case 'openai':
     case 'custom': {
       const { OpenAIAdapter } = await import('./providers/openai')
-      return new OpenAIAdapter(creds.apiKey, creds.model, creds.apiBaseUrl)
+      const disableThinking = (await getSetting('custom_disable_thinking')) === 'true'
+      return new OpenAIAdapter(creds.apiKey, creds.model, creds.apiBaseUrl, disableThinking)
     }
     case 'google': {
       const { GoogleAdapter } = await import('./providers/google')

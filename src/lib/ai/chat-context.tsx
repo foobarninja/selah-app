@@ -2,6 +2,7 @@
 
 import { createContext, useContext, useState, useCallback, useRef, type ReactNode } from 'react'
 import { useChatStream } from './use-chat-stream'
+import { truncationNotice } from './truncation'
 import type { ChatMessage, Citation, GroundingRequest, ContextToggles } from './types'
 import type { Message, ConversationThread, GroundingContext } from '@/components/ai-assistant/types'
 
@@ -68,12 +69,14 @@ export function ChatProvider({ children, grounding, groundingDisplay, isConfigur
         return prev
       })
     },
-    onDone: (newCitations) => {
+    onDone: (newCitations, meta) => {
       setCitations(newCitations)
+      const notice = meta?.truncated ? truncationNotice(meta.finishReason) : null
       setMessages((prev) => {
         const last = prev[prev.length - 1]
         if (last?.id === 'streaming') {
-          return [...prev.slice(0, -1), { ...last, id: `msg-${Date.now()}`, sourceTier: 4 as const }]
+          const content = notice ? `${last.content}\n\n> ⚠️ ${notice}` : last.content
+          return [...prev.slice(0, -1), { ...last, content, id: `msg-${Date.now()}`, sourceTier: 4 as const }]
         }
         return prev
       })

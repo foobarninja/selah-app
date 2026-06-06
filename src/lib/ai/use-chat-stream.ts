@@ -1,9 +1,14 @@
 import { useCallback, useRef } from 'react'
 import type { StreamEvent, Citation, GroundingRequest, ChatMessage, ContextToggles } from './types'
 
+interface DoneMeta {
+  truncated?: boolean
+  finishReason?: 'stop' | 'length' | null
+}
+
 interface UseChatStreamOptions {
   onToken: (content: string) => void
-  onDone: (citations: Citation[]) => void
+  onDone: (citations: Citation[], meta?: DoneMeta) => void
   onError: (message: string) => void
 }
 
@@ -59,7 +64,7 @@ export function useChatStream({ onToken, onDone, onError }: UseChatStreamOptions
                   onToken(event.content)
                   break
                 case 'done':
-                  onDone(event.citations)
+                  onDone(event.citations, { truncated: event.truncated, finishReason: event.finishReason })
                   break
                 case 'error':
                   onError(event.message)

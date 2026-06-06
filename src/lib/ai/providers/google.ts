@@ -1,6 +1,7 @@
 import { GoogleGenerativeAI } from '@google/generative-ai'
-import type { AiProviderAdapter } from './base'
+import type { AiProviderAdapter, StreamFinish } from './base'
 import type { ChatMessage, ModelConfig, ConnectionTestResult } from '../types'
+import { normalizeGoogleFinish } from '../truncation'
 
 export class GoogleAdapter implements AiProviderAdapter {
   readonly id = 'google'
@@ -10,7 +11,7 @@ export class GoogleAdapter implements AiProviderAdapter {
     this.genAI = new GoogleGenerativeAI(apiKey)
   }
 
-  async *stream(messages: ChatMessage[], config: ModelConfig): AsyncIterable<string> {
+  async *stream(messages: ChatMessage[], config: ModelConfig): AsyncGenerator<string, StreamFinish> {
     const genModel = this.genAI.getGenerativeModel({
       model: config.model || this.model,
       generationConfig: { maxOutputTokens: config.maxTokens || 2048 },
@@ -33,10 +34,14 @@ export class GoogleAdapter implements AiProviderAdapter {
     const lastMessage = chatMessages[chatMessages.length - 1]
     const result = await chat.sendMessageStream(lastMessage.content)
 
+    let rawFinish: string | null = null
     for await (const chunk of result.stream) {
       const text = chunk.text()
       if (text) yield text
+      const reason = chunk.candidates?.[0]?.finishReason
+      if (reason) rawFinish = reason
     }
+    return { finishReason: normalizeGoogleFinish(rawFinish) }
   }
 
   async testConnection(): Promise<ConnectionTestResult> {

@@ -6,6 +6,8 @@ import { buildSystemPrompt } from '@/lib/ai/grounding/system-prompt'
 import { extractCitations } from '@/lib/ai/post-processing/citation-extractor'
 import { requireActiveProfileId } from '@/lib/profiles/active-profile'
 import { sanitizeProviderError } from '@/lib/ai/sanitize-error'
+import { isTruncated, type FinishReason } from '@/lib/ai/truncation'
+import { createThinkStripper } from '@/lib/ai/think-filter'
 import type { AiSendRequest, ChatMessage, ModelConfig, StreamEvent } from '@/lib/ai/types'
 
 const MAX_HISTORY_MESSAGES = 20
@@ -93,16 +95,44 @@ export async function POST(request: NextRequest) {
           }
         }
 
-        for await (const chunk of provider.stream(fullMessages, config)) {
-          fullResponse += chunk
-          controller.enqueue(encoder.encode(encodeSSE({ type: 'token', content: chunk })))
+        // Drive the generator manually so we can read its return value — the
+        // normalized finish reason — which `for await` would discard. The
+        // stripper removes inline <think> reasoning some local models emit so
+        // it never reaches the user or citation extraction.
+        let finishReason: FinishReason | undefined
+        const stripper = createThinkStripper()
+        const iterator = provider.stream(fullMessages, config)
+        while (true) {
+          const { value, done } = await iterator.next()
+          if (done) {
+            finishReason = value ? value.finishReason : undefined
+            break
+          }
+          const visible = stripper.push(value)
+          if (visible) {
+            fullResponse += visible
+            controller.enqueue(encoder.encode(encodeSSE({ type: 'token', content: visible })))
+          }
+        }
+        const tail = stripper.flush()
+        if (tail) {
+          fullResponse += tail
+          controller.enqueue(encoder.encode(encodeSSE({ type: 'token', content: tail })))
         }
 
         clearTimeout(timeout)
 
+        const truncated = isTruncated(finishReason)
+        // Diagnostic: surfaces the finish reason + sizes so a truncated response
+        // can be traced to either a max-tokens cap ('length') or a dropped
+        // upstream stream (null) without re-instrumenting.
+        console.log(
+          `[ai/send] finishReason=${finishReason ?? 'unreported'} truncated=${truncated} responseChars=${fullResponse.length} promptChars=${systemPrompt.length}`
+        )
+
         // Post-processing: extract citations
         const citations = await extractCitations(fullResponse)
-        controller.enqueue(encoder.encode(encodeSSE({ type: 'done', citations })))
+        controller.enqueue(encoder.encode(encodeSSE({ type: 'done', citations, truncated, finishReason })))
       } catch (err: unknown) {
         clearTimeout(timeout)
         const userMessage = sanitizeProviderError(err)

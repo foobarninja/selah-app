@@ -26,6 +26,7 @@
 - Recommendation: Warn loudly at startup if neither `ENCRYPTION_SECRET` nor `DATABASE_URL` is set. Consider refusing to start in production without a proper key.
 
 **No HTTP security headers configured:**
+- Status: RESOLVED (2026-06-06) — added a `headers()` block in `next.config.ts` applying CSP, X-Frame-Options: DENY, X-Content-Type-Options: nosniff, Referrer-Policy, and Permissions-Policy to all routes. CSP is protective on frame-ancestors/object-src/base-uri/form-action while permissive on script/style/img/font/connect so it doesn't break Next. Verified live: headers present on page + API routes, reader page still renders 200. (Note: CSP keeps 'unsafe-inline'/'unsafe-eval' for scripts — a nonce-based CSP would be stricter but needs middleware work; deferred.)
 - Risk: No Content-Security-Policy, X-Frame-Options, X-Content-Type-Options, or Referrer-Policy headers. The app serves user-generated content (notes, journal entries) which renders in the browser.
 - Files: `next.config.ts` (headers key absent), `src/middleware.ts` (no header injection)
 - Current mitigation: Home-LAN deployment reduces exposure, but local XSS is still possible.

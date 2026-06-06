@@ -1,7 +1,18 @@
 import { NextRequest, NextResponse } from 'next/server'
 import { restoreBackup } from '@/lib/settings/queries'
+import { requireActiveProfileId } from '@/lib/profiles/active-profile'
 
 export async function POST(request: NextRequest) {
+  // Full-DB restore overwrites the entire database — a privileged, global,
+  // destructive operation. Require an authenticated active profile BEFORE
+  // reading the upload or touching the DB. Without this guard any
+  // unauthenticated request could overwrite the entire SQLite DB.
+  try {
+    await requireActiveProfileId()
+  } catch {
+    return NextResponse.json({ error: 'No active profile' }, { status: 401 })
+  }
+
   const formData = await request.formData()
   const file = formData.get('file') as File | null
   if (!file) {

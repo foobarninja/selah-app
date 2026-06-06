@@ -33,6 +33,7 @@
 - Recommendation: Add a `headers()` block in `next.config.ts` with at minimum `X-Frame-Options: DENY`, `X-Content-Type-Options: nosniff`, and a permissive CSP.
 
 **`first-launch` and `safe-models` endpoints unauthenticated:**
+- Status: ACCEPTED RISK (2026-06-06) — not fixed. `first-launch` only reads/sets a boolean (low impact) and `safe-models` already requires parent-PIN verification before mutation. On a single-household LAN install this is acceptable; revisit if exposed beyond the home network.
 - Risk: `GET/POST /api/settings/first-launch` can be called without a session cookie (middleware allows it because it falls through to the cookie gate, but `first-launch` itself has no `requireActiveProfileId`). `safe-models` does require a parent PIN, but the profile lookup is done after an unsanitized profile-ID read.
 - Files: `src/app/api/settings/first-launch/route.ts`, `src/app/api/safe-models/route.ts`
 - Current mitigation: first-launch is low-risk (only reads/sets a boolean). safe-models requires parent PIN verification before any mutation.

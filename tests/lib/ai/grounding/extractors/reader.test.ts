@@ -41,6 +41,10 @@ vi.mock('@/lib/db', () => ({
         relationalNote: 'God addresses Job directly.',
         conceptualNote: 'Wisdom literature confronts theodicy.',
         climateNote: 'Set amid storm imagery of the ancient Near East.',
+        modernParallel: 'Like standing before a force far bigger than yourself.',
+        preachingAngles: JSON.stringify([
+          { angle: 'Where Were You?', target_audience: 'Those wrestling with suffering', primary_theme: 'sovereignty' },
+        ]),
         keyQuestions: null,
         chapterStart: 38,
         chapterEnd: 38,
@@ -66,6 +70,20 @@ describe('extractReaderContext — climate injection', () => {
     const narrative = sections.find((s) => s.id === 'narrative')
     expect(narrative).toBeDefined()
     expect(narrative!.content).toContain('Set amid storm imagery of the ancient Near East.')
+  })
+
+  it('injects narrativeUnit.modernParallel and preachingAngles into the Narrative Context section', async () => {
+    const { extractReaderContext } = await import('@/lib/ai/grounding/extractors/reader')
+    const sections = await extractReaderContext(
+      { bookId: 'JOB', chapter: 38, translationId: 'BSB' } as never,
+      'user-1',
+    )
+    const narrative = sections.find((s) => s.id === 'narrative')
+    expect(narrative).toBeDefined()
+    expect(narrative!.content).toContain('Like standing before a force far bigger than yourself.')
+    expect(narrative!.content).toContain('Where Were You?')
+    // preaching angle objects must render their text, never "[object Object]"
+    expect(narrative!.content).not.toContain('[object Object]')
   })
 
   it('emits a climate section from passageCtx.climateContexts', async () => {

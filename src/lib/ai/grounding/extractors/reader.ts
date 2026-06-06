@@ -95,6 +95,20 @@ export async function extractReaderContext(ctx: ReaderContext, userId: string): 
           for (const q of questions) lines.push(`- ${q}`)
         } catch { /* skip malformed JSON */ }
       }
+      if (narrativeUnit.modernParallel) lines.push(`\n**Modern Parallel:** ${narrativeUnit.modernParallel}`)
+      if (narrativeUnit.preachingAngles) {
+        try {
+          // preachingAngles is a JSON array of { angle, target_audience, primary_theme }
+          const angles = JSON.parse(narrativeUnit.preachingAngles) as Array<{ angle?: string; target_audience?: string }>
+          const rendered = angles
+            .map((a) => (a?.angle ? `- **${a.angle}**${a.target_audience ? ` — for ${a.target_audience}` : ''}` : null))
+            .filter((l): l is string => l !== null)
+          if (rendered.length > 0) {
+            lines.push(`\n**Preaching Angles:**`)
+            for (const l of rendered) lines.push(l)
+          }
+        } catch { /* skip malformed JSON */ }
+      }
     }
     const content = lines.join('\n')
     if (content) {

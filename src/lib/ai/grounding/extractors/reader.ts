@@ -87,6 +87,7 @@ export async function extractReaderContext(ctx: ReaderContext, userId: string): 
       if (narrativeUnit.significance) lines.push(`\n**Theological Significance:** ${narrativeUnit.significance}`)
       if (narrativeUnit.relationalNote) lines.push(`\n**Relational Dynamics:** ${narrativeUnit.relationalNote}`)
       if (narrativeUnit.conceptualNote) lines.push(`\n**Conceptual Background:** ${narrativeUnit.conceptualNote}`)
+      if (narrativeUnit.climateNote) lines.push(`\n**Cultural & Historical Climate:** ${narrativeUnit.climateNote}`)
       if (narrativeUnit.keyQuestions) {
         try {
           const questions = JSON.parse(narrativeUnit.keyQuestions) as string[]
@@ -130,7 +131,7 @@ export async function extractReaderContext(ctx: ReaderContext, userId: string): 
   }
 
   // ── Characters with mini-profiles ─────────────────────────────────────────
-  const { sceneCast, themes, crossReferences, commentaries } = passageCtx
+  const { sceneCast, themes, climateContexts, crossReferences, commentaries } = passageCtx
 
   if (sceneCast.length > 0) {
     // Get full character profiles for scene cast
@@ -194,6 +195,21 @@ export async function extractReaderContext(ctx: ReaderContext, userId: string): 
     const content = lines.join('\n')
     if (content) {
       sections.push({ id: 'themes', label: 'Themes', content, estimatedTokens: Math.ceil(content.length / 4), defaultEnabled: true })
+    }
+  }
+
+  // ── Climate & cultural context ────────────────────────────────────────────
+  // climateContexts arrive pre-filtered by the caller's visible source tiers.
+  if (climateContexts.length > 0) {
+    const lines: string[] = []
+    lines.push('\n### Climate & Cultural Context')
+    for (const c of climateContexts) {
+      lines.push(`**${c.title}**`)
+      if (c.content) lines.push(c.content)
+    }
+    const content = lines.join('\n')
+    if (content) {
+      sections.push({ id: 'climate', label: 'Climate & Culture', content, estimatedTokens: Math.ceil(content.length / 4), defaultEnabled: true })
     }
   }
 

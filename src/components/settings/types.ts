@@ -51,6 +51,13 @@ export interface OpenRouterParameters extends ModelParameters {
   disableThinking: boolean
 }
 
+/** Settings for the custom / OpenAI-compatible provider. */
+export interface CustomParameters {
+  /** When true, sends `chat_template_kwargs: { enable_thinking: false }` to suppress
+   *  inline <think> reasoning on local servers (llama.cpp, vLLM, Unsloth Studio). */
+  disableThinking: boolean
+}
+
 export interface AIConfig {
   isConfigured: boolean
   provider: AIProvider | null
@@ -67,6 +74,8 @@ export interface AIConfig {
   ollamaParams: OllamaParameters
   /** Saved OpenRouter sampling parameters (or defaults if not yet saved). */
   openrouterParams: OpenRouterParameters
+  /** Saved custom / OpenAI-compatible provider settings. */
+  customParams: CustomParameters
 }
 
 export interface SourceTierVisibility { canon: boolean; scholarship: boolean; historical: boolean; aiAssisted: boolean; conjecture: boolean }

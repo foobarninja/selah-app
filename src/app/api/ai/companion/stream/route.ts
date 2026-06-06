@@ -27,6 +27,8 @@ import {
   getThreadMessages,
 } from '@/lib/ai/companion/thread-store'
 import { requireActiveProfileId } from '@/lib/profiles/active-profile'
+import { isTruncated, type FinishReason } from '@/lib/ai/truncation'
+import { createThinkStripper } from '@/lib/ai/think-filter'
 import type { ModelConfig } from '@/lib/ai/types'
 import { scanMessage } from '@/lib/safety/scan'
 import { extractSafetyMarker } from '@/lib/safety/marker'
@@ -170,10 +172,30 @@ export async function POST(request: NextRequest) {
         // stream to the user briefly before the full response completes. The
         // persisted message strips the marker; the transient display is
         // acceptable for v1. A streaming-time marker strip is phase-2 polish.
-        for await (const token of provider.stream(chatMessages, modelConfig)) {
-          assistantText += token
-          emit({ type: 'token', content: token })
+        let finishReason: FinishReason | undefined
+        const stripper = createThinkStripper()
+        const iterator = provider.stream(chatMessages, modelConfig)
+        while (true) {
+          const { value, done } = await iterator.next()
+          if (done) {
+            finishReason = value ? value.finishReason : undefined
+            break
+          }
+          const visible = stripper.push(value)
+          if (visible) {
+            assistantText += visible
+            emit({ type: 'token', content: visible })
+          }
         }
+        const tail = stripper.flush()
+        if (tail) {
+          assistantText += tail
+          emit({ type: 'token', content: tail })
+        }
+        const truncated = isTruncated(finishReason)
+        console.log(
+          `[ai/companion/stream] finishReason=${finishReason ?? 'unreported'} truncated=${truncated} responseChars=${assistantText.length}`
+        )
         // Parse the first-line safety marker from the model's response.
         // extractSafetyMarker returns the stripped text (marker removed) + the level.
         // Runs unconditionally so the user never sees a stray marker, regardless of
@@ -206,7 +228,7 @@ export async function POST(request: NextRequest) {
           flagLevel: shouldPersistFlags ? assistantFlag : null,
           flagSource: shouldPersistFlags ? assistantSource : null,
         })
-        emit({ type: 'done', citations: [], conversationId })
+        emit({ type: 'done', citations: [], conversationId, truncated, finishReason })
       } catch (err) {
         console.error('[ai/companion/stream] provider error:', err instanceof Error ? err.message : err)
         emit({ type: 'error', message: sanitizeProviderError(err) })

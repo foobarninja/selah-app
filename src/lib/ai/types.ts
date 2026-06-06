@@ -57,6 +57,10 @@ export interface StreamTokenEvent {
 export interface StreamDoneEvent {
   type: 'done'
   citations: Citation[]
+  /** True when the response was cut short (max-tokens cap or a dropped stream). */
+  truncated?: boolean
+  /** Normalized finish reason: 'stop' | 'length' | null (dropped) | undefined (unreported). */
+  finishReason?: 'stop' | 'length' | null
 }
 
 export interface StreamErrorEvent {

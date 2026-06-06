@@ -1,12 +1,13 @@
-import type { AiProviderAdapter } from './base'
+import type { AiProviderAdapter, StreamFinish } from './base'
 import type { ChatMessage, ModelConfig, ConnectionTestResult, OllamaModelInfo } from '../types'
+import { normalizeOllamaFinish } from '../truncation'
 
 export class OllamaAdapter implements AiProviderAdapter {
   readonly id = 'ollama'
 
   constructor(private baseUrl: string, private model: string, private disableThinking = false) {}
 
-  async *stream(messages: ChatMessage[], config: ModelConfig): AsyncIterable<string> {
+  async *stream(messages: ChatMessage[], config: ModelConfig): AsyncGenerator<string, StreamFinish> {
     const response = await fetch(`${this.baseUrl}/api/chat`, {
       method: 'POST',
       headers: { 'Content-Type': 'application/json' },
@@ -34,6 +35,7 @@ export class OllamaAdapter implements AiProviderAdapter {
 
     const decoder = new TextDecoder()
     let buffer = ''
+    let rawFinish: string | null = null
 
     while (true) {
       const { done, value } = await reader.read()
@@ -50,11 +52,17 @@ export class OllamaAdapter implements AiProviderAdapter {
           if (json.message?.content) {
             yield json.message.content
           }
+          // Ollama's terminal line carries done=true and a done_reason
+          // ('stop' | 'length'). Absent on a severed stream → stays null.
+          if (json.done && json.done_reason) {
+            rawFinish = json.done_reason
+          }
         } catch {
           // skip malformed lines
         }
       }
     }
+    return { finishReason: normalizeOllamaFinish(rawFinish) }
   }
 
   async testConnection(): Promise<ConnectionTestResult> {

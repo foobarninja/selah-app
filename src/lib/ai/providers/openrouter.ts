@@ -1,6 +1,7 @@
 import OpenAI from 'openai'
-import type { AiProviderAdapter } from './base'
+import type { AiProviderAdapter, StreamFinish } from './base'
 import type { ChatMessage, ModelConfig, ConnectionTestResult, OpenRouterModelInfo } from '../types'
+import { normalizeOpenAIFinish } from '../truncation'
 
 const OPENROUTER_BASE_URL = 'https://openrouter.ai/api/v1'
 
@@ -23,7 +24,7 @@ export class OpenRouterAdapter implements AiProviderAdapter {
     })
   }
 
-  async *stream(messages: ChatMessage[], config: ModelConfig): AsyncIterable<string> {
+  async *stream(messages: ChatMessage[], config: ModelConfig): AsyncGenerator<string, StreamFinish> {
     const openaiMessages = messages.map((m) => ({
       role: m.role as 'system' | 'user' | 'assistant',
       content: m.content,
@@ -58,8 +59,11 @@ export class OpenRouterAdapter implements AiProviderAdapter {
       params as unknown as Parameters<typeof this.client.chat.completions.create>[0] & { stream: true }
     )
 
+    let rawFinish: string | null = null
     for await (const chunk of stream) {
-      const delta = chunk.choices[0]?.delta as
+      const choice = chunk.choices[0]
+      if (choice?.finish_reason) rawFinish = choice.finish_reason
+      const delta = choice?.delta as
         | { content?: string | null; reasoning_content?: string | null; reasoning?: string | null }
         | undefined
       if (!delta) continue
@@ -74,6 +78,7 @@ export class OpenRouterAdapter implements AiProviderAdapter {
       const combined = reasoning + content
       if (combined) yield combined
     }
+    return { finishReason: normalizeOpenAIFinish(rawFinish) }
   }
 
   async testConnection(): Promise<ConnectionTestResult> {

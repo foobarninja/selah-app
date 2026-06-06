@@ -1,6 +1,7 @@
 import Anthropic from '@anthropic-ai/sdk'
-import type { AiProviderAdapter } from './base'
+import type { AiProviderAdapter, StreamFinish } from './base'
 import type { ChatMessage, ModelConfig, ConnectionTestResult } from '../types'
+import { normalizeAnthropicFinish } from '../truncation'
 
 export class AnthropicAdapter implements AiProviderAdapter {
   readonly id = 'anthropic'
@@ -10,7 +11,7 @@ export class AnthropicAdapter implements AiProviderAdapter {
     this.client = new Anthropic({ apiKey })
   }
 
-  async *stream(messages: ChatMessage[], config: ModelConfig): AsyncIterable<string> {
+  async *stream(messages: ChatMessage[], config: ModelConfig): AsyncGenerator<string, StreamFinish> {
     const systemMessage = messages.find((m) => m.role === 'system')
     const chatMessages = messages
       .filter((m) => m.role !== 'system')
@@ -23,11 +24,15 @@ export class AnthropicAdapter implements AiProviderAdapter {
       messages: chatMessages,
     })
 
+    let rawFinish: string | null = null
     for await (const event of stream) {
       if (event.type === 'content_block_delta' && event.delta.type === 'text_delta') {
         yield event.delta.text
+      } else if (event.type === 'message_delta' && event.delta.stop_reason) {
+        rawFinish = event.delta.stop_reason
       }
     }
+    return { finishReason: normalizeAnthropicFinish(rawFinish) }
   }
 
   async testConnection(): Promise<ConnectionTestResult> {

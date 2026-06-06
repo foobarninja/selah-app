@@ -122,6 +122,7 @@ export function SettingsView({ translations, aiConfig, aiProviders, studyPrefere
   const [ollamaFreqPenalty, setOllamaFreqPenalty] = useState(aiConfig.ollamaParams.freqPenalty)
   const [ollamaPresencePenalty, setOllamaPresencePenalty] = useState(aiConfig.ollamaParams.presPenalty)
   const [customApiUrl, setCustomApiUrl] = useState(aiConfig.customApiUrl || '')
+  const [customDisableThinking, setCustomDisableThinking] = useState(aiConfig.customParams.disableThinking)
   const [openrouterModels, setOpenrouterModels] = useState<Array<{ id: string; name: string; contextLength: number; promptCost: string; completionCost: string }>>([])
   const [openrouterLoading, setOpenrouterLoading] = useState(false)
   const [openrouterError, setOpenrouterError] = useState<string | null>(null)
@@ -135,6 +136,7 @@ export function SettingsView({ translations, aiConfig, aiProviders, studyPrefere
 
   const isOllama = selectedProvider === 'ollama'
   const isOpenRouter = selectedProvider === 'openrouter'
+  const isCustomLike = selectedProvider === 'custom' || selectedProvider === 'openai'
 
   // Auto-apply parameter preset when the user picks an OpenRouter model with a
   // known optimal configuration (e.g. Qwen 3.5 Plus needs temp 0.02). Without
@@ -455,6 +457,14 @@ export function SettingsView({ translations, aiConfig, aiProviders, studyPrefere
                       </div>
                       <p style={{ fontFamily: font.body, fontSize: '13px', color: 'var(--selah-text-2)', marginBottom: '6px' }}>Model</p>
                       <input type="text" value={selectedModel} onChange={(e) => setSelectedModel(e.target.value)} placeholder="e.g., gpt-4o or local model name" className="w-full rounded-lg outline-none mb-4" style={{ fontFamily: font.mono, fontSize: '13px', padding: '8px 12px', backgroundColor: 'var(--selah-bg-surface, #1C1917)', color: 'var(--selah-text-1)', border: '1px solid var(--selah-border-color, #3D3835)' }} />
+                      {isCustomLike && (
+                        <div style={{ marginBottom: '8px' }}>
+                          <Toggle label="Disable thinking (for local reasoning models like Gemma, Qwen3)" checked={customDisableThinking} onChange={(v) => setCustomDisableThinking(v)} />
+                          <p style={{ fontFamily: font.body, fontSize: '11px', color: 'var(--selah-text-3)', marginTop: '4px' }}>
+                            Suppresses inline &lt;think&gt; reasoning that otherwise consumes the token budget and cuts answers short.
+                          </p>
+                        </div>
+                      )}
                     </>
                   )}
                   <div className="flex items-center gap-3">
@@ -474,6 +484,7 @@ export function SettingsView({ translations, aiConfig, aiProviders, studyPrefere
                         extraSettings.ollama_pres_penalty = String(ollamaPresencePenalty)
                       }
                       if (!isOllama && !isOpenRouter && customApiUrl) { extraSettings.custom_api_url = customApiUrl }
+                      if (isCustomLike) { extraSettings.custom_disable_thinking = String(customDisableThinking) }
                       if (isOpenRouter) {
                         extraSettings.openrouter_temperature = String(orTemperature)
                         extraSettings.openrouter_top_p = String(orTopP)

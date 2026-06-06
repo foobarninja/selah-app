@@ -148,6 +148,10 @@ export async function getAIConfig(): Promise<AIConfig> {
     disableThinking: await getSettingBool('openrouter_disable_thinking', false),
   }
 
+  const customParams = {
+    disableThinking: await getSettingBool('custom_disable_thinking', false),
+  }
+
   return {
     isConfigured,
     provider: (provider as AIConfig['provider']) || null,
@@ -159,6 +163,7 @@ export async function getAIConfig(): Promise<AIConfig> {
     savedProviders: savedProviders as AIConfig['savedProviders'],
     ollamaParams,
     openrouterParams,
+    customParams,
   }
 }
 

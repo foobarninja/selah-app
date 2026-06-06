@@ -19,6 +19,7 @@
 - Recommendation: Implement attempt counting per profile in `app_settings` or an in-memory map. Lock out after 5 failed attempts for 60 seconds.
 
 **Encryption key falls back to a static default:**
+- Status: RESOLVED (2026-06-06, commit 2205846) — the hardcoded-seed branch now warns loudly and throws in production (refuses to start); env-derived branches unchanged, so existing ciphertext still decrypts (verified against live rows). Note: this install keys off `DATABASE_URL` (a predictable connection string) since `ENCRYPTION_SECRET` is unset — setting a high-entropy `ENCRYPTION_SECRET` would strengthen it, but would require re-entering stored API keys (key rotation).
 - Risk: `src/lib/crypto.ts` derives the AES-256-GCM key from `ENCRYPTION_SECRET`, then `DATABASE_URL`, then the hardcoded string `'selah-default-key-seed'`. Installs that omit both env vars store API keys encrypted with a known-plaintext key, providing no real protection.
 - Files: `src/lib/crypto.ts`
 - Current mitigation: None — the fallback is explicit and documented in code.

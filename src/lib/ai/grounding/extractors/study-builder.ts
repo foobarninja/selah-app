@@ -170,9 +170,15 @@ export async function extractStudyBuilderContext(userId: string, ctx: StudyBuild
           }
           if (nu.preachingAngles) {
             try {
-              const angles = JSON.parse(nu.preachingAngles) as string[]
-              parts.push(`\n**Preaching Angles:**`)
-              for (const a of angles) parts.push(`- ${a}`)
+              // preachingAngles is a JSON array of { angle, target_audience, primary_theme } objects
+              const angles = JSON.parse(nu.preachingAngles) as Array<{ angle?: string; target_audience?: string }>
+              const rendered = angles
+                .map((a) => (a?.angle ? `- **${a.angle}**${a.target_audience ? ` — for ${a.target_audience}` : ''}` : null))
+                .filter((l): l is string => l !== null)
+              if (rendered.length > 0) {
+                parts.push(`\n**Preaching Angles:**`)
+                for (const l of rendered) parts.push(l)
+              }
             } catch { /* skip */ }
           }
         }

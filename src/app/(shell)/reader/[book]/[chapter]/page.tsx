@@ -58,7 +58,7 @@ export default async function ReaderPage({ params, searchParams }: Props) {
   const [verses, context, resurfacedEntries] = await Promise.all([
     getChapterText(activeTranslation, bookId, chapter, parallelIds),
     getPassageContext(bookId, chapter, passage.verseStart, verseEnd, visibleTiers),
-    surfaceNotes(bookId, chapter, passage.verseStart, verseEnd),
+    surfaceNotes(userId, bookId, chapter, passage.verseStart, verseEnd),
   ])
 
   if (verses.length > 0) {

@@ -10,8 +10,14 @@ function getDb() {
 /**
  * Five-channel resurfacing engine.
  * Surfaces past user notes that are relevant to the current passage.
+ *
+ * Scoped to the active profile via `userId` — every channel filters on
+ * `user_notes.user_id` so one profile's notes never leak into another's
+ * resurfacing feed. The caller resolves `userId` from the active-profile
+ * cookie (requireActiveProfileId) and threads it in here.
  */
 export async function surfaceNotes(
+  userId: string,
   bookId: string,
   chapter: number,
   verseStart: number,
@@ -30,10 +36,11 @@ export async function surfaceNotes(
       FROM user_notes n
       JOIN user_note_anchors a ON a.note_id = n.id
       LEFT JOIN journals j ON j.id = n.journal_id
-      WHERE a.anchor_type = 'verse' AND a.book_id = ? AND a.chapter = ?
+      WHERE n.user_id = ?
+        AND a.anchor_type = 'verse' AND a.book_id = ? AND a.chapter = ?
         AND a.verse_start >= ? AND a.verse_start <= ?
       LIMIT 10
-    `).all(bookId, chapter, verseStart, verseEnd) as NoteRow[]
+    `).all(userId, bookId, chapter, verseStart, verseEnd) as NoteRow[]
 
     for (const row of directMatches) {
       addResult(results, row, 'direct-anchor', 1.0)
@@ -47,10 +54,11 @@ export async function surfaceNotes(
       JOIN user_note_themes nt ON nt.note_id = n.id
       JOIN passage_themes pt ON pt.theme_id = nt.theme_id
       LEFT JOIN journals j ON j.id = n.journal_id
-      WHERE pt.book_id = ? AND pt.chapter = ?
+      WHERE n.user_id = ?
+        AND pt.book_id = ? AND pt.chapter = ?
         AND pt.verse_start <= ? AND (pt.verse_end >= ? OR pt.verse_end IS NULL)
       LIMIT 10
-    `).all(bookId, chapter, verseEnd, verseStart) as NoteRow[]
+    `).all(userId, bookId, chapter, verseEnd, verseStart) as NoteRow[]
 
     for (const row of themeMatches) {
       if (!results.has(row.id)) {
@@ -66,11 +74,12 @@ export async function surfaceNotes(
       JOIN user_note_anchors a ON a.note_id = n.id
       JOIN character_appearances ca ON ca.character_id = a.ref_id
       LEFT JOIN journals j ON j.id = n.journal_id
-      WHERE a.anchor_type = 'character'
+      WHERE n.user_id = ?
+        AND a.anchor_type = 'character'
         AND ca.book_id = ? AND ca.chapter = ?
         AND ca.verse_start <= ? AND (ca.verse_end >= ? OR ca.verse_end IS NULL)
       LIMIT 10
-    `).all(bookId, chapter, verseEnd, verseStart) as NoteRow[]
+    `).all(userId, bookId, chapter, verseEnd, verseStart) as NoteRow[]
 
     for (const row of charMatches) {
       if (!results.has(row.id)) {
@@ -87,11 +96,12 @@ export async function surfaceNotes(
       JOIN cross_references cr ON cr.target_book = a.book_id
         AND cr.target_chapter = a.chapter AND cr.target_verse = a.verse_start
       LEFT JOIN journals j ON j.id = n.journal_id
-      WHERE a.anchor_type = 'verse'
+      WHERE n.user_id = ?
+        AND a.anchor_type = 'verse'
         AND cr.source_book = ? AND cr.source_chapter = ?
         AND cr.source_verse >= ? AND cr.source_verse <= ?
       LIMIT 10
-    `).all(bookId, chapter, verseStart, verseEnd) as NoteRow[]
+    `).all(userId, bookId, chapter, verseStart, verseEnd) as NoteRow[]
 
     for (const row of xrefMatches) {
       if (!results.has(row.id)) {
@@ -117,8 +127,9 @@ export async function surfaceNotes(
             JOIN user_notes n ON n.id = f.rowid
             LEFT JOIN journals j ON j.id = n.journal_id
             WHERE user_notes_fts MATCH ?
+              AND n.user_id = ?
             LIMIT 5
-          `).all(keywords) as NoteRow[]
+          `).all(keywords, userId) as NoteRow[]
 
           for (const row of ftsMatches) {
             if (!results.has(row.id)) {

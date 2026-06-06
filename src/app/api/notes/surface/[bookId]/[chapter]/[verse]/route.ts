@@ -1,5 +1,6 @@
 import { NextResponse } from 'next/server'
 import { surfaceNotes } from '@/lib/resurfacing'
+import { requireActiveProfileId } from '@/lib/profiles/active-profile'
 
 export async function GET(
   _request: Request,
@@ -12,6 +13,13 @@ export async function GET(
     return NextResponse.json({ error: 'Invalid parameters' }, { status: 400 })
   }
 
-  const entries = await surfaceNotes(bookId.toUpperCase(), chapter, verse, verse)
+  let userId: string
+  try {
+    userId = await requireActiveProfileId()
+  } catch {
+    return NextResponse.json({ error: 'No active profile' }, { status: 401 })
+  }
+
+  const entries = await surfaceNotes(userId, bookId.toUpperCase(), chapter, verse, verse)
   return NextResponse.json(entries)
 }

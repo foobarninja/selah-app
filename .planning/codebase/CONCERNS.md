@@ -5,12 +5,14 @@
 ## Security Considerations
 
 **Backup/restore endpoints have no profile-level auth check:**
+- Status: RESOLVED (2026-06-06, commit 299df5d) — both routes now require an authenticated active profile (401 otherwise) before any DB read/stream/overwrite; regression test added. Follow-up (not done): restrict these global destructive ops to an owner/admin profile — no admin role exists yet.
 - Risk: Any client with a valid session cookie (any profile, not just admin/parent) can download the full SQLite database or overwrite it with an arbitrary file. The full DB contains all profiles' notes, PINs (bcrypt hashes), AI conversation history, and API keys (AES-encrypted).
 - Files: `src/app/api/settings/backup/route.ts`, `src/app/api/settings/restore/route.ts`
 - Current mitigation: Middleware confirms a session cookie exists, so an unauthenticated user cannot reach these routes. But any authenticated profile — including a child profile — can call them.
 - Recommendation: Gate both routes on `requireActiveProfileId()` and confirm the caller is a parent/admin profile (or at minimum has a PIN set). For restore, require PIN re-verification.
 
 **PIN brute-force: no attempt limiting on `/api/profiles/select`:**
+- Status: ACCEPTED RISK (2026-06-06) — deliberately not fixed. Deployment is a single-household LAN over HTTP; the PIN guards profile *switching* (psychological privacy between family members), not a boundary against external attackers. bcrypt cost-10 throttling (~10/sec) is deemed sufficient for this threat model. Revisit if the app is ever exposed beyond the home network.
 - Risk: A 4-digit numeric PIN has only 10,000 combinations. There is no lockout, rate limit, or CAPTCHA on the PIN verify endpoint. An attacker with LAN access can enumerate all PINs in seconds.
 - Files: `src/app/api/profiles/select/route.ts`, `src/app/api/profiles/[id]/verify-pin/route.ts`
 - Current mitigation: bcrypt cost 10 slows each attempt to ~100ms, reducing throughput to ~10 guesses/second. This is insufficient against an automated attacker.
